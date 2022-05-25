@@ -1,0 +1,39 @@
+﻿{
+  "configurations": [
+    {
+      "name": "Debug",
+      "generator": "MinGW Makefiles",
+      "configurationType": "Debug",
+      "buildRoot": "${projectDir}\\build\\${name}",
+      "installRoot": "${projectDir}\\build\\install\\${name}",
+      "buildCommandArgs": "-j 512",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "gnu-gcc-arm" ],
+      "PostbuildCommand": "picotool load -x ${name}",
+      "variables": [
+        {
+          "name": "PICO_BOARD",
+          "value": "pico",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "name": "RPi Pico",
+      "generator": "MinGW Makefiles",
+      "configurationType": "Release",
+      "buildRoot": "${projectDir}\\build\\${name}",
+      "installRoot": "${projectDir}\\build\\install\\${name}",
+      "buildCommandArgs": "-j 512",
+      "ctestCommandArgs": "-DPICO_BOARD:STRING=adafruit_feather_rp2040 -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE \"-DCMAKE_C_COMPILER:FILEPATH=C:\\Program Files (x86)\\GNU Arm Embedded Toolchain\\10 2021.10\\bin\\arm-none-eabi-gcc.exe\" \"-DCMAKE_CXX_COMPILER:FILEPATH=C:\\Program Files (x86)\\GNU Arm Embedded Toolchain\\10 2021.10\\bin\\arm-none-eabi-g++.exe\"",
+      "inheritEnvironments": [ "gnu-gcc-arm" ],
+      "variables": [
+        {
+          "name": "PICO_BOARD",
+          "value": "pico",
+          "type": "STRING"
+        }
+      ]
+    }
+  ]
+}
