@@ -43,6 +43,8 @@ SPDX-License-Identifier: MIT
 #include "mipi_dcs.h"
 #include "mipi_display.h"
 
+#include "spi_helper.h"
+
 static int dma_channel;
 
 static void mipi_display_write_command(const uint8_t command)
@@ -51,9 +53,9 @@ static void mipi_display_write_command(const uint8_t command)
     gpio_put(MIPI_DISPLAY_PIN_DC, 0);
 
     /* Set CS low to reserve the SPI bus. */
-    gpio_put(MIPI_DISPLAY_PIN_CS, 0);
-
-    spi_write_blocking(spi0, &command, 1);
+ //   gpio_put(MIPI_DISPLAY_PIN_CS, 0);
+    spi_cs(csLCD);
+    spi_write_blocking(spi1, &command, 1);
 
     /* Set CS high to ignore any traffic on SPI bus. */
     gpio_put(MIPI_DISPLAY_PIN_CS, 1);
@@ -71,9 +73,10 @@ static void mipi_display_write_data(const uint8_t *data, size_t length)
     gpio_put(MIPI_DISPLAY_PIN_DC, 1);
 
     /* Set CS low to reserve the SPI bus. */
-    gpio_put(MIPI_DISPLAY_PIN_CS, 0);
+//    gpio_put(MIPI_DISPLAY_PIN_CS, 0);
+    spi_cs(csLCD);
 
-    spi_write_blocking(spi0, data, length);
+    spi_write_blocking(spi1, data, length);
 
     /* Set CS high to ignore any traffic on SPI bus. */
     gpio_put(MIPI_DISPLAY_PIN_CS, 1);
@@ -89,7 +92,8 @@ static void mipi_display_write_data_dma(const uint8_t *buffer, size_t length)
     gpio_put(MIPI_DISPLAY_PIN_DC, 1);
 
     /* Set CS low to reserve the SPI bus. */
-    gpio_put(MIPI_DISPLAY_PIN_CS, 0);
+//    gpio_put(MIPI_DISPLAY_PIN_CS, 0);
+    spi_cs(csLCD);
 
     dma_channel_wait_for_finish_blocking(dma_channel);
     dma_channel_set_trans_count(dma_channel, length, false);
@@ -103,9 +107,9 @@ static void mipi_display_dma_init()
     dma_channel = dma_claim_unused_channel(true);
     dma_channel_config channel_config = dma_channel_get_default_config(dma_channel);
     channel_config_set_transfer_data_size(&channel_config, DMA_SIZE_8);
-    channel_config_set_dreq(&channel_config, DREQ_SPI0_TX);
+    channel_config_set_dreq(&channel_config, DREQ_SPI1_TX);
     dma_channel_set_config(dma_channel, &channel_config, false);
-    dma_channel_set_write_addr(dma_channel, &spi_get_hw(spi0)->dr, false);
+    dma_channel_set_write_addr(dma_channel, &spi_get_hw(spi1)->dr, false);
 }
 
 static void mipi_display_read_data(uint8_t *data, size_t length)
@@ -174,8 +178,8 @@ static void mipi_display_spi_master_init()
     /* Set CS high to ignore any traffic on SPI bus. */
     gpio_put(MIPI_DISPLAY_PIN_CS, 1);
 
-    spi_init(spi0, MIPI_DISPLAY_SPI_CLOCK_SPEED_HZ);
-    uint32_t baud = spi_set_baudrate(spi0, MIPI_DISPLAY_SPI_CLOCK_SPEED_HZ);
+    spi_init(spi1, MIPI_DISPLAY_SPI_CLOCK_SPEED_HZ);
+    uint32_t baud = spi_set_baudrate(spi1, MIPI_DISPLAY_SPI_CLOCK_SPEED_HZ);
 
     hagl_hal_debug("Baudrate is set to %d.\n", baud);
 }
@@ -310,5 +314,5 @@ void mipi_display_ioctl(const uint8_t command, uint8_t *data, size_t size)
 
 void mipi_display_close()
 {
-    spi_deinit(spi0);
+    spi_deinit(spi1);
 }

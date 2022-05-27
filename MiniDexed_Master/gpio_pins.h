@@ -3,10 +3,12 @@
 #define TX1		4
 #define RX1		5
 
-#define A0		26
-#define A1		27
-#define A2		28
+#define ADC0	26
+#define ADC1	27
+#define ADC2	28
 
+#define RESET	6
+#define LCD_DC	7
 #define KEY_CS	8
 #define SD_CS	9
 #define SCK		10

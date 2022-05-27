@@ -6,6 +6,7 @@ target_sources(hagl_hal INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/hagl_hal_double.c
   ${CMAKE_CURRENT_LIST_DIR}/hagl_hal_triple.c
   ${CMAKE_CURRENT_LIST_DIR}/times.c
+  ../spi_helper.c
 )
 
 target_include_directories(hagl_hal INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include)
