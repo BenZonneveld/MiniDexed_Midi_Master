@@ -7,6 +7,8 @@
 #include "Pots.h"
 #include "gpio_pins.h"
 
+std::array<void(*)(), 3>cPots::potCallback;
+
 cPots::cPots()
 {
 	adc_gpio_init(ADC0);
@@ -29,7 +31,7 @@ cPots::cPots()
 void cPots::capture(uint8_t channel)
 {
 	updated[channel] = false;
-	uint32_t current = 0;
+	uint64_t current = 0;
 //	printf("Starting capture\n");
 	adc_select_input(channel);
 
@@ -63,10 +65,14 @@ void cPots::capture(uint8_t channel)
 		current += capture_buf[i];
 	}
 	current = current / CAPTURE_DEPTH;
-	if ((current >>1) != pot[channel])
+	if (current != pot[channel])
 	{
-		pot[channel] = (uint8_t)current>>1;
+		pot[channel] = (uint8_t)current;
 		updated[channel] = true;
+		if (potCallback[channel] != nullptr) potCallback[channel]();
+	}
+	else {
+		updated[channel] = false;
 	}
 	dma_channel_unclaim(dma_chan);
 }
@@ -81,4 +87,9 @@ void cPots::readAll()
 uint16_t cPots::getPot(uint8_t id)
 {
 	return pot[id];
+}
+
+void cPots::setPotCallback(uint8_t pot, void(*callback)())
+{
+	potCallback[pot] = callback;
 }

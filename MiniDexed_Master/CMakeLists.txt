@@ -40,7 +40,7 @@ target_sources(${PROJECT} PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/hagl_hal/hagl_hal_double.c
         ${CMAKE_CURRENT_LIST_DIR}/hagl_hal/hagl_hal_triple.c
         ${CMAKE_CURRENT_LIST_DIR}/hagl_hal/times.c
-)
+ )
 
 
 pico_enable_stdio_usb(${PROJECT} 0)

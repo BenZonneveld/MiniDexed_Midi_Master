@@ -59,10 +59,14 @@ int main(void)
   char text[64];
   printf("MDMA Booting\r\n");
 
+  cMenu menu;
   screen = cScreen();
 // hagl_init();
   screen.cls();
-  InitMainMenu();
+//  InitMainMenu();
+
+  menu.Init();
+  menu.ShowMenu();
 
   while (1)
   {
@@ -71,27 +75,7 @@ int main(void)
     midi_task();
     Pots.readAll();
     sleep_ms(50);
-    buttons.getButtons();
-//    printf("BUttons State: %02X\r\n", buttons.getState());
-
-    if ( buttons.getState())
-        printf("Buttons State: %02X\r\n", buttons.getState());
-
-    if (Pots.isUpdated(0))
-    {
-        snprintf(text, sizeof(text), "Pot 0: %i", Pots.getPot(0));
-        printf("%s\r\n", text);
-    }
-    if (Pots.isUpdated(1))
-    {
-        snprintf(text, sizeof(text), "Pot 1: %i", Pots.getPot(1));
-        printf("%s\r\n", text);
-    }
-    if (Pots.isUpdated(2))
-    {
-        snprintf(text, sizeof(text), "Pot 2: %i", Pots.getPot(2));
-        printf("%s\r\n", text);
-    }
+    buttons.handleButtons();
 
     //   screen.print(10,10, BLACK,text);
  //   snprintf(text, sizeof(text), "Pot 1: %i", Pots.getPot(1));

@@ -5,9 +5,25 @@ extern "C"
 {
 #endif
 
+#define MAXBANKS 256
+#define MAXPATCH 32
+#define MAXCHANNEL 16
+
 class cTG {
 public:
-	void BankSelect(uint16_t bank);
+	uint16_t BankUp();
+	uint16_t BankDown();
+	uint16_t setBank(uint16_t bank);
+	uint8_t PatchUp();
+	uint8_t PatchDown();
+	uint8_t setPatch(uint8_t patch);
+	uint8_t ChannelUp();
+	uint8_t ChannelDown();
+	uint8_t setChannel(uint8_t channel);
+	uint16_t getBank() { return mbank; }
+	uint8_t getPatch() { return mpatch; }
+	uint8_t getChannel() { return mchannel; }
+
 	void Patch(uint8_t patch);
 	void Channel(uint8_t channel);
 	void Cutoff(uint8_t freq);
