@@ -13,7 +13,7 @@
 #include "MIDI/midi.h"
 #include "Pots/Pots.h"
 #include "Buttons/Buttons.h"
-#include "Screen/Screen.h"
+#include "GFX-lib/TFT.h"
 #include "Screen/MainMenu.h"
 #include "Dexed/TG.h"
 
@@ -34,7 +34,8 @@ void led_task(void);
 
 cPots Pots = cPots();
 cButtons buttons = cButtons();
-cScreen screen;// = cScreen();
+//cScreen screen = cScreen();
+TFT tft = TFT();
 cTG dexed[8] = { cTG() };
 
 /*------------- MAIN -------------*/
@@ -46,8 +47,9 @@ int main(void)
   stdio_init_all();
   printf("MDMA Booting\r\n");
   tusb_init();
-  printf("MDMA Booting\r\n");
+  printf("TUSB Initialized\r\n");
 
+  tft.init(160,128);
     // Initialise UART 0
 //  uart_init(MIDIPORT, 31250);
 //  uart_init(DEXED, 31250);
@@ -56,13 +58,13 @@ int main(void)
 //  gpio_set_function(RX0, GPIO_FUNC_UART);
 //  gpio_set_function(TX1, GPIO_FUNC_UART);
 //  gpio_set_function(RX1, GPIO_FUNC_UART);
-  char text[64];
-  printf("MDMA Booting\r\n");
+//  char text[64];
+  printf("TFT Initialized\r\n");
 
-  screen = cScreen();
-// hagl_init();
-  screen.cls();
-  InitMainMenu();
+  cMenu menu;
+
+  menu.Init();
+  menu.ShowMenu();
 
   while (1)
   {
@@ -71,33 +73,7 @@ int main(void)
     midi_task();
     Pots.readAll();
     sleep_ms(50);
-    buttons.getButtons();
-//    printf("BUttons State: %02X\r\n", buttons.getState());
-
-    if ( buttons.getState())
-        printf("Buttons State: %02X\r\n", buttons.getState());
-
-    if (Pots.isUpdated(0))
-    {
-        snprintf(text, sizeof(text), "Pot 0: %i", Pots.getPot(0));
-        printf("%s\r\n", text);
-    }
-    if (Pots.isUpdated(1))
-    {
-        snprintf(text, sizeof(text), "Pot 1: %i", Pots.getPot(1));
-        printf("%s\r\n", text);
-    }
-    if (Pots.isUpdated(2))
-    {
-        snprintf(text, sizeof(text), "Pot 2: %i", Pots.getPot(2));
-        printf("%s\r\n", text);
-    }
-
-    //   screen.print(10,10, BLACK,text);
- //   snprintf(text, sizeof(text), "Pot 1: %i", Pots.getPot(1));
- //   screen.print(10, 30, BLACK, text);
- //   snprintf(text, sizeof(text), "Pot 2: %i", Pots.getPot(2));
- //   screen.print(10, 50, BLACK, text);
+    buttons.handleButtons();
   }
 
   return 0;

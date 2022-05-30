@@ -24,22 +24,25 @@ target_sources(${PROJECT} PUBLIC
 #        ${CMAKE_CURRENT_SOURCE_DIR}/MIDI/midi.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Pots/Pots.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Buttons/Buttons.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/Screen/screen.cpp 
         ${CMAKE_CURRENT_SOURCE_DIR}/Screen/MainMenu.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Dexed/TG.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/hagl/src/bitmap.c
-        ${CMAKE_CURRENT_LIST_DIR}/hagl/src/clip.c
-        ${CMAKE_CURRENT_LIST_DIR}/hagl/src/fontx.c
-        ${CMAKE_CURRENT_LIST_DIR}/hagl/src/hagl.c
-        ${CMAKE_CURRENT_LIST_DIR}/hagl/src/hsl.c
-        ${CMAKE_CURRENT_LIST_DIR}/hagl/src/rgb565.c
-        ${CMAKE_CURRENT_LIST_DIR}/hagl/src/rgb888.c
-        ${CMAKE_CURRENT_LIST_DIR}/hagl/src/tjpgd.c
-        ${CMAKE_CURRENT_LIST_DIR}/hagl_hal/mipi_display.c
-        ${CMAKE_CURRENT_LIST_DIR}/hagl_hal/hagl_hal_single.c
-        ${CMAKE_CURRENT_LIST_DIR}/hagl_hal/hagl_hal_double.c
-        ${CMAKE_CURRENT_LIST_DIR}/hagl_hal/hagl_hal_triple.c
-        ${CMAKE_CURRENT_LIST_DIR}/hagl_hal/times.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/bitmap.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/clip.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/fontx.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/hagl.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/hsl.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/rgb565.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/rgb888.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/tjpgd.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/hagl_hal/mipi_display.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/hagl_hal/hagl_hal_single.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/hagl_hal/hagl_hal_double.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/hagl_hal/hagl_hal_triple.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/hagl_hal/times.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/GFX-lib/Adafruit_GFX.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/GFX-lib/TFT.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/GFX-lib/glcdfont.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/GFX-lib/Print.cpp
 )
 
 
@@ -56,6 +59,7 @@ target_include_directories(${PROJECT} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/Dexed
         ${CMAKE_CURRENT_SOURCE_DIR}/hagl/include
         ${CMAKE_CURRENT_SOURCE_DIR}/hagl_hal/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/GFX-lib/
 )
 
 target_link_libraries(${PROJECT} PUBLIC
@@ -71,8 +75,8 @@ target_link_libraries(${PROJECT} PUBLIC
 
 target_compile_definitions(${PROJECT} PRIVATE
   #HAGL_HAL_USE_SINGLE_BUFFER
-  #HAGL_HAL_USE_DOUBLE_BUFFER
-  HAGL_HAL_USE_TRIPLE_BUFFER
+  HAGL_HAL_USE_DOUBLE_BUFFER
+  #HAGL_HAL_USE_TRIPLE_BUFFER
   HAGL_HAL_USE_DMA=1
   HAGL_HAL_DEBUG
   MIPI_DISPLAY_SPI_CLOCK_SPEED_HZ=24000000
@@ -84,9 +88,9 @@ target_compile_definitions(${PROJECT} PRIVATE
   MIPI_DISPLAY_PIN_MOSI=11 # SDA
   MIPI_DISPLAY_PIN_MISO=12
   MIPI_DISPLAY_PIXEL_FORMAT=MIPI_DCS_PIXEL_FORMAT_16BIT
-  MIPI_DISPLAY_ADDRESS_MODE=MIPI_DCS_ADDRESS_MODE_BGR|MIPI_DCS_ADDRESS_MODE_MIRROR_Y|MIPI_DCS_ADDRESS_MODE_MIRROR_X
-  MIPI_DISPLAY_WIDTH=128
-  MIPI_DISPLAY_HEIGHT=160
+  MIPI_DISPLAY_ADDRESS_MODE=MIPI_DCS_ADDRESS_MODE_BGR|MIPI_DCS_ADDRESS_MODE_SWAP_XY|MIPI_DCS_ADDRESS_MODE_MIRROR_Y 
+  MIPI_DISPLAY_WIDTH=160
+  MIPI_DISPLAY_HEIGHT=128
   MIPI_DISPLAY_OFFSET_X=0
   MIPI_DISPLAY_OFFSET_Y=0
   MIPI_DISPLAY_INVERT=0
