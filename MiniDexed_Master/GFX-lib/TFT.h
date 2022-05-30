@@ -110,7 +110,7 @@ public:
       //  virtual void setAddrWindow(uint16_t x, uint16_t y, uint16_t w,
       //                             uint16_t h) = 0;
 
-    void setAddrWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+//    void setAddrWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
     //  void setRotation(uint8_t r);
     void enableDisplay(bool enable);
     void enableTearing(bool enable);

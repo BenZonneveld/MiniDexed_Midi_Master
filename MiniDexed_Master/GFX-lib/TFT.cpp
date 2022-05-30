@@ -560,7 +560,7 @@ void TFT::drawRGBBitmap(int16_t x, int16_t y, uint16_t *pcolors,
 
   pcolors += by1 * saveW + bx1; // Offset bitmap ptr to clipped top-left
 //  startWrite();
-  setAddrWindow(x, y, w, h); // Clipped area
+  //setAddrWindow(x, y, w, h); // Clipped area
   hagl_hal_blit(x, y, (bitmap_t *)pcolors);
   //while (h--) {              // For each (clipped) scanline...
   //  writePixels(pcolors, w); // Push one (clipped) row
@@ -607,17 +607,17 @@ uint16_t TFT::color565(uint8_t red, uint8_t green, uint8_t blue) {
   @param  h  Height of window
 */
 /**************************************************************************/
-void TFT::setAddrWindow(uint16_t x, uint16_t y, uint16_t w,
-    uint16_t h) {
-    printf("windoWWidth: %i\r\n", windowWidth);
-    if (x + w > windowWidth -1)
-    {
-        w = windowWidth - 1  - x ;
-    }
-    if (y + h > windowHeight)
-        h = windowHeight - 1 - y;
-  //  hagl_set_clip_window(x, y, x+w, y+h);
-}
+//void TFT::setAddrWindow(uint16_t x, uint16_t y, uint16_t w,
+//    uint16_t h) {
+//    printf("windoWWidth: %i\r\n", windowWidth);
+//    if (x + w > windowWidth -1)
+//    {
+//        w = windowWidth - 1  - x ;
+//    }
+//    if (y + h > windowHeight)
+//        h = windowHeight - 1 - y;
+//  //  hagl_set_clip_window(x, y, x+w, y+h);
+//}
 
 /**************************************************************************/
 /*!

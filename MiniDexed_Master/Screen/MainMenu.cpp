@@ -60,8 +60,8 @@ void cMenu::ShowMenu()
 	uint16_t h = 0;
 	uint16_t last_h = 0;
 
-//	tft.setAddrWindow(0, 0, 159, 127);
-	tft.fillRect(0,0,159,127,BLACK);
+//	tft.setAddrWindow(0, 0, 160, 128);
+	tft.fillRect(0,0,159,127 ,BLACK);
 	tft.setFont(&FreeSans9pt7b);
 	tft.setTextColor(WHITE);
 	tft.setTextSize(0);
@@ -72,7 +72,7 @@ void cMenu::ShowMenu()
 		tft.getTextBounds(menus[menu][i], col, row, &x, &y, &w, &h);
 		if (h > last_h)
 			last_h = h;
-		tft.fillRect(col-offset, row * ((128 + last_h) / 4), 2*offset, 21, GREY);
+		tft.fillRoundRect(col-offset, row * ((128 + last_h) / 4), (2*offset) , 21, 4,GREY);
 		tft.setTextColor(WHITE);
 		tft.setCursor(col-(w/2), last_h + (row * ((128 + last_h) / 4))+3);
 		tft.print(menus[menu][i]);
@@ -80,7 +80,7 @@ void cMenu::ShowMenu()
 		row++;
 		if (row > 3)
 		{
-			col = 159-offset;
+			col = 158-offset;
 			row = 0;
 		}
 	}
@@ -228,9 +228,9 @@ void cMenu::Midi(uint8_t button)
 
 	menu = M_TG_MIDI;
 	ShowMenu();
-//	ShowValue(dexed[selectedTG].getBank() +1, 61, 0, 38, 21);
-//	ShowValue(dexed[selectedTG].getPatch() +1, 61, ((128 + 13) / 4), 38, 21);
-//	ShowValue(dexed[selectedTG].getChannel() + 1, 61, 2*((128 + 13) / 4), 38, 21);
+	ShowValue(dexed[selectedTG].getBank() +1, 61, 0, 38, 21);
+	ShowValue(dexed[selectedTG].getPatch() +1, 61, ((128 + 13) / 4), 38, 21);
+	ShowValue(dexed[selectedTG].getChannel() + 1, 61, 2*((128 + 13) / 4), 38, 21);
 
 	printf("Bank: %i, Patch %i, Channel %i", dexed[selectedTG].getBank(), 
 										dexed[selectedTG].getPatch(),
