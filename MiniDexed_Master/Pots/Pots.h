@@ -5,11 +5,13 @@
 extern "C"
 {
 #endif
-#define CAPTURE_DEPTH 4096
-
+#define CAPTURE_DEPTH 256
+#define MIN_DEVIATION	3
+#define POT_MIN 15
+#define POT_MAX 4090
 	class cPots {
 	public:
-		cPots();
+		void init();
 		bool isUpdated(uint8_t potid) { return updated[potid]; }
 		uint16_t getPot(uint8_t id);
 		void readAll();
@@ -18,7 +20,7 @@ extern "C"
 //		uint dma_chan;
 		bool updated[3];
 		uint16_t pot[3];
-		uint8_t capture_buf[CAPTURE_DEPTH];
+		uint16_t capture_buf[CAPTURE_DEPTH];
 		void capture(uint8_t channel);
 		static std::array<void(*)(), 3>potCallback;
 

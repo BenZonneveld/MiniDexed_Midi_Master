@@ -105,6 +105,7 @@ static void mipi_display_dma_init()
     hagl_hal_debug("%s\n", "initialising DMA.");
 
     dma_channel = dma_claim_unused_channel(true);
+    printf("DMA Channel: %i\r\n", dma_channel);
     dma_channel_config channel_config = dma_channel_get_default_config(dma_channel);
     channel_config_set_transfer_data_size(&channel_config, DMA_SIZE_8);
     channel_config_set_dreq(&channel_config, DREQ_SPI1_TX);

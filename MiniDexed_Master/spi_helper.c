@@ -26,6 +26,7 @@ void spi_cs(uint8_t port)
         gpio_put(LCDCS, 0);
         break;
     default:
+        printf("wrong port %i\r\n", port);
         break;
     }
 }

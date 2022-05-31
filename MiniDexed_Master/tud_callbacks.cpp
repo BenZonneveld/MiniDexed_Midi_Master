@@ -3,7 +3,7 @@
 #include <bsp/board.h>
 #include <tusb.h> 
 
-#include "MDMA.h"
+#include "MidiCore.h"
 
 
 //--------------------------------------------------------------------+

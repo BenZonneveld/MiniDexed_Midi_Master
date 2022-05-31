@@ -24,6 +24,7 @@ extern "C"
         void handleButtons();
         void setCallback(uint8_t mask, void (* callback)(uint8_t button));
         void setDBLCallback(uint8_t mask, void (*callback)());
+        void setLongCallback(uint8_t mask, void (*callback)(uint8_t button));
         void doCallback(uint8_t button);
     private:
         BTNEVNT checkButton(bool buttonval, uint8_t btn); 
@@ -33,6 +34,7 @@ extern "C"
         uint8_t cs;
         static std::array<void(*)(uint8_t), 8>buttonCallback;
         static std::array<void(*)(), 8>buttonDBLCallback;
+        static std::array<void(*)(uint8_t), 8>buttonLongCallback;
 
         // Button timing variables
         unsigned int debounce;          // ms debounce period to prevent flickering when pressing or releasing the button

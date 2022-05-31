@@ -361,7 +361,7 @@ uint8_t hagl_put_char(wchar_t code, int16_t x0, int16_t y0, color_t color, const
             if (set) {
                 *(ptr++) = color;
             } else {
-                *(ptr++) = 0x0000;
+                *(ptr++) = hagl_get_pixel(x0+x,y0+y); // 0x0000;   // TODO: Get Background color
             }
         }
         glyph.buffer += glyph.pitch;
