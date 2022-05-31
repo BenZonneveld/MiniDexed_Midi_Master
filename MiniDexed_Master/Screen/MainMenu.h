@@ -27,8 +27,10 @@ public:
 	static void PatchSelectPot();
 	static void ChannelSelectPot();
 	static void mainmenu();
+	static void TGMain(uint8_t button);
 private:
-	static void ShowValue(uint16_t value, int16_t x0, int16_t y0, int16_t w0, int16_t h0);
+	static void ShowValue(uint16_t value, int16_t x0, int16_t y0, int16_t w0, int16_t h0, bool colorflag);
 	static uint8_t menu;
 	static int8_t selectedTG;
+	static bool pflag[3];
 };

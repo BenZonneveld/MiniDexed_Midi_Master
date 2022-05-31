@@ -49,7 +49,7 @@ int main(void)
   tusb_init();
   printf("TUSB Initialized\r\n");
 
-  tft.init(160,128);
+  tft.init();
     // Initialise UART 0
 //  uart_init(MIDIPORT, 31250);
 //  uart_init(DEXED, 31250);

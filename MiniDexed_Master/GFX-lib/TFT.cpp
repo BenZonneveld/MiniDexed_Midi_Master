@@ -668,21 +668,19 @@ void TFT::enableSleep(bool enable) {
                    the defines only, the values are NOT the same!)
 */
 /**************************************************************************/
-void TFT::init(uint16_t width, uint16_t height) {
-    invertOnCommand = ST77XX_INVON;
-    invertOffCommand = ST77XX_INVOFF;
+void TFT::init() {
     hagl_init();
     hagl_clear_screen();
     hagl_flush();
-    _rowstart = (160 - height);
+    _rowstart = 0;
     _rowstart2 = 0;
-    _colstart = _colstart2 = (128 - width);
+    _colstart = _colstart2 = 0;
  
-    windowWidth = width;
-    windowHeight = height;
+    windowWidth = 160;
+    windowHeight = 128;
 }
 
 void TFT::flush()
 {
-    hagl_hal_flush();
+    hagl_flush();
 }

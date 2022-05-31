@@ -116,7 +116,7 @@ public:
     void enableTearing(bool enable);
     void enableSleep(bool enable);
 
-    void init(uint16_t width, uint16_t height);
+    void init();
     void flush();
     // Remaining functions do not need to be declared in subclasses
     // unless they wish to provide hardware-specific optimizations.
