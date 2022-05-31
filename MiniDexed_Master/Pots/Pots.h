@@ -8,7 +8,7 @@ extern "C"
 #define CAPTURE_DEPTH 256
 #define MIN_DEVIATION	3
 #define POT_MIN 15
-#define POT_MAX 4090
+#define POT_MAX 4096
 	class cPots {
 	public:
 		void init();

@@ -5,15 +5,15 @@
 
 #include "TG.h"
 
-uint16_t cTG::mbank;
-uint8_t cTG::mpatch;
-uint8_t cTG::mchannel;
-uint8_t cTG::mfreq;
-uint8_t cTG::mreso;
-uint8_t cTG::mrev;
-int8_t cTG::mdetune;
-int8_t cTG::mpan;
-int8_t cTG::mvol;
+//uint16_t cTG::mbank;
+//uint8_t cTG::mpatch;
+//uint8_t cTG::mchannel;
+//uint8_t cTG::mfreq;
+//uint8_t cTG::mreso;
+//uint8_t cTG::mrev;
+//int8_t cTG::mdetune;
+//int8_t cTG::mpan;
+//int8_t cTG::mvol;
 
 cTG::cTG()
 {

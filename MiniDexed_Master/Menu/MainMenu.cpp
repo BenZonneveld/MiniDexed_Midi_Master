@@ -11,7 +11,7 @@
 #include "Buttons.h"
 #include "tools.h"
 
-int8_t cMenu::selectedTG;
+int8_t cMenu::currentTG;
 uint8_t cMenu::menu;
 bool cMenu::pflag[3];
 
@@ -20,7 +20,7 @@ void cMenu::Init()
 	hagl_init();
 	hagl_clear_screen();
 	menu = M_MAIN;
-	selectedTG = -1;
+	currentTG = -1;
 	mainmenu();
 }
 
@@ -45,6 +45,8 @@ void cMenu::mainmenu()
 	Pots.setPotCallback(0, NULL);
 	Pots.setPotCallback(1, NULL);
 	Pots.setPotCallback(2, NULL);
+	menu = M_MAIN;
+	ShowMenu();
 	printf("Main Menu callbacks set\r\n");
 }
 
@@ -58,19 +60,20 @@ void cMenu::ShowMenu()
 	
 	for (uint8_t i = 0; i < 8; i++)
 	{
+//		printf("dexed[%i].channel: %i\r\n", i, dexed[i].getChannel());
 		y = row * 34;
 		if (i < 4)
 		{
 			hagl_fill_rounded_rectangle(col, y, col + (2 * offset)-4, y + 21, 4, hagl_color(128, 64, 64));
 			hagl_fill_rectangle(col, y, col + (2 * offset) - 8, y + 21, hagl_color(128, 64, 64));
-			hagl_print(menus[menu][i], col + 5, y + 1, WHITE, 2);
+			hagl_print(menus[menu][i], col + 5, y + 1, WHITE, 1);
 		}
 		else {
-			hagl_fill_rounded_rectangle(col+4, y, col + (2 * offset), y + 21, 4, hagl_color(64, 64, 64));
-			hagl_fill_rectangle(col + 8, y, col + (2 * offset), y + 21, hagl_color(64, 64, 64));
-			hagl_print(menus[menu][i], col + 9, y + 1, WHITE, 2);
+			hagl_fill_rounded_rectangle(col+4, y, col + (2 * offset), y + 21, 4, hagl_color(128, 64, 64));
+			hagl_fill_rectangle(col + 8, y, col + (2 * offset), y + 21, hagl_color(128, 64, 64));
+			hagl_print(menus[menu][i], col + 9, y + 1, WHITE, 1);
 		}
-		printf("%s\r\n", menus[menu][i]);
+//		printf("%s\r\n", menus[menu][i]);
 		row++;
 		if (row > 3)
 		{
@@ -82,6 +85,7 @@ void cMenu::ShowMenu()
 
 void cMenu::ShowValue(uint16_t value, int16_t x0, int16_t y0, int16_t w0, int16_t h0, bool colorflag, uint8_t fontsize)
 {	
+	printf("currentTG: %i\r\n", currentTG);
 	char text[6];
 	uint8_t offset = 3;
 	itoa(value, text, 10);
@@ -92,12 +96,12 @@ void cMenu::ShowValue(uint16_t value, int16_t x0, int16_t y0, int16_t w0, int16_
 		hagl_fill_rectangle(x0, y0, x0+w0, y0+h0, WHITE);
 	}
 	else {
-		hagl_fill_rectangle(x0, y0, x0+w0, y0+h0, RED);
+		hagl_fill_rectangle(x0, y0, x0+w0, y0+h0+1, hagl_color(64,64,255));
 	}
 	if (value > 9)
 		offset = 8;
 	if (value > 99)
-		offset = 14;
+		offset = 13;
 	if (value > 999)
 		offset = 16;
 	hagl_print(text,(x0 + (w0/2)) - offset, y0+1, BLACK, fontsize);
@@ -106,23 +110,27 @@ void cMenu::ShowValue(uint16_t value, int16_t x0, int16_t y0, int16_t w0, int16_
 
 void cMenu::menuLevelUp()
 {
-	printf("menuLevelUp\r\n");
-	if ( menu > M_MAIN)
-		menu--;
+	uint8_t button = currentTG;
 	switch (menu)
 	{
 	case M_MAIN:
+	case M_TG:
+		menu = M_MAIN;
+		printf("menu: M_MAIN\r\n");
 		mainmenu();
 		break;
-	case M_TG:
+	case M_TG_MAIN:
 	case M_TG_MIDI:
-		menu = M_TG;
-		selectTG(selectedTG);
+//		menu = M_TG;
+		printf("menu: M_TG\r\n");
+		printf("currentTG: %i\r\n", currentTG);
+		selectTG(button);
 		break;
 	default:
+		printf("default\r\n");
 		break;
 	}
-	ShowMenu();
+//	ShowMenu();
 }
 
 void cMenu::BankSelect(uint8_t button)
@@ -131,10 +139,10 @@ void cMenu::BankSelect(uint8_t button)
 	switch (button)
 	{
 	case BUT1:
-		bank = dexed[selectedTG].BankDown();
+		bank = dexed[currentTG].BankDown();
 		break;
 	case BUT5:
-		bank = dexed[selectedTG].BankUp();
+		bank = dexed[currentTG].BankUp();
 		break;
 	default:
 		break;
@@ -146,11 +154,14 @@ void cMenu::BankSelect(uint8_t button)
 void cMenu::BankSelectPot()
 {
 	uint16_t bank = map(Pots.getPot(BANKPOT),POT_MIN, POT_MAX,0,MAXBANKS);
-	if (bank == dexed[selectedTG].getBank() && !pflag[BANKPOT])
-		pflag[BANKPOT] = true;
-	if (bank != dexed[selectedTG].getBank() && pflag[BANKPOT] )
+	if (bank == dexed[currentTG].getBank() && !pflag[BANKPOT])
 	{
-		bank = dexed[selectedTG].setBank(bank);
+		pflag[BANKPOT] = true;
+		ShowValue(bank + 1, 61, 0, VALUEWIDTH, 21, pflag[BANKPOT], 1);
+	}
+	if (bank != dexed[currentTG].getBank() && pflag[BANKPOT])
+	{
+		bank = dexed[currentTG].setBank(bank);
 		ShowValue(bank + 1, 61, 0, VALUEWIDTH, 21, pflag[BANKPOT], 1);
 	}
 }
@@ -161,10 +172,10 @@ void cMenu::PatchSelect(uint8_t button)
 	switch (button)
 	{
 	case BUT2:
-		patch = dexed[selectedTG].PatchDown();
+		patch = dexed[currentTG].PatchDown();
 		break;
 	case BUT6:
-		patch = dexed[selectedTG].PatchUp();
+		patch = dexed[currentTG].PatchUp();
 		break;
 	default:
 		break;
@@ -176,11 +187,14 @@ void cMenu::PatchSelectPot()
 {
 	uint8_t patch = map(Pots.getPot(PATCHPOT),POT_MIN, POT_MAX,0,MAXPATCH + 1);
 	if (patch > 31) patch = 31;
-	if (patch == dexed[selectedTG].getPatch() && !pflag[PATCHPOT])
-		pflag[PATCHPOT] = true;
-	if (patch != dexed[selectedTG].getPatch() && pflag[PATCHPOT])
+	if (patch == dexed[currentTG].getPatch() && !pflag[PATCHPOT])
 	{
-		patch = dexed[selectedTG].setPatch(patch);
+		pflag[PATCHPOT] = true;
+		ShowValue(patch + 1, 61, 34, VALUEWIDTH, 21, pflag[PATCHPOT], 1);
+	}
+	if (patch != dexed[currentTG].getPatch() && pflag[PATCHPOT])
+	{
+		patch = dexed[currentTG].setPatch(patch);
 		ShowValue(patch + 1, 61, 34, VALUEWIDTH, 21, pflag[PATCHPOT], 1);
 	}
 }
@@ -191,10 +205,10 @@ void cMenu::ChannelSelect(uint8_t button)
 	switch (button)
 	{
 	case BUT3:
-		channel = dexed[selectedTG].ChannelDown();
+		channel = dexed[currentTG].ChannelDown();
 		break;
 	case BUT7:
-		channel = dexed[selectedTG].ChannelUp();
+		channel = dexed[currentTG].ChannelUp();
 		break;
 	default:
 		break;
@@ -205,17 +219,21 @@ void cMenu::ChannelSelect(uint8_t button)
 void cMenu::ChannelSelectPot()
 {
 	uint8_t channel = map(Pots.getPot(CHANPOT), POT_MIN, POT_MAX, 0, MAXCHANNEL);
-	if (channel == dexed[selectedTG].getChannel() && !pflag[CHANPOT])
-		pflag[CHANPOT] = true;
-	if (channel != dexed[selectedTG].getChannel() && pflag[CHANPOT] )
+	if (channel == dexed[currentTG].getChannel() && !pflag[CHANPOT])
 	{
-		channel = dexed[selectedTG].setChannel(channel);
+		pflag[CHANPOT] = true;
+		ShowValue(channel + 1, 61, 68, VALUEWIDTH, 21, pflag[CHANPOT], 1);
+	}
+	if (channel != dexed[currentTG].getChannel() && pflag[CHANPOT])
+	{
+		channel = dexed[currentTG].setChannel(channel);
 		ShowValue(channel + 1, 61, 68, VALUEWIDTH, 21, pflag[CHANPOT], 1);
 	}
 }
 
 void cMenu::Midi(uint8_t button)
 {
+	printf("Midi currentTG: %i\t", currentTG);
 	buttons.setCallback(0, &cMenu::BankSelect);
 	buttons.setCallback(1, &cMenu::PatchSelect);
 	buttons.setCallback(2, &cMenu::ChannelSelect);
@@ -246,26 +264,26 @@ void cMenu::Midi(uint8_t button)
 	uint8_t patch = Pots.getPot(PATCHPOT) / 8;
 	uint16_t bank = Pots.getPot(BANKPOT);
 
-	if (channel == dexed[selectedTG].getChannel())
+	if (channel == dexed[currentTG].getChannel())
 		pflag[CHANPOT] = true;
-	if (patch == dexed[selectedTG].getPatch())
+	if (patch == dexed[currentTG].getPatch())
 		pflag[PATCHPOT] = true;
-	if (bank == dexed[selectedTG].getBank())
+	if (bank == dexed[currentTG].getBank())
 		pflag[BANKPOT] = true;
-	ShowValue(dexed[selectedTG].getBank() +1, 61, 0, VALUEWIDTH, 21, pflag[BANKPOT],1);
-	ShowValue(dexed[selectedTG].getPatch() +1, 61, 34, VALUEWIDTH, 21, pflag[PATCHPOT],1);
-	ShowValue(dexed[selectedTG].getChannel() + 1, 61, 68, VALUEWIDTH, 21, pflag[CHANPOT],1);
+	ShowValue(dexed[currentTG].getBank() +1, 61, 0, VALUEWIDTH, 21, pflag[BANKPOT],1);
+	ShowValue(dexed[currentTG].getPatch() +1, 61, 34, VALUEWIDTH, 21, pflag[PATCHPOT],1);
+	ShowValue(dexed[currentTG].getChannel() + 1, 61, 68, VALUEWIDTH, 21, pflag[CHANPOT],1);
 
-	printf("Bank: %i, Patch %i, Channel %i", dexed[selectedTG].getBank(), 
-										dexed[selectedTG].getPatch(),
-										dexed[selectedTG].getChannel());
+	printf("Bank: %i, Patch %i, Channel %i\r\n", dexed[currentTG].getBank(),
+										dexed[currentTG].getPatch(),
+										dexed[currentTG].getChannel());
 }
 
 void cMenu::selectTG(uint8_t button )
 {
-	selectedTG = button;
+	currentTG = button;
 	menu = M_TG;
-
+	
 	buttons.setCallback(0, &cMenu::Midi);
 	buttons.setCallback(1, &cMenu::TGMain);
 	buttons.setCallback(2, NULL);
@@ -274,6 +292,14 @@ void cMenu::selectTG(uint8_t button )
 	buttons.setCallback(5, NULL);
 	buttons.setCallback(6, NULL);
 	buttons.setCallback(7, NULL);
+//	buttons.setDBLCallback(0, &cMenu::menuLevelUp);
+	//buttons.setDBLCallback(1, &cMenu::menuLevelUp);
+	//buttons.setDBLCallback(2, &cMenu::menuLevelUp);
+	//buttons.setDBLCallback(3, &cMenu::menuLevelUp);
+	//buttons.setDBLCallback(4, &cMenu::menuLevelUp);
+	//buttons.setDBLCallback(5, &cMenu::menuLevelUp);
+	//buttons.setDBLCallback(6, &cMenu::menuLevelUp);
+	//buttons.setDBLCallback(7, &cMenu::menuLevelUp);
 	Pots.setPotCallback(0, NULL);
 	Pots.setPotCallback(1, NULL);
 	Pots.setPotCallback(2, NULL);
@@ -286,11 +312,12 @@ void cMenu::selectTG(uint8_t button )
 	buttons.setLongCallback(6, NULL);
 	buttons.setLongCallback(7, NULL);
 	ShowMenu();
-//	printf("Select TG %i function\r\n", button);
+	printf("Select TG %i callbacks\r\n", button);
 }
 
 void cMenu::TGMain(uint8_t button)
 {
+	printf("TGMain callbacks set\r\n");
 	menu = M_TG_MAIN;
 	buttons.setCallback(0, NULL);
 	buttons.setCallback(1, NULL);

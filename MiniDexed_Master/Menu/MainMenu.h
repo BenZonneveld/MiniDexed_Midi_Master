@@ -1,8 +1,5 @@
 //void InitMainMenu();
 
-enum menus { MAIN, TG };
-enum levels { TOP, LEV1, LEV2 };
-
 #define VALUEWIDTH 37
 #define BANKPOT 2
 #define PATCHPOT 1
@@ -25,7 +22,7 @@ public:
 private:
 	static void ShowValue(uint16_t value, int16_t x0, int16_t y0, int16_t w0, int16_t h0, bool colorflag, uint8_t fontsize);
 	static uint8_t menu;
-	static int8_t selectedTG;
+	static int8_t currentTG;
 	static bool pflag[3];
 };
 

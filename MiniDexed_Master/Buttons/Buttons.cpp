@@ -203,12 +203,12 @@ void cButtons::doCallback(uint8_t button)
     case BTNONE:
         break;
     case BTCLICK:
-        printf("BTClick Callback\r\n");
+//        printf("BTClick Callback\r\n");
         if (buttonCallback[button] != nullptr)
             buttonCallback[button](button);
         break;
     case BTDBLC:
-        printf("BTDoubleClick Callback\r\n");
+//        printf("BTDoubleClick Callback\r\n");
         if (buttonDBLCallback[button] != nullptr)
             buttonDBLCallback[button]();
         break;
