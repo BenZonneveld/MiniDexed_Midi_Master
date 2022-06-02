@@ -1,6 +1,7 @@
 #ifndef _POTS_H
 #define _POTS_H
 #include <array>
+//#include "TG.h"
 #ifdef __cplusplus
 extern "C"
 {
@@ -15,15 +16,15 @@ extern "C"
 		bool isUpdated(uint8_t potid) { return updated[potid]; }
 		uint16_t getPot(uint8_t id);
 		void readAll();
-		void setPotCallback(uint8_t pot, void(*callback)());
+		void setPotCallback(uint8_t pot, void(*callback)(uint8_t pot));
 	private:
 //		uint dma_chan;
 		bool updated[3];
 		uint16_t pot[3];
 		uint16_t capture_buf[CAPTURE_DEPTH];
 		void capture(uint8_t channel);
-		static std::array<void(*)(), 3>potCallback;
-
+		static std::array<void(*)(uint8_t), 3>potCallback;
+//		static uint16_t parm[PARMS];
 	};
 #ifdef __cplusplus
 }

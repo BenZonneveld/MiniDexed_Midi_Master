@@ -21,96 +21,188 @@ cTG::cTG()
 	mpatch = 0;
 	mchannel = 0;
 	mfreq = 127;
-	mreso = 127;
+	mreso = 0;
 	mrev = 0;
-	mdetune = 0;
-	mpan = 64;
+	mcomp = false;
+	mtranspose = 0;
+	mtune = 0;
+	mpan = 0;
 	mvol = 127;
+	setParmType(PBANK, &mbank);
+	setParmType(PPATCH, &mpatch);
+	setParmType(PCHANNEL, &mchannel);
+	setParmType(PFREQ, &mfreq);
+	setParmType(PRESO, &mreso);
+	setParmType(PVERB, &mrev);
+	setParmType(PCOMP, &mcomp);
+	setParmType(PTRANS, &mtranspose);
+	setParmType(PTUNE, &mtune);
+	setParmType(PPAN, &mpan);
+	setParmType(PVOL, &mvol);
 }
 
-uint16_t cTG::BankUp()
+void cTG::setParmType(uint16_t parm, int8_t* data)
 {
-	if (mbank < MAXBANKS)
-		mbank++;
-	return mbank;
+	parms[parm].type = 0;
+	parms[parm].val8s = data;
 }
 
-uint16_t cTG::BankDown()
+void cTG::setParmType(uint16_t parm, uint8_t* data)
 {
-	if (mbank > 0)
-		mbank--;
-	return mbank;
+	parms[parm].type = 1;
+	parms[parm].val8t = data;
 }
 
-uint16_t cTG::setBank(uint16_t bank)
+void cTG::setParmType(uint16_t parm, uint16_t* data)
 {
-	if ( bank < MAXBANKS )
-		mbank = bank;
-	return mbank;
-};
-
-uint8_t cTG::PatchUp()
-{
-	if (mpatch < MAXPATCH)
-		mpatch++;
-	return mpatch;
+	parms[parm].type = 2;
+	parms[parm].val16t = data;
 }
 
-uint8_t cTG::PatchDown()
+int32_t cTG::parmUp(uint16_t parm)
 {
-	if (mpatch > 0)
-		mpatch--;
-	return mpatch;
+	int8_t v8s;
+	uint8_t v8t;
+	uint16_t v16t;
+
+	switch (parms[parm].type)
+	{
+	case 0:
+		v8s = *parms[parm].val8s;
+		if (v8s < ranges[parm][1])
+		{
+			v8s++;
+		}
+		*parms[parm].val8s = v8s;
+		return v8s;
+		break;
+	case 1:
+		v8t = *parms[parm].val8t;
+		if (v8t < ranges[parm][1])
+		{
+			v8t++;
+		}
+		*parms[parm].val8t = v8t;
+		return v8t;
+		break;
+	case 2:
+		v16t = *parms[parm].val16t;
+		if (v16t < ranges[parm][1])
+		{
+			v16t++;
+		}
+		*parms[parm].val16t = v16t;
+		return v16t;
+		break;
+	default:
+		return -2;
+		break;
+	}
 }
 
-uint8_t cTG::setPatch(uint8_t patch)
+int32_t cTG::parmDown(uint16_t parm)
 {
-	if (patch >= 0 && patch < MAXPATCH)
-		mpatch = patch;
-	return mpatch;
-};
+	int8_t v8s;
+	uint8_t v8t;
+	uint16_t v16t;
 
-uint8_t cTG::ChannelUp()
-{
-	if (mchannel < MAXCHANNEL)
-		mchannel++;
-	return mchannel;
+	switch (parms[parm].type)
+	{
+	case 0:
+		v8s = *parms[parm].val8s;
+		if (v8s > ranges[parm][0])
+		{
+			v8s--;
+		}
+		*parms[parm].val8s = v8s;
+		return v8s;
+		break;
+	case 1:
+		v8t = *parms[parm].val8t; 
+		if (v8t > ranges[parm][0])
+		{
+			v8t--;
+		}
+		*parms[parm].val8t = v8t;		
+		return v8t;
+		break;
+	case 2:
+		v16t = *parms[parm].val16t;
+		if (v16t > ranges[parm][0])
+		{
+			v16t--;
+		}
+		*parms[parm].val16t = v16t;
+		return v16t;
+		break;
+	default:
+		return -2;
+		break;
+	}
 }
 
-uint8_t cTG::ChannelDown()
+int32_t cTG::setValue(uint16_t parm, int32_t value)
 {
-	if (mchannel > 0)
-		mchannel--;
-	return mchannel;
+	if (value >= ranges[parm][0] && value < ranges[parm][1])
+	{
+		switch (parms[parm].type)
+		{
+		case 0:
+			*parms[parm].val8s = value;
+			break;
+		case 1:
+			*parms[parm].val8t = value;
+			break;
+		case 2:
+			*parms[parm].val16t = value;
+			break;
+		default:
+			break;
+		}
+	}
+	return value;
 }
 
-uint8_t cTG::setChannel(uint8_t channel)
+int32_t cTG::getValue(uint16_t parm)
 {
-	if (channel <= MAXCHANNEL && channel >= 0)
-		mchannel = channel;
-	return mchannel;
-};
+	switch (parms[parm].type)
+	{
+	case 0:
+		return *parms[parm].val8s;
+		break;
+	case 1:
+		return *parms[parm].val8t;
+		break;
+	case 2:
+		return *parms[parm].val16t;
+		break;
+	default:
+		printf("Unknown datatype\r\n");
+		return 0;
+		break;
+	}
+}
 
 void cTG::Cutoff(uint8_t freq)
 {
-};
+}
 
 void cTG::Reso(uint8_t reso)
 {
-};
+}
 
 void cTG::Rvrb(uint8_t level)
 {
-};
+}
 
 void cTG::Detune(int8_t detune)
 {
-};
+}
 
 void cTG::Panning(int8_t pan)
 {
-};
+}
 
 void cTG::Volume(uint8_t vol)
 {
-};
+}

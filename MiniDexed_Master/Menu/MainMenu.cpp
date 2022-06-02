@@ -13,80 +13,96 @@
 
 int8_t cMenu::currentTG;
 uint8_t cMenu::menu;
+uint8_t cMenu::prev_menu; 
 bool cMenu::pflag[3];
+uint16_t cMenu::potparam[4];
+int8_t cMenu::potpos[3];
+int16_t cMenu::bparam[8];
+int8_t cMenu::parampos[8];
 
 void cMenu::Init()
 {
 	hagl_init();
 	hagl_clear_screen();
-	menu = M_MAIN;
+	hagl_flush();
 	currentTG = -1;
 	mainmenu();
 }
 
 void cMenu::mainmenu()
 {
-	buttons.setCallback(0, &cMenu::selectTG);
-	buttons.setCallback(1, &cMenu::selectTG);
-	buttons.setCallback(2, &cMenu::selectTG);
-	buttons.setCallback(3, &cMenu::selectTG);
-	buttons.setCallback(4, &cMenu::selectTG);
-	buttons.setCallback(5, &cMenu::selectTG);
-	buttons.setCallback(6, &cMenu::selectTG);
-	buttons.setCallback(7, &cMenu::selectTG);
-	buttons.setDBLCallback(0, &cMenu::menuLevelUp);
-	buttons.setDBLCallback(1, &cMenu::menuLevelUp);
-	buttons.setDBLCallback(2, &cMenu::menuLevelUp);
-	buttons.setDBLCallback(3, &cMenu::menuLevelUp);
-	buttons.setDBLCallback(4, &cMenu::menuLevelUp);
-	buttons.setDBLCallback(5, &cMenu::menuLevelUp);
-	buttons.setDBLCallback(6, &cMenu::menuLevelUp);
-	buttons.setDBLCallback(7, &cMenu::menuLevelUp);
-	Pots.setPotCallback(0, NULL);
-	Pots.setPotCallback(1, NULL);
-	Pots.setPotCallback(2, NULL);
+	hagl_fill_rectangle(0, 0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1, BLACK);
 	menu = M_MAIN;
-	ShowMenu();
-	printf("Main Menu callbacks set\r\n");
+	prev_menu = M_MAIN;
+
+	setButtonCallback(BUT1, 0, POS0, &cMenu::selectTG);
+	setButtonCallback(BUT2, 0, POS0, &cMenu::selectTG);
+	setButtonCallback(BUT3, 0, POS0, &cMenu::selectTG);
+	setButtonCallback(BUT4, 0, POS0, &cMenu::selectTG);
+	setButtonCallback(BUT5, 0, POS0, &cMenu::selectTG);
+	setButtonCallback(BUT6, 0, POS0, &cMenu::selectTG);
+	setButtonCallback(BUT7, 0, POS0, &cMenu::selectTG);
+	setButtonCallback(BUT8, 0, POS0, &cMenu::selectTG);
+	buttons.setDBLCallback(BUT1, &cMenu::menuBack);
+	buttons.setDBLCallback(BUT2, &cMenu::menuBack);
+	buttons.setDBLCallback(BUT3, &cMenu::menuBack);
+	buttons.setDBLCallback(BUT4, &cMenu::menuBack);
+	buttons.setDBLCallback(BUT5, &cMenu::menuBack);
+	buttons.setDBLCallback(BUT6, &cMenu::menuBack);
+	buttons.setDBLCallback(BUT7, &cMenu::menuBack);
+	buttons.setDBLCallback(BUT8, &cMenu::menuBack);
+	Pots.setPotCallback(TOPPOT, NULL);
+	Pots.setPotCallback(MIDPOT, NULL);
+	Pots.setPotCallback(BOTPOT, NULL);
 }
 
-void cMenu::ShowMenu()
+void cMenu::ShowButtonText(uint8_t button)
 {
 	int16_t offset = 30;
 	int16_t col = 0;
 	int16_t row = 0;
-	int16_t y = 0;
-	hagl_fill_rectangle(0,0, MIPI_DISPLAY_WIDTH, MIPI_DISPLAY_HEIGHT,BLACK);
-	
-	for (uint8_t i = 0; i < 8; i++)
+
+	switch (button)
 	{
-//		printf("dexed[%i].channel: %i\r\n", i, dexed[i].getChannel());
-		y = row * 34;
-		if (i < 4)
-		{
-			hagl_fill_rounded_rectangle(col, y, col + (2 * offset)-4, y + 21, 4, hagl_color(128, 64, 64));
-			hagl_fill_rectangle(col, y, col + (2 * offset) - 8, y + 21, hagl_color(128, 64, 64));
-			hagl_print(menus[menu][i], col + 5, y + 1, WHITE, 1);
-		}
-		else {
-			hagl_fill_rounded_rectangle(col+4, y, col + (2 * offset), y + 21, 4, hagl_color(128, 64, 64));
-			hagl_fill_rectangle(col + 8, y, col + (2 * offset), y + 21, hagl_color(128, 64, 64));
-			hagl_print(menus[menu][i], col + 9, y + 1, WHITE, 1);
-		}
-//		printf("%s\r\n", menus[menu][i]);
-		row++;
-		if (row > 3)
-		{
-			col = MIPI_DISPLAY_WIDTH-(2*offset);
-			row = 0;
-		}
+	case BUT5:
+		col = MIPI_DISPLAY_WIDTH - (2 * offset);
+	case BUT1:
+		row = POS0;
+		break;
+	case BUT6:
+		col = MIPI_DISPLAY_WIDTH - (2 * offset);
+	case BUT2:
+		row = POS1;
+		break;
+	case BUT7:
+		col = MIPI_DISPLAY_WIDTH - (2 * offset);
+	case BUT3:
+		row = POS2;
+		break;
+	case BUT8:
+		col = MIPI_DISPLAY_WIDTH - (2 * offset);
+	case BUT4:
+		row = POS3;
+		break;
+	}
+	if (button < 4)
+	{
+		hagl_fill_rounded_rectangle(col, row, col + (2 * offset) - 4, row + 21, 4, hagl_color(128, 64, 64));
+		hagl_fill_rectangle(col, row, col + (2 * offset) - 8, row + 21, hagl_color(128, 64, 64));
+		hagl_print(menus[menu][button], col + 5, row + 1, WHITE, 1);
+	}
+	else {
+		hagl_fill_rounded_rectangle(col + 4, row, col + (2 * offset), row + 21, 4, hagl_color(128, 64, 64));
+		hagl_fill_rectangle(col + 8, row, col + (2 * offset), row + 21, hagl_color(128, 64, 64));
+		hagl_print(menus[menu][button], col + 9, row + 1, WHITE, 1);
 	}
 }
 
-void cMenu::ShowValue(uint16_t value, int16_t x0, int16_t y0, int16_t w0, int16_t h0, bool colorflag, uint8_t fontsize)
+void cMenu::ShowValue(int32_t param, int16_t x0, int16_t y0, int16_t w0, int16_t h0, bool colorflag, uint8_t fontsize)
 {	
-	printf("currentTG: %i\r\n", currentTG);
-	char text[6];
+	int32_t value = dexed[currentTG].getValue(param);
+//	return;
+	char text[7];
 	uint8_t offset = 3;
 	itoa(value, text, 10);
 	hagl_set_clip_window(x0, y0, x0 + w0, y0 + h0);
@@ -98,237 +114,221 @@ void cMenu::ShowValue(uint16_t value, int16_t x0, int16_t y0, int16_t w0, int16_
 	else {
 		hagl_fill_rectangle(x0, y0, x0+w0, y0+h0+1, hagl_color(64,64,255));
 	}
-	if (value > 9)
+
+	if (abs(value) > 9)
 		offset = 8;
-	if (value > 99)
+	if (abs(value) > 99)
 		offset = 13;
-	if (value > 999)
+	if (abs(value) > 999)
 		offset = 16;
+	if (value < 0)
+		offset = offset + 6;
 	hagl_print(text,(x0 + (w0/2)) - offset, y0+1, BLACK, fontsize);
-	hagl_set_clip_window(0, 0, MIPI_DISPLAY_WIDTH, MIPI_DISPLAY_HEIGHT);
+	hagl_set_clip_window(0, 0, MIPI_DISPLAY_WIDTH-1, MIPI_DISPLAY_HEIGHT-1);
 }
 
-void cMenu::menuLevelUp()
+void cMenu::menuBack()
 {
-	uint8_t button = currentTG;
+	menu = prev_menu;
 	switch (menu)
 	{
 	case M_MAIN:
-	case M_TG:
-		menu = M_MAIN;
-		printf("menu: M_MAIN\r\n");
 		mainmenu();
+		break;
+	case M_TG:
+		selectTG();
 		break;
 	case M_TG_MAIN:
 	case M_TG_MIDI:
-//		menu = M_TG;
-		printf("menu: M_TG\r\n");
-		printf("currentTG: %i\r\n", currentTG);
-		selectTG(button);
-		break;
+	case M_TG_TUNE:
 	default:
 		printf("default\r\n");
 		break;
-	}
-//	ShowMenu();
-}
-
-void cMenu::BankSelect(uint8_t button)
-{
-	int8_t bank = -1;
-	switch (button)
-	{
-	case BUT1:
-		bank = dexed[currentTG].BankDown();
-		break;
-	case BUT5:
-		bank = dexed[currentTG].BankUp();
-		break;
-	default:
-		break;
-	}
-
-	ShowValue(bank + 1, 61, 0, VALUEWIDTH, 21, true, 1);
-}
-
-void cMenu::BankSelectPot()
-{
-	uint16_t bank = map(Pots.getPot(BANKPOT),POT_MIN, POT_MAX,0,MAXBANKS);
-	if (bank == dexed[currentTG].getBank() && !pflag[BANKPOT])
-	{
-		pflag[BANKPOT] = true;
-		ShowValue(bank + 1, 61, 0, VALUEWIDTH, 21, pflag[BANKPOT], 1);
-	}
-	if (bank != dexed[currentTG].getBank() && pflag[BANKPOT])
-	{
-		bank = dexed[currentTG].setBank(bank);
-		ShowValue(bank + 1, 61, 0, VALUEWIDTH, 21, pflag[BANKPOT], 1);
-	}
-}
-
-void cMenu::PatchSelect(uint8_t button)
-{
-	int8_t patch = -1;
-	switch (button)
-	{
-	case BUT2:
-		patch = dexed[currentTG].PatchDown();
-		break;
-	case BUT6:
-		patch = dexed[currentTG].PatchUp();
-		break;
-	default:
-		break;
-	}
-	ShowValue(patch + 1, 61, 34, VALUEWIDTH, 21, true, 1);
-}
-
-void cMenu::PatchSelectPot()
-{
-	uint8_t patch = map(Pots.getPot(PATCHPOT),POT_MIN, POT_MAX,0,MAXPATCH + 1);
-	if (patch > 31) patch = 31;
-	if (patch == dexed[currentTG].getPatch() && !pflag[PATCHPOT])
-	{
-		pflag[PATCHPOT] = true;
-		ShowValue(patch + 1, 61, 34, VALUEWIDTH, 21, pflag[PATCHPOT], 1);
-	}
-	if (patch != dexed[currentTG].getPatch() && pflag[PATCHPOT])
-	{
-		patch = dexed[currentTG].setPatch(patch);
-		ShowValue(patch + 1, 61, 34, VALUEWIDTH, 21, pflag[PATCHPOT], 1);
-	}
-}
-
-void cMenu::ChannelSelect(uint8_t button)
-{
-	int8_t channel = -1;
-	switch (button)
-	{
-	case BUT3:
-		channel = dexed[currentTG].ChannelDown();
-		break;
-	case BUT7:
-		channel = dexed[currentTG].ChannelUp();
-		break;
-	default:
-		break;
-	}
-	ShowValue(channel + 1, 61, 68, VALUEWIDTH, 21, true,1);
-}
-
-void cMenu::ChannelSelectPot()
-{
-	uint8_t channel = map(Pots.getPot(CHANPOT), POT_MIN, POT_MAX, 0, MAXCHANNEL);
-	if (channel == dexed[currentTG].getChannel() && !pflag[CHANPOT])
-	{
-		pflag[CHANPOT] = true;
-		ShowValue(channel + 1, 61, 68, VALUEWIDTH, 21, pflag[CHANPOT], 1);
-	}
-	if (channel != dexed[currentTG].getChannel() && pflag[CHANPOT])
-	{
-		channel = dexed[currentTG].setChannel(channel);
-		ShowValue(channel + 1, 61, 68, VALUEWIDTH, 21, pflag[CHANPOT], 1);
 	}
 }
 
 void cMenu::Midi(uint8_t button)
 {
-	printf("Midi currentTG: %i\t", currentTG);
-	buttons.setCallback(0, &cMenu::BankSelect);
-	buttons.setCallback(1, &cMenu::PatchSelect);
-	buttons.setCallback(2, &cMenu::ChannelSelect);
-	buttons.setCallback(3, NULL);
-	buttons.setCallback(4, &cMenu::BankSelect);
-	buttons.setCallback(5, &cMenu::PatchSelect);
-	buttons.setCallback(6, &cMenu::ChannelSelect);
-	buttons.setCallback(7, NULL);
-
-	buttons.setLongCallback(0, &cMenu::BankSelect);
-	buttons.setLongCallback(1, &cMenu::PatchSelect);
-	buttons.setLongCallback(2, &cMenu::ChannelSelect);
-	buttons.setLongCallback(4, &cMenu::BankSelect);
-	buttons.setLongCallback(5, &cMenu::PatchSelect);
-	buttons.setLongCallback(6, &cMenu::ChannelSelect);
-
-	Pots.setPotCallback(BANKPOT, &cMenu::BankSelectPot);
-	Pots.setPotCallback(PATCHPOT, &cMenu::PatchSelectPot);
-	Pots.setPotCallback(CHANPOT, &cMenu::ChannelSelectPot);
-
+	hagl_fill_rectangle(0, 0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1, BLACK);
 	menu = M_TG_MIDI;
-	ShowMenu();
+	prev_menu = M_TG;
 
-	pflag[BANKPOT] = false;
-	pflag[CHANPOT] = false;
-	pflag[PATCHPOT] = false;
-	uint8_t channel = Pots.getPot(CHANPOT) / 15;
-	uint8_t patch = Pots.getPot(PATCHPOT) / 8;
-	uint16_t bank = Pots.getPot(BANKPOT);
+	setButtonParm(BUT1, PBANK, POS0, true);
+	setButtonParm(BUT2, PPATCH, POS1, true);
+	setButtonParm(BUT3, PCHANNEL, POS2, true);
+	clearButtonCB(BUT4);
+	setButtonParm(BUT5, PBANK, POS0, true);
+	setButtonParm(BUT6, PPATCH, POS1, true);
+	setButtonParm(BUT7, PCHANNEL, POS2, true);
+	clearButtonCB(BUT8);
 
-	if (channel == dexed[currentTG].getChannel())
-		pflag[CHANPOT] = true;
-	if (patch == dexed[currentTG].getPatch())
-		pflag[PATCHPOT] = true;
-	if (bank == dexed[currentTG].getBank())
-		pflag[BANKPOT] = true;
-	ShowValue(dexed[currentTG].getBank() +1, 61, 0, VALUEWIDTH, 21, pflag[BANKPOT],1);
-	ShowValue(dexed[currentTG].getPatch() +1, 61, 34, VALUEWIDTH, 21, pflag[PATCHPOT],1);
-	ShowValue(dexed[currentTG].getChannel() + 1, 61, 68, VALUEWIDTH, 21, pflag[CHANPOT],1);
+	setPotCallback(TOPPOT, PBANK, POS0);
+	setPotCallback(MIDPOT, PPATCH, POS1);
+	setPotCallback(BOTPOT, PCHANNEL, POS2);
 
-	printf("Bank: %i, Patch %i, Channel %i\r\n", dexed[currentTG].getBank(),
-										dexed[currentTG].getPatch(),
-										dexed[currentTG].getChannel());
+	ShowValue(PBANK, 61, POS0, VALUEWIDTH, 21, pflag[TOPPOT],1);
+	ShowValue(PPATCH, 61, POS1, VALUEWIDTH, 21, pflag[MIDPOT],1);
+	ShowValue(PCHANNEL, 61, POS2, VALUEWIDTH, 21, pflag[BOTPOT],1);
 }
 
-void cMenu::selectTG(uint8_t button )
+void cMenu::selectTG(uint8_t button)
 {
 	currentTG = button;
+	selectTG();
+}
+
+void cMenu::selectTG()
+{
+	hagl_fill_rectangle(0, 0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1, BLACK);
 	menu = M_TG;
-	
+	prev_menu = M_MAIN;
+
+	clearButtonCB(BUT1);
+	clearButtonCB(BUT2);
+	clearButtonCB(BUT3);
+	clearButtonCB(BUT4);
+	clearButtonCB(BUT5);
+	clearButtonCB(BUT6);
+	clearButtonCB(BUT7);
+	clearButtonCB(BUT8);
+
 	buttons.setCallback(0, &cMenu::Midi);
 	buttons.setCallback(1, &cMenu::TGMain);
-	buttons.setCallback(2, NULL);
-	buttons.setCallback(3, NULL);
-	buttons.setCallback(4, NULL);
-	buttons.setCallback(5, NULL);
-	buttons.setCallback(6, NULL);
-	buttons.setCallback(7, NULL);
-//	buttons.setDBLCallback(0, &cMenu::menuLevelUp);
-	//buttons.setDBLCallback(1, &cMenu::menuLevelUp);
-	//buttons.setDBLCallback(2, &cMenu::menuLevelUp);
-	//buttons.setDBLCallback(3, &cMenu::menuLevelUp);
-	//buttons.setDBLCallback(4, &cMenu::menuLevelUp);
-	//buttons.setDBLCallback(5, &cMenu::menuLevelUp);
-	//buttons.setDBLCallback(6, &cMenu::menuLevelUp);
-	//buttons.setDBLCallback(7, &cMenu::menuLevelUp);
-	Pots.setPotCallback(0, NULL);
-	Pots.setPotCallback(1, NULL);
-	Pots.setPotCallback(2, NULL);
-	buttons.setLongCallback(0, NULL);
-	buttons.setLongCallback(1, NULL);
-	buttons.setLongCallback(2, NULL);
-	buttons.setLongCallback(3, NULL);
-	buttons.setLongCallback(4, NULL);
-	buttons.setLongCallback(5, NULL);
-	buttons.setLongCallback(6, NULL);
-	buttons.setLongCallback(7, NULL);
-	ShowMenu();
-	printf("Select TG %i callbacks\r\n", button);
+	buttons.setCallback(2, &cMenu::TGTune);
+
+	resetPotCB(TOPPOT);
+	resetPotCB(MIDPOT);
+	resetPotCB(BOTPOT);
 }
 
 void cMenu::TGMain(uint8_t button)
 {
-	printf("TGMain callbacks set\r\n");
+	hagl_fill_rectangle(0, 0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1, BLACK);
 	menu = M_TG_MAIN;
-	buttons.setCallback(0, NULL);
-	buttons.setCallback(1, NULL);
-	buttons.setCallback(2, NULL);
-	buttons.setCallback(3, NULL);
-	buttons.setCallback(4, NULL);
-	buttons.setCallback(5, NULL);
-	buttons.setCallback(6, NULL);
-	buttons.setCallback(7, NULL);
-	Pots.setPotCallback(0, NULL);
-	Pots.setPotCallback(1, NULL);
-	Pots.setPotCallback(2, NULL);
-	ShowMenu();
+	prev_menu = M_TG;
+
+	setButtonParm(BUT1, PFREQ, POS0, true);
+	setButtonParm(BUT2, PRESO, POS1, true);
+	setButtonParm(BUT3, PVERB, POS2, true);
+	clearButtonCB(BUT4);
+	setButtonParm(BUT5, PFREQ, POS0, true);
+	setButtonParm(BUT6, PRESO, POS1, true);
+	setButtonParm(BUT7, PVERB, POS2, true);
+	clearButtonCB(BUT8);
+
+	setPotCallback(TOPPOT, PFREQ, POS0);
+	setPotCallback(MIDPOT, PRESO, POS1);
+	setPotCallback(BOTPOT, PVERB, POS2);
+
+	ShowValue(PFREQ, 61, POS0, VALUEWIDTH, 21, pflag[TOPPOT], 1);
+	ShowValue(PRESO, 61, POS1, VALUEWIDTH, 21, pflag[MIDPOT], 1);
+	ShowValue(PVERB, 61, POS2, VALUEWIDTH, 21, pflag[BOTPOT], 1);
+}
+
+void cMenu::TGTune(uint8_t button)
+{
+	hagl_fill_rectangle(0, 0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1, BLACK);
+	menu = M_TG_TUNE;
+	prev_menu = M_TG;
+
+	setButtonParm(BUT1, PTRANS, POS0, true);
+	setButtonParm(BUT2, PTUNE, POS1, true);
+	setButtonParm(BUT3, PPAN, POS2, true);
+	setButtonParm(BUT4, PVOL, POS3, true);
+	setButtonParm(BUT5, PTRANS, POS0, true);
+	setButtonParm(BUT6, PTUNE, POS1, true);
+	setButtonParm(BUT7, PPAN, POS2, true);
+	setButtonParm(BUT8, PVOL, POS3, true);
+
+	setPotCallback(TOPPOT, PTUNE, POS1);
+	setPotCallback(MIDPOT, PPAN, POS2);
+	setPotCallback(BOTPOT, PVOL, POS3);
+
+	ShowValue(PTRANS, 61, parampos[BUT1], VALUEWIDTH, 21, true, 1);
+	ShowValue(PTUNE, 61, parampos[BUT2], VALUEWIDTH, 21, pflag[TOPPOT], 1);
+	ShowValue(PPAN, 61, parampos[BUT3], VALUEWIDTH, 21, pflag[MIDPOT], 1);
+	ShowValue(PVOL, 61, parampos[BUT4], VALUEWIDTH, 21, pflag[BOTPOT], 1);
+}
+
+void cMenu::ParmSelect(uint8_t button)
+{
+	switch (button)
+	{
+	case BUT1:
+	case BUT2:
+	case BUT3:
+	case BUT4:
+		dexed[currentTG].parmDown(bparam[button]);
+		break;
+	case BUT5:
+	case BUT6:
+	case BUT7:
+	case BUT8:
+		dexed[currentTG].parmUp(bparam[button]);
+		break;
+	default:
+		break;
+	}
+	ShowValue(bparam[button], 61, parampos[button], VALUEWIDTH, 21, true, 1);
+}
+
+void cMenu::ParmPot(uint8_t channel)
+{
+	uint16_t param = potparam[channel];
+	int32_t value = map(Pots.getPot(channel), POT_MIN, POT_MAX, ranges[param][0], 1+ranges[param][1]);
+
+	if (value == dexed[currentTG].getValue(param) && !pflag[channel])
+	{
+		pflag[channel] = true;
+		ShowValue(param, 61, potpos[channel], VALUEWIDTH, 21, pflag[channel], 1);
+	}
+	if (value != dexed[currentTG].getValue(param) && pflag[channel])
+	{
+		value = dexed[currentTG].setValue(param,value);
+		ShowValue(param, 61, potpos[channel], VALUEWIDTH, 21, pflag[channel], 1);
+	}
+}
+
+void cMenu::setButtonCallback(uint8_t button, uint16_t param, int8_t pos,void (*callback)(uint8_t button))
+{
+	buttons.setCallback(button, callback);
+	if (callback == nullptr)
+		bparam[button] = -1;
+	bparam[button] = param;
+	parampos[button] = pos;
+	ShowButtonText(button);
+}
+
+void cMenu::setButtonParm(uint8_t button, uint16_t param, int8_t pos, bool haslongpress)
+{
+	setButtonCallback(button, param, pos, &cMenu::ParmSelect);
+	if ( haslongpress )
+		buttons.setLongCallback(button, &cMenu::ParmSelect);
+	else
+		buttons.setLongCallback(0, NULL);
+}
+
+void cMenu::clearButtonCB(uint8_t button)
+{
+	buttons.setCallback(button, NULL);
+	buttons.setLongCallback(button, NULL);
+	ShowButtonText(button);
+}
+
+void cMenu::setPotCallback(uint8_t channel, uint16_t param, int8_t pos)
+{
+	Pots.setPotCallback(channel, &cMenu::ParmPot);
+	potparam[channel] = param;
+	potpos[channel] = pos;
+	pflag[channel] = false;
+
+	uint16_t pot = map(Pots.getPot(channel), POT_MIN, POT_MAX, ranges[param][0], ranges[param][1]);
+
+	if (pot == dexed[currentTG].getValue(param))
+		pflag[channel] = true;
+}
+
+void cMenu::resetPotCB(uint8_t channel)
+{
+	Pots.setPotCallback(channel, NULL);
 }

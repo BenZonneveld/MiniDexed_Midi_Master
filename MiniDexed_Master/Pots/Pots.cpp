@@ -7,7 +7,7 @@
 #include "Pots.h"
 #include "gpio_pins.h"
 
-std::array<void(*)(), 3>cPots::potCallback;
+std::array<void(*)(uint8_t), 3>cPots::potCallback;
 
 void cPots::init()
 {
@@ -84,7 +84,7 @@ void cPots::capture(uint8_t channel)
 			return;
 		pot[channel] = (uint16_t)current;
 		updated[channel] = true;
-		if (potCallback[channel] != nullptr) potCallback[channel]();
+		if (potCallback[channel] != nullptr) potCallback[channel](channel);
 	}
 	else {
 		updated[channel] = false;
@@ -104,7 +104,7 @@ uint16_t cPots::getPot(uint8_t id)
 	return pot[id];
 }
 
-void cPots::setPotCallback(uint8_t pot, void(*callback)())
+void cPots::setPotCallback(uint8_t pot, void(*callback)(uint8_t pot))
 {
 	potCallback[pot] = callback;
 }

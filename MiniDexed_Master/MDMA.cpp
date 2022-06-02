@@ -32,14 +32,6 @@ cTG dexed[8];
 /*------------- MAIN -------------*/
 int main(void)
 {
-    dexed[0].setChannel(0);
-    dexed[1].setChannel(1);
-    dexed[2].setChannel(2);
-    dexed[3].setChannel(3);
-    dexed[4].setChannel(4);
-    dexed[5].setChannel(5);
-    dexed[6].setChannel(6);
-    dexed[7].setChannel(7);
     cMenu menu;
     board_init();
     set_sys_clock_khz(133000, true);
@@ -52,8 +44,7 @@ int main(void)
     Pots.init();
 
     menu.Init();
-    menu.ShowMenu();
-    menu.ShowMenu();
+    menu.Show();
 
     while (1)
     {

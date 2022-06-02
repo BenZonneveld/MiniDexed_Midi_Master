@@ -5,25 +5,41 @@ extern "C"
 {
 #endif
 
+#define PARMS	16
 #define MAXBANKS 256
 #define MAXPATCH 32
 #define MAXCHANNEL 16
+#define MAXFREQ 128
+#define MAXRESO	128
+#define MAXREV	128
+
+enum TGPARAMS { PBANK, PPATCH, PCHANNEL, PFREQ, PRESO, PVERB, PCOMP, PTRANS, PTUNE, PPAN, PVOL};
+
+const int16_t ranges[][2] = {
+	{1,MAXBANKS}, // PBANK
+	{ 1, MAXPATCH}, // PPATCH
+	{ 0, MAXCHANNEL}, // PCHANNEL
+	{ 0, MAXFREQ}, // PFREQ
+	{ 0, MAXRESO}, // PRESO
+	{ 0, MAXREV}, // PVERB
+	{0,1}, // PCOMP
+	{-8,8}, // PTRANS
+	{ -99,99}, // PTUNE
+	{ -63, 63}, // PPAN
+	{ 0, 127} // PVOL
+};
+
 
 class cTG {
 public:
 	cTG();
-	uint16_t BankUp();
-	uint16_t BankDown();
-	uint16_t setBank(uint16_t bank);
-	uint8_t PatchUp();
-	uint8_t PatchDown();
-	uint8_t setPatch(uint8_t patch);
-	uint8_t ChannelUp();
-	uint8_t ChannelDown();
-	uint8_t setChannel(uint8_t channel);
-	uint16_t getBank() { return mbank; }
-	uint8_t getPatch() { return mpatch; }
-	uint8_t getChannel() { return mchannel; }
+	int32_t parmDown(uint16_t parm);
+	int32_t parmUp(uint16_t parm);
+	int8_t setValue(uint16_t parm, int8_t value);
+	uint8_t setValue(uint16_t parm, uint8_t value);
+	int32_t setValue(uint16_t parm, int32_t value);
+	int32_t getValue(uint16_t parm);
+	uint8_t getParmType(uint16_t parm) { return parms[parm].type; }
 
 	void Patch(uint8_t patch);
 	void Channel(uint8_t channel);
@@ -34,15 +50,26 @@ public:
 	void Panning(int8_t pan);
 	void Volume(uint8_t vol);
 private:
+	void setParmType(uint16_t parm, int8_t* data);
+	void setParmType(uint16_t parm, uint8_t* data);
+	void setParmType(uint16_t parm, uint16_t* data);
 	uint16_t mbank;
 	uint8_t mpatch;
 	uint8_t mchannel;
 	uint8_t mfreq;
 	uint8_t mreso;
 	uint8_t mrev;
-	int8_t mdetune;
+	uint8_t mcomp;
+	int8_t mtranspose;
+	int8_t mtune;
 	int8_t mpan;
-	int8_t mvol;
+	uint8_t mvol;
+	struct s_parms{
+		uint8_t type;
+		int8_t *val8s;
+		uint8_t *val8t;
+		uint16_t *val16t;
+	} parms[PARMS];
 	unsigned char notes[16]; // Maybe not an array...
 };
 
