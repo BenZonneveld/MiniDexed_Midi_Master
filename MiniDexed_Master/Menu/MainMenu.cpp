@@ -269,6 +269,7 @@ void cMenu::ParmSelect(uint8_t button)
 	default:
 		break;
 	}
+//	dexed[currentTG].sendMidi(bparam[button]);
 	ShowValue(bparam[button], 61, parampos[button], VALUEWIDTH, 21, true, 1);
 }
 

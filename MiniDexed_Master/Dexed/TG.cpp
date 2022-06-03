@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <pico/stdlib.h>
 #include <string.h>
-
+#include "pico/multicore.h"
 #include "TG.h"
 
 //uint16_t cTG::mbank;
@@ -159,6 +159,10 @@ int32_t cTG::setValue(uint16_t parm, int32_t value)
 		default:
 			break;
 		}
+		uint32_t data;
+		data = (mchannel<<28) | (parm << 16 )| value;
+		if ( multicore_fifo_wready() ) multicore_fifo_push_blocking(data);
+		printf("data: %08X channel: %i\r\n", data, mchannel);
 	}
 	return value;
 }

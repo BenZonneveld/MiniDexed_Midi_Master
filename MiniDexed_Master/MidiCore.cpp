@@ -5,6 +5,7 @@
 #include "tusb.h"
 #include "hardware/uart.h"
 #include "hardware/gpio.h"
+#include "pico/multicore.h"
 #include "MidiCore.h"
 #include "gpio_pins.h"
 #include "MIDI/midi.h"
@@ -123,6 +124,7 @@ void led_task(void)
 
 void midicore()
 {
+    uint32_t txdata=0;
     printf("MidiCore Launched on core 1:\r\n");
     tusb_init();
 
@@ -141,6 +143,10 @@ void midicore()
     {
         tud_task();   // tinyusb device task
         led_task();
+        if (multicore_fifo_rvalid()) {
+            txdata = multicore_fifo_pop_blocking();
+ //           printf("MidiCore data: %08X'\r\n", txdata);
+        }
         midi_task();
     }
 }
