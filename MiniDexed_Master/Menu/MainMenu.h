@@ -10,6 +10,8 @@ enum POS { POS0 = 0, POS1 = 34, POS2 = 68, POS3 = 102 };
 class cMenu {
 public:
 	void Init();
+	void ClearNeedUpdate() { menuNeedFlush = false; }
+	bool NeedUpdate() { return menuNeedFlush; }
 	void Show() { mainmenu(); }
 	static void ShowButtonText(uint8_t button);
 	static void menuBack();
@@ -37,6 +39,7 @@ private:
 	static uint16_t potparam[4];
 	static int16_t bparam[8];
 	static int8_t parampos[8];
+	static bool menuNeedFlush;
 };
 
 #define BLACK 0x0000

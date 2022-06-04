@@ -98,13 +98,13 @@ void cButtons::handleButtons()
 	uint8_t buf = 0;
 //    spi_set_baudrate(spi1, 24000000);
 	
-#if defined(HAGL_HAL_USE_DMA)
-#else
+//#if defined(HAGL_HAL_USE_DMA)
+//#else
 //    printf("SPI Read\r\n");
     spi_cs(csKEY);
 	spi_read_blocking(spi1, 0xff, &buf, 1);
     spiAllHigh(); 
-#endif
+//#endif
 	state = (buf & 0xF0)>>4 | ((buf & 0x8) >> 3| (buf&0x4) >> 1| (buf&0x2)<<1 | (buf&0x1)<< 3)<<4; // Swap nibble to get the correct order
 
 //    spi_set_baudrate(spi1, MIPI_DISPLAY_SPI_CLOCK_SPEED_HZ);

@@ -14,7 +14,7 @@
 #define SCK		10
 #define MOSI	11
 #define MISO	12
-#define LCDCS	13
+#define LCD_CS	13
 
 #define I2S_DATA	20
 #define I2S_LRCK	19

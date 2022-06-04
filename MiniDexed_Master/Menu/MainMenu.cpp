@@ -19,11 +19,12 @@ uint16_t cMenu::potparam[4];
 int8_t cMenu::potpos[3];
 int16_t cMenu::bparam[8];
 int8_t cMenu::parampos[8];
+bool cMenu::menuNeedFlush;
 
 void cMenu::Init()
 {
+	menuNeedFlush = false;
 	hagl_init();
-	hagl_clear_screen();
 	hagl_flush();
 	currentTG = -1;
 	mainmenu();
@@ -31,7 +32,8 @@ void cMenu::Init()
 
 void cMenu::mainmenu()
 {
-	hagl_fill_rectangle(0, 0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1, BLACK);
+	hagl_clear_screen();
+//	hagl_fill_rectangle(0, 0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1, BLACK);
 	menu = M_MAIN;
 	prev_menu = M_MAIN;
 
@@ -80,7 +82,7 @@ void cMenu::ShowButtonText(uint8_t button)
 		row = POS2;
 		break;
 	case BUT8:
-		col = MIPI_DISPLAY_WIDTH - (2 * offset);
+		col = MIPI_DISPLAY_WIDTH - (2 * offset) -1;
 	case BUT4:
 		row = POS3;
 		break;
@@ -90,41 +92,46 @@ void cMenu::ShowButtonText(uint8_t button)
 		hagl_fill_rounded_rectangle(col, row, col + (2 * offset) - 4, row + 21, 4, hagl_color(128, 64, 64));
 		hagl_fill_rectangle(col, row, col + (2 * offset) - 8, row + 21, hagl_color(128, 64, 64));
 		hagl_print(menus[menu][button], col + 5, row + 1, WHITE, 1);
+		printf("%s\n", menus[menu][button]);
+		menuNeedFlush = true;
 	}
 	else {
-		hagl_fill_rounded_rectangle(col + 4, row, col + (2 * offset), row + 21, 4, hagl_color(128, 64, 64));
+		hagl_fill_rounded_rectangle(col + 4, row, col + (2 * offset)-8, row + 21, 4, hagl_color(128, 64, 64));
 		hagl_fill_rectangle(col + 8, row, col + (2 * offset), row + 21, hagl_color(128, 64, 64));
 		hagl_print(menus[menu][button], col + 9, row + 1, WHITE, 1);
+		printf("%s\n", menus[menu][button]);
+		menuNeedFlush = true;
 	}
 }
 
 void cMenu::ShowValue(int32_t param, int16_t x0, int16_t y0, int16_t w0, int16_t h0, bool colorflag, uint8_t fontsize)
 {	
 	int32_t value = dexed[currentTG].getValue(param);
-//	return;
+
 	char text[7];
 	uint8_t offset = 3;
 	itoa(value, text, 10);
-	hagl_set_clip_window(x0, y0, x0 + w0, y0 + h0);
-	hagl_clear_clip_window();
-	if ( colorflag)
-	{
-		hagl_fill_rectangle(x0, y0, x0+w0, y0+h0, WHITE);
-	}
-	else {
-		hagl_fill_rectangle(x0, y0, x0+w0, y0+h0+1, hagl_color(64,64,255));
-	}
+//	hagl_set_clip_window(x0, y0, x0 + w0, y0 + h0);
+//	hagl_clear_clip_window();
+	//if ( colorflag)
+	//{
+	//	hagl_fill_rectangle(x0, y0, x0+w0, y0+h0, WHITE);
+	//}
+	//else {
+	//	hagl_fill_rectangle(x0, y0, x0+w0, y0+h0+1, hagl_color(64,64,255));
+	//}
 
-	if (abs(value) > 9)
-		offset = 8;
-	if (abs(value) > 99)
-		offset = 13;
-	if (abs(value) > 999)
-		offset = 16;
-	if (value < 0)
-		offset = offset + 6;
-	hagl_print(text,(x0 + (w0/2)) - offset, y0+1, BLACK, fontsize);
-	hagl_set_clip_window(0, 0, MIPI_DISPLAY_WIDTH-1, MIPI_DISPLAY_HEIGHT-1);
+	//if (abs(value) > 9)
+	//	offset = 8;
+	//if (abs(value) > 99)
+	//	offset = 13;
+	//if (abs(value) > 999)
+	//	offset = 16;
+	//if (value < 0)
+	//	offset = offset + 6;
+	//hagl_print(text,(x0 + (w0/2)) - offset, y0+1, BLACK, fontsize);
+	//hagl_set_clip_window(0, 0, MIPI_DISPLAY_WIDTH-1, MIPI_DISPLAY_HEIGHT-1);
+	menuNeedFlush = true;
 }
 
 void cMenu::menuBack()

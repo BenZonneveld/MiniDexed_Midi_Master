@@ -12,12 +12,13 @@ family_initialize_project(${PROJECT} ${CMAKE_CURRENT_LIST_DIR})
 
 add_executable(${PROJECT})
 
-#add_subdirectory(hagl)
-#add_subdirectory(hagl_hal)
+add_subdirectory(hagl)
+add_subdirectory(hagl_hal)
+add_subdirectory(GFX-lib)
 
 target_sources(${PROJECT} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/MDMA.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/spi_helper.c
+ #       ${CMAKE_CURRENT_SOURCE_DIR}/spi_helper.c
         ${CMAKE_CURRENT_SOURCE_DIR}/MidiCore.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usb_descriptors.c
         ${CMAKE_CURRENT_SOURCE_DIR}/tud_callbacks.cpp
@@ -28,19 +29,19 @@ target_sources(${PROJECT} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/Buttons/Buttons.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Menu/MainMenu.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Dexed/TG.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/bitmap.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/clip.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/fontx.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/hagl.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/hsl.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/rgb565.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/rgb888.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/tjpgd.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/hagl_hal/mipi_display.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/hagl_hal/hagl_hal_single.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/hagl_hal/hagl_hal_double.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/hagl_hal/hagl_hal_triple.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/hagl_hal/times.c
+#        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/bitmap.c
+#        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/clip.c
+#        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/fontx.c
+#        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/hagl.c
+#        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/hsl.c
+#        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/rgb565.c
+#        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/rgb888.c
+#        ${CMAKE_CURRENT_SOURCE_DIR}/hagl/src/tjpgd.c
+#        ${CMAKE_CURRENT_SOURCE_DIR}/hagl_hal/mipi_display.c
+#        ${CMAKE_CURRENT_SOURCE_DIR}/hagl_hal/hagl_hal_single.c
+#        ${CMAKE_CURRENT_SOURCE_DIR}/hagl_hal/hagl_hal_double.c
+#        ${CMAKE_CURRENT_SOURCE_DIR}/hagl_hal/hagl_hal_triple.c
+#        ${CMAKE_CURRENT_SOURCE_DIR}/hagl_hal/times.c
 )
 
 
@@ -58,25 +59,29 @@ target_include_directories(${PROJECT} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/Dexed
         ${CMAKE_CURRENT_SOURCE_DIR}/hagl/include
         ${CMAKE_CURRENT_SOURCE_DIR}/hagl_hal/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/GFX-lib
 )
 
 target_link_libraries(${PROJECT} PUBLIC
     pico_stdlib
     pico_multicore
     hardware_adc
-    hardware_dma
+#    hardware_dma
     hardware_spi
     hardware_gpio
     pico_bootsel_via_double_reset
+    hagl
+    hagl_hal
+    GFX-lib
 )
 
 target_compile_definitions(${PROJECT} PRIVATE
-  #HAGL_HAL_USE_SINGLE_BUFFER
-  HAGL_HAL_USE_DOUBLE_BUFFER
+  HAGL_HAL_USE_SINGLE_BUFFER
+  #HAGL_HAL_USE_DOUBLE_BUFFER
   #HAGL_HAL_USE_TRIPLE_BUFFER
   #HAGL_HAL_USE_DMA
   HAGL_HAL_DEBUG
-  MIPI_DISPLAY_SPI_CLOCK_SPEED_HZ=12500000
+  MIPI_DISPLAY_SPI_CLOCK_SPEED_HZ=8000000
   MIPI_DISPLAY_PIN_CS=13
   MIPI_DISPLAY_PIN_DC=7 # A0
   MIPI_DISPLAY_PIN_RST=6

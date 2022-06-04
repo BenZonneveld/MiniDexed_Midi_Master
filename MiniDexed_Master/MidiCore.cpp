@@ -6,9 +6,12 @@
 #include "hardware/uart.h"
 #include "hardware/gpio.h"
 #include "pico/multicore.h"
+#include "pico/util/queue.h"
 #include "MidiCore.h"
 #include "gpio_pins.h"
 #include "MIDI/midi.h"
+//#include "TG.h"
+#include "MDMA.h"
 
 bool led_usb_state = false;
 bool led_uart_state = false;
@@ -124,7 +127,7 @@ void led_task(void)
 
 void midicore()
 {
-    uint32_t txdata=0;
+    dexed_t mididata;
     printf("MidiCore Launched on core 1:\r\n");
     tusb_init();
 
@@ -143,11 +146,12 @@ void midicore()
     {
         tud_task();   // tinyusb device task
         led_task();
-        if (multicore_fifo_rvalid()) {
-            txdata = multicore_fifo_pop_blocking();
- //           printf("MidiCore data: %08X'\r\n", txdata);
-        }
         midi_task();
+        while (queue_try_remove(&tg_fifo, &mididata))
+        {
+            if ( mididata.channel == 0)
+                printf("rx %i\n", mididata.data);
+        }
     }
 }
 
