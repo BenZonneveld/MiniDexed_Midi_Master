@@ -3,13 +3,23 @@
 #include <pico/stdlib.h>
 #include <string.h>
 
-#include "hagl.h"
-#include "hagl_hal.h"
+#include "GFX-lib/Adafruit_GFX.h"
+#include "GFX-lib/Adafruit_SPITFT.h"
+//#include "hagl.h"
+//#include "hagl_hal.h"
 #include "MainMenu.h"
 #include "string_table.h"
 #include "mdma.h"
 #include "Buttons.h"
 #include "tools.h"
+
+#define PROGMEM
+#include "fonts/FreeSans9pt7b.h"
+#include "fonts/FreeSans12pt7b.h"
+#include "fonts/FreeSans18pt7b.h"
+#include "fonts/FreeSans24pt7b.h"
+
+Adafruit_SPITFT tft = Adafruit_SPITFT();
 
 int8_t cMenu::currentTG;
 uint8_t cMenu::menu;
@@ -19,19 +29,26 @@ uint16_t cMenu::potparam[4];
 int8_t cMenu::potpos[3];
 int16_t cMenu::bparam[8];
 int8_t cMenu::parampos[8];
+bool cMenu::menuNeedFlush;
 
 void cMenu::Init()
 {
-	hagl_init();
-	hagl_clear_screen();
-	hagl_flush();
+	tft.init(160, 128);
+	tft.fillScreen(BLACK);
+	tft.setCursor(24, 24);
+	tft.setTextSize(1);
+	tft.setTextColor(WHITE);
+	tft.setFont(&FreeSans9pt7b);
+//	tft.println("INIT");
+
 	currentTG = -1;
 	mainmenu();
 }
 
 void cMenu::mainmenu()
 {
-	hagl_fill_rectangle(0, 0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1, BLACK);
+	tft.setAddrWindow(0, 0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1);
+	tft.fillScreen(BLACK);
 	menu = M_MAIN;
 	prev_menu = M_MAIN;
 
@@ -80,39 +97,42 @@ void cMenu::ShowButtonText(uint8_t button)
 		row = POS2;
 		break;
 	case BUT8:
-		col = MIPI_DISPLAY_WIDTH - (2 * offset);
+		col = MIPI_DISPLAY_WIDTH - (2 * offset) -1;
 	case BUT4:
 		row = POS3;
 		break;
 	}
 	if (button < 4)
 	{
-		hagl_fill_rounded_rectangle(col, row, col + (2 * offset) - 4, row + 21, 4, hagl_color(128, 64, 64));
-		hagl_fill_rectangle(col, row, col + (2 * offset) - 8, row + 21, hagl_color(128, 64, 64));
-		hagl_print(menus[menu][button], col + 5, row + 1, WHITE, 1);
+//		tft.fillRoundRect(col, row, (2 * offset) - 4, 21, 4, tft.color565(128, 64, 64));
+//		tft.writeFillRect(col, row, (2 * offset) - 8, 21, tft.color565(128, 64, 64));
+		tft.setCursor(col + 5, row+14);
+		tft.print(menus[menu][button]);
+		printf("%s\n", menus[menu][button]);
 	}
 	else {
-		hagl_fill_rounded_rectangle(col + 4, row, col + (2 * offset), row + 21, 4, hagl_color(128, 64, 64));
-		hagl_fill_rectangle(col + 8, row, col + (2 * offset), row + 21, hagl_color(128, 64, 64));
-		hagl_print(menus[menu][button], col + 9, row + 1, WHITE, 1);
+//		tft.drawRoundRect(col + 4, row, (2 * offset) - 8, 21, 4, tft.color565(128, 64, 64));
+//		tft.fillRect(col + 4, row, (2 * offset) - 8, 21, tft.color565(128, 64, 64));
+		tft.setCursor(col + 9, row+14);
+		tft.print(menus[menu][button]);
+		printf("%s\n", menus[menu][button]);
 	}
 }
 
 void cMenu::ShowValue(int32_t param, int16_t x0, int16_t y0, int16_t w0, int16_t h0, bool colorflag, uint8_t fontsize)
 {	
 	int32_t value = dexed[currentTG].getValue(param);
-//	return;
+
 	char text[7];
 	uint8_t offset = 3;
 	itoa(value, text, 10);
-	hagl_set_clip_window(x0, y0, x0 + w0, y0 + h0);
-	hagl_clear_clip_window();
+	tft.setAddrWindow(x0, y0, w0, h0);
 	if ( colorflag)
 	{
-		hagl_fill_rectangle(x0, y0, x0+w0, y0+h0, WHITE);
+		tft.fillRect(x0,y0,w0,h0,WHITE);
 	}
 	else {
-		hagl_fill_rectangle(x0, y0, x0+w0, y0+h0+1, hagl_color(64,64,255));
+		tft.fillRect(x0, y0, w0, h0, tft.color565(64, 64, 255));
 	}
 
 	if (abs(value) > 9)
@@ -123,8 +143,12 @@ void cMenu::ShowValue(int32_t param, int16_t x0, int16_t y0, int16_t w0, int16_t
 		offset = 16;
 	if (value < 0)
 		offset = offset + 6;
-	hagl_print(text,(x0 + (w0/2)) - offset, y0+1, BLACK, fontsize);
-	hagl_set_clip_window(0, 0, MIPI_DISPLAY_WIDTH-1, MIPI_DISPLAY_HEIGHT-1);
+	tft.setTextColor(BLACK);
+	tft.setCursor((x0 + (w0 / 2)) - offset, y0 + 14);
+	tft.print(text);
+	tft.setTextColor(WHITE);
+//	hagl_print(text,(x0 + (w0/2)) - offset, y0+1, BLACK, fontsize);
+	tft.setAddrWindow(0,0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1);
 }
 
 void cMenu::menuBack()
@@ -149,7 +173,7 @@ void cMenu::menuBack()
 
 void cMenu::Midi(uint8_t button)
 {
-	hagl_fill_rectangle(0, 0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1, BLACK);
+	tft.fillScreen(BLACK);
 	menu = M_TG_MIDI;
 	prev_menu = M_TG;
 
@@ -179,7 +203,7 @@ void cMenu::selectTG(uint8_t button)
 
 void cMenu::selectTG()
 {
-	hagl_fill_rectangle(0, 0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1, BLACK);
+	tft.fillScreen(BLACK);
 	menu = M_TG;
 	prev_menu = M_MAIN;
 
@@ -203,7 +227,7 @@ void cMenu::selectTG()
 
 void cMenu::TGMain(uint8_t button)
 {
-	hagl_fill_rectangle(0, 0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1, BLACK);
+	tft.fillScreen(BLACK);
 	menu = M_TG_MAIN;
 	prev_menu = M_TG;
 
@@ -227,7 +251,7 @@ void cMenu::TGMain(uint8_t button)
 
 void cMenu::TGTune(uint8_t button)
 {
-	hagl_fill_rectangle(0, 0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1, BLACK);
+	tft.fillScreen(BLACK);
 	menu = M_TG_TUNE;
 	prev_menu = M_TG;
 

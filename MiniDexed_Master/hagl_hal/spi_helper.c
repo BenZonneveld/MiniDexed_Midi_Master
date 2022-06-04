@@ -6,7 +6,7 @@
 
 void spiAllHigh()
 {
-    gpio_put(LCDCS, 1);
+    gpio_put(LCD_CS, 1);
     gpio_put(SD_CS, 1);
     gpio_put(KEY_CS, 0);
 }
@@ -23,7 +23,7 @@ void spi_cs(uint8_t port)
         gpio_put(SD_CS, 0);
         break;
     case 2:
-        gpio_put(LCDCS, 0);
+        gpio_put(LCD_CS, 0);
         break;
     default:
         printf("wrong port %i\r\n", port);

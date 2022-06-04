@@ -2,13 +2,13 @@
 #include <stdlib.h>
 #include <pico/stdlib.h>
 
-#include "hardware/dma.h"
+//#include "hardware/dma.h"
 #include <hardware/spi.h>
 #include "hardware/gpio.h"
 
 #include "Buttons.h"
 #include "gpio_pins.h"
-#include "spi_helper.h"
+//#include "spi_helper.h"
 
 std::array<void(*) (uint8_t), 8>cButtons::buttonCallback;
 std::array<void(*)(), 8>cButtons::buttonDBLCallback;
@@ -96,18 +96,12 @@ void cButtons::setLongCallback(uint8_t button, void (*callback)(uint8_t button))
 void cButtons::handleButtons()
 {
 	uint8_t buf = 0;
-//    spi_set_baudrate(spi1, 24000000);
 	
-#if defined(HAGL_HAL_USE_DMA)
-#else
-//    printf("SPI Read\r\n");
-    spi_cs(csKEY);
-	spi_read_blocking(spi1, 0xff, &buf, 1);
-    spiAllHigh(); 
-#endif
+//    spi_cs(csKEY);
+    gpio_put(KEY_CS, 1);
+    spi_read_blocking(spi1, 0xff, &buf, 1);
+    gpio_put(KEY_CS, 0);
 	state = (buf & 0xF0)>>4 | ((buf & 0x8) >> 3| (buf&0x4) >> 1| (buf&0x2)<<1 | (buf&0x1)<< 3)<<4; // Swap nibble to get the correct order
-
-//    spi_set_baudrate(spi1, MIPI_DISPLAY_SPI_CLOCK_SPEED_HZ);
 
     for (uint8_t i = 0; i < NBR_OF_BUTTONS; i++)
     {

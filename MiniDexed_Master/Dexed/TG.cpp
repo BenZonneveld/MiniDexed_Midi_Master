@@ -3,7 +3,8 @@
 #include <pico/stdlib.h>
 #include <string.h>
 #include "pico/multicore.h"
-#include "TG.h"
+#include "pico/util/queue.h"
+#include "MDMA.h"
 
 //uint16_t cTG::mbank;
 //uint8_t cTG::mpatch;
@@ -143,6 +144,7 @@ int32_t cTG::parmDown(uint16_t parm)
 
 int32_t cTG::setValue(uint16_t parm, int32_t value)
 {
+	dexed_t tgdata;
 	if (value >= ranges[parm][0] && value < ranges[parm][1])
 	{
 		switch (parms[parm].type)
@@ -159,10 +161,15 @@ int32_t cTG::setValue(uint16_t parm, int32_t value)
 		default:
 			break;
 		}
-		uint32_t data;
-		data = (mchannel<<28) | (parm << 16 )| value;
-		if ( multicore_fifo_wready() ) multicore_fifo_push_blocking(data);
-		printf("data: %08X channel: %i\r\n", data, mchannel);
+		tgdata.channel = mchannel;
+		tgdata.cmd = 0;
+		tgdata.val1 = 0;
+		tgdata.val2 = 124;
+		tgdata.parm = parm;
+		tgdata.data = value;
+		
+		queue_add_blocking(&tg_fifo, &tgdata);
+		printf("data: %08X channel: %i\r\n", tgdata.parm, tgdata.channel);
 	}
 	return value;
 }

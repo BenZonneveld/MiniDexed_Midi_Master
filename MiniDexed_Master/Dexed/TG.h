@@ -29,6 +29,14 @@ const int16_t ranges[][2] = {
 	{ 0, 127} // PVOL
 };
 
+typedef struct {
+	uint8_t channel;
+	uint8_t cmd;
+	uint16_t parm;
+	uint8_t val1;
+	uint8_t val2;
+	uint16_t data;
+} dexed_t;
 
 class cTG {
 public:
