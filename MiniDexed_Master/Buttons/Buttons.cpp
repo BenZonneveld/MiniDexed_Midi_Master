@@ -2,13 +2,11 @@
 #include <stdlib.h>
 #include <pico/stdlib.h>
 
-//#include "hardware/dma.h"
 #include <hardware/spi.h>
 #include "hardware/gpio.h"
 
 #include "Buttons.h"
 #include "gpio_pins.h"
-//#include "spi_helper.h"
 
 std::array<void(*) (uint8_t), 8>cButtons::buttonCallback;
 std::array<void(*)(), 8>cButtons::buttonDBLCallback;

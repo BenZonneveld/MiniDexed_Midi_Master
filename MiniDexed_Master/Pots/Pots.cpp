@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include <pico/stdlib.h>
-
 #include <hardware/adc.h>
-//#include <hardware/dma.h>
-
 #include "Pots.h"
 #include "gpio_pins.h"
 
@@ -101,6 +98,7 @@ void cPots::readAll()
 
 uint16_t cPots::getPot(uint8_t id)
 {
+	printf("getPot(%i)= %i\n", id,pot[id]);
 	return pot[id];
 }
 

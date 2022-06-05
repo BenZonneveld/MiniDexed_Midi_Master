@@ -1,7 +1,6 @@
 #ifndef _POTS_H
 #define _POTS_H
 #include <array>
-//#include "TG.h"
 #ifdef __cplusplus
 extern "C"
 {

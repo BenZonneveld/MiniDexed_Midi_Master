@@ -1,6 +1,6 @@
 #ifndef _BUTTONS_H
 #define _BUTTONS_H
-#include <unordered_map>
+#include <array>
 
 #ifdef __cplusplus
 extern "C"

@@ -1,16 +1,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pico/stdlib.h>
-#include <string.h>
 
-#include "GFX-lib/Adafruit_GFX.h"
-#include "GFX-lib/Adafruit_SPITFT.h"
-//#include "hagl.h"
-//#include "hagl_hal.h"
 #include "MainMenu.h"
 #include "string_table.h"
 #include "mdma.h"
-#include "Buttons.h"
 #include "tools.h"
 
 #define PROGMEM
@@ -48,7 +42,7 @@ void cMenu::Init()
 void cMenu::mainmenu()
 {
 	tft.setAddrWindow(0, 0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1);
-	tft.fillScreen(BLACK);
+//	tft.fillScreen(BLACK);
 	menu = M_MAIN;
 	prev_menu = M_MAIN;
 
@@ -105,14 +99,14 @@ void cMenu::ShowButtonText(uint8_t button)
 	if (button < 4)
 	{
 //		tft.fillRoundRect(col, row, (2 * offset) - 4, 21, 4, tft.color565(128, 64, 64));
-//		tft.writeFillRect(col, row, (2 * offset) - 8, 21, tft.color565(128, 64, 64));
+		tft.writeFillRect(col, row, (2 * offset) - 8, 21, tft.color565(128, 64, 64));
 		tft.setCursor(col + 5, row+14);
 		tft.print(menus[menu][button]);
 		printf("%s\n", menus[menu][button]);
 	}
 	else {
 //		tft.drawRoundRect(col + 4, row, (2 * offset) - 8, 21, 4, tft.color565(128, 64, 64));
-//		tft.fillRect(col + 4, row, (2 * offset) - 8, 21, tft.color565(128, 64, 64));
+		tft.fillRect(col + 4, row, (2 * offset) - 8, 21, tft.color565(128, 64, 64));
 		tft.setCursor(col + 9, row+14);
 		tft.print(menus[menu][button]);
 		printf("%s\n", menus[menu][button]);
@@ -125,7 +119,7 @@ void cMenu::ShowValue(int32_t param, int16_t x0, int16_t y0, int16_t w0, int16_t
 
 	char text[7];
 	uint8_t offset = 3;
-	itoa(value, text, 10);
+	itoa(value + ranges[param][ROFFSET], text, 10);
 	tft.setAddrWindow(x0, y0, w0, h0);
 	if ( colorflag)
 	{
@@ -143,11 +137,16 @@ void cMenu::ShowValue(int32_t param, int16_t x0, int16_t y0, int16_t w0, int16_t
 		offset = 16;
 	if (value < 0)
 		offset = offset + 6;
+	if (param == PCHANNEL && value == 16)
+	{
+		sprintf(text, "OMNI");
+		offset = 16;
+	}
+
 	tft.setTextColor(BLACK);
 	tft.setCursor((x0 + (w0 / 2)) - offset, y0 + 14);
 	tft.print(text);
 	tft.setTextColor(WHITE);
-//	hagl_print(text,(x0 + (w0/2)) - offset, y0+1, BLACK, fontsize);
 	tft.setAddrWindow(0,0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1);
 }
 
@@ -160,6 +159,7 @@ void cMenu::menuBack()
 		mainmenu();
 		break;
 	case M_TG:
+		tft.writeFillRect(61, 0, VALUEWIDTH, 128, BLACK);
 		selectTG();
 		break;
 	case M_TG_MAIN:
@@ -173,7 +173,7 @@ void cMenu::menuBack()
 
 void cMenu::Midi(uint8_t button)
 {
-	tft.fillScreen(BLACK);
+//	tft.fillScreen(BLACK);
 	menu = M_TG_MIDI;
 	prev_menu = M_TG;
 
@@ -203,7 +203,7 @@ void cMenu::selectTG(uint8_t button)
 
 void cMenu::selectTG()
 {
-	tft.fillScreen(BLACK);
+//	tft.fillScreen(BLACK);
 	menu = M_TG;
 	prev_menu = M_MAIN;
 
@@ -227,7 +227,7 @@ void cMenu::selectTG()
 
 void cMenu::TGMain(uint8_t button)
 {
-	tft.fillScreen(BLACK);
+//	tft.fillScreen(BLACK);
 	menu = M_TG_MAIN;
 	prev_menu = M_TG;
 
@@ -251,7 +251,7 @@ void cMenu::TGMain(uint8_t button)
 
 void cMenu::TGTune(uint8_t button)
 {
-	tft.fillScreen(BLACK);
+//	tft.fillScreen(BLACK);
 	menu = M_TG_TUNE;
 	prev_menu = M_TG;
 
@@ -293,6 +293,7 @@ void cMenu::ParmSelect(uint8_t button)
 	default:
 		break;
 	}
+	dexed[currentTG].sendParam(bparam[button], dexed[currentTG].getValue(bparam[button]));
 //	dexed[currentTG].sendMidi(bparam[button]);
 	ShowValue(bparam[button], 61, parampos[button], VALUEWIDTH, 21, true, 1);
 }
@@ -300,8 +301,8 @@ void cMenu::ParmSelect(uint8_t button)
 void cMenu::ParmPot(uint8_t channel)
 {
 	uint16_t param = potparam[channel];
-	int32_t value = map(Pots.getPot(channel), POT_MIN, POT_MAX, ranges[param][0], 1+ranges[param][1]);
-
+	int32_t value = map(Pots.getPot(channel), POT_MIN, POT_MAX, ranges[param][RMIN], 1+ranges[param][RMAX]);
+	printf("value(%i): %i\n",channel, value);
 	if (value == dexed[currentTG].getValue(param) && !pflag[channel])
 	{
 		pflag[channel] = true;
@@ -347,7 +348,7 @@ void cMenu::setPotCallback(uint8_t channel, uint16_t param, int8_t pos)
 	potpos[channel] = pos;
 	pflag[channel] = false;
 
-	uint16_t pot = map(Pots.getPot(channel), POT_MIN, POT_MAX, ranges[param][0], ranges[param][1]);
+	uint16_t pot = map(Pots.getPot(channel), POT_MIN, POT_MAX, ranges[param][RMIN], ranges[param][RMAX]);
 
 	if (pot == dexed[currentTG].getValue(param))
 		pflag[channel] = true;

@@ -5,14 +5,13 @@
 #include "tusb.h"
 #include "hardware/uart.h"
 #include "hardware/gpio.h"
-#include "pico/multicore.h"
 #include "pico/util/queue.h"
 #include "MidiCore.h"
 #include "gpio_pins.h"
 #include "MIDI/midi.h"
-//#include "TG.h"
-#include "MDMA.h"
+#include "TG.h"
 
+queue_t midi_fifo;
 bool led_usb_state = false;
 bool led_uart_state = false;
 
@@ -150,7 +149,8 @@ void midicore()
         while (queue_try_remove(&tg_fifo, &mididata))
         {
 //            if ( mididata.channel == 0 || mididata.channel == 0x80)
-                printf("rx %i\t%04X\n", mididata.channel, mididata.data);
+                
+                printf("rx chan: %i\tinstance: %i cmd: %02X data1: %02X data2: %02X value: %04X\n", mididata.channel, mididata.instance, mididata.cmd, mididata.val1, mididata.val2,mididata.data);
         }
     }
 }
