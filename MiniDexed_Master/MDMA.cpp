@@ -31,11 +31,16 @@ int main(void)
     stdio_init_all();
     printf("MDMA Booting\r\n");
     
+    Pots.init();
+    menu.Init();
+
     multicore_launch_core1(midicore);
  
-    Pots.init();
-
-    menu.Init();
+    while (midi_ready == false)
+    {
+        tight_loop_contents();
+    }
+    tft.fillScreen(BLACK);
     menu.Show();
 
     while (1)

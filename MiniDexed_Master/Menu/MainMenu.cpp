@@ -28,21 +28,19 @@ bool cMenu::menuNeedFlush;
 void cMenu::Init()
 {
 	tft.init(160, 128);
-	tft.fillScreen(BLACK);
-	tft.setCursor(24, 24);
-	tft.setTextSize(1);
+	tft.fillScreen(GREY);
+	tft.setTextSize(0);
 	tft.setTextColor(WHITE);
 	tft.setFont(&FreeSans9pt7b);
 //	tft.println("INIT");
 
 	currentTG = -1;
-	mainmenu();
+//	mainmenu();
 }
 
 void cMenu::mainmenu()
 {
 	tft.setAddrWindow(0, 0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1);
-//	tft.fillScreen(BLACK);
 	menu = M_MAIN;
 	prev_menu = M_MAIN;
 
@@ -106,7 +104,7 @@ void cMenu::ShowButtonText(uint8_t button)
 	}
 	else {
 //		tft.drawRoundRect(col + 4, row, (2 * offset) - 8, 21, 4, tft.color565(128, 64, 64));
-		tft.fillRect(col + 4, row, (2 * offset) - 8, 21, tft.color565(128, 64, 64));
+		tft.fillRect(col + 4, row, (2 * offset) - 4, 21, tft.color565(128, 64, 64));
 		tft.setCursor(col + 9, row+14);
 		tft.print(menus[menu][button]);
 		printf("%s\n", menus[menu][button]);

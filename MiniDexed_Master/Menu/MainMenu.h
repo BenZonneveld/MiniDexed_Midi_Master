@@ -2,9 +2,9 @@
 #include "Adafruit_GFX.h"
 #include "Adafruit_SPITFT.h"
 #define VALUEWIDTH 37
-#define TOPPOT	2
+#define TOPPOT	0
 #define MIDPOT	1
-#define BOTPOT	0
+#define BOTPOT	2
 
 extern const GFXfont FreeSans9pt7b;
 extern const GFXfont FreeSans12pt7b;

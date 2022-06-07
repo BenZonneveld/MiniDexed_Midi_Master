@@ -8,13 +8,12 @@
 #include "pico/util/queue.h"
 #include "MidiCore.h"
 #include "gpio_pins.h"
-#include "MIDI/midi.h"
-#include "TG.h"
+//#include "MIDI/midi.h"
 
 queue_t midi_fifo;
 bool led_usb_state = false;
 bool led_uart_state = false;
-
+bool midi_ready = false;
 //--------------------------------------------------------------------+
 // UART Helper
 //--------------------------------------------------------------------+
@@ -148,10 +147,71 @@ void midicore()
         midi_task();
         while (queue_try_remove(&tg_fifo, &mididata))
         {
+            uint8_t packet[4];
+
 //            if ( mididata.channel == 0 || mididata.channel == 0x80)
-                
-                printf("rx chan: %i\tinstance: %i cmd: %02X data1: %02X data2: %02X value: %04X\n", mididata.channel, mididata.instance, mididata.cmd, mididata.val1, mididata.val2,mididata.data);
+            switch (mididata.cmd)
+            {
+            case PBANK:
+                sendCtrl(0, mididata);
+                break;
+            case PPATCH:
+                sendCtrl(128, mididata);
+                break;
+            case PCHANNEL:
+                printf("Change channel\n");
+                break;
+            case PFREQ:
+                break;
+            case PRESO:
+                break;
+            case PVERB:
+                break;
+            case PCOMP:
+                break;
+            case PTRANS:
+                break;
+            case PTUNE:
+                break;
+            case PPAN:
+                break;
+            case PVOL:
+                break;
+            default:
+                break;
+            }
+            printf("rx chan: %i\tinstance: %i cmd: %02X data1: %02X data2: %02X value: %04X\n", mididata.channel, mididata.instance, mididata.cmd, mididata.val1, mididata.val2,mididata.data);
         }
     }
 }
 
+void dx7sysex(uint16_t parm, dexed_t mididata)
+{
+    // 0xF0   Start Sysex
+    // 0x43   ID # i = 67; Yamaha
+    // 0x10     Sub status ( s = 1 & channel number ; n = 0; ch 1;
+    // 0x02   Parameter group g=0; voice; g=2; function, we want function
+    // parm_no  78 and up
+    // xx       data byte
+    // 0xF7   end sysex
+}
+
+void sendCtrl(uint8_t ctrl, dexed_t mididata)
+{
+    if ( mididata.cmd == PPATCH )
+    {
+        uint8_t pgmchange[2] = { 0xC0 | mididata.channel, mididata.data & 0x7F };
+//        tud_midi_stream_write(0, pgmchange, 2); // Should be serial !!!
+        uart_write_blocking(DEXED, pgmchange, 2);
+        printf("PGM Change: %i\n", mididata.data);
+    }
+    else {
+        uint8_t ctrlchange[3] = { 0xB0 | mididata.channel, ctrl, mididata.data & 0x7F };
+//        tud_midi_stream_write(0, ctrlchange, 3); // Should be serial !!!
+        uart_write_blocking(DEXED, ctrlchange, 3);
+        if (ctrl == 0)
+        {
+            printf("Bank Change %i\n", mididata.data);
+        }
+    }
+}
