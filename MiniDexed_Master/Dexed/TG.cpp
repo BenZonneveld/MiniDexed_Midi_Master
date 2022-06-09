@@ -182,13 +182,17 @@ int32_t cTG::getValue(uint16_t parm)
 void cTG::sendParam(uint16_t parm, uint16_t value)
 {
 	dexed_t tgdata;
-	tgdata.channel = mchannel;
+	if (parm != PCHANNEL)
+
+		tgdata.channel = mchannel;
+	else
+		tgdata.channel = mobject_id;
 	tgdata.instance = mobject_id;
-	tgdata.cmd = parm;
-	tgdata.val1 = value & 0x7f;
-	tgdata.val2 = (value >> 7) & 0x7f;
+	tgdata.cmd = 0;
+//	tgdata.val1 = value & 0x7f;
+//	tgdata.val2 = (value >> 7) & 0x7f;
 	tgdata.parm = parm;
-	tgdata.data = value;
+	tgdata.value = value;
 	queue_add_blocking(&tg_fifo, &tgdata);
 }
 

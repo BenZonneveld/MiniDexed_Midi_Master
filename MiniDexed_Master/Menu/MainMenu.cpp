@@ -19,10 +19,10 @@ int8_t cMenu::currentTG;
 uint8_t cMenu::menu;
 uint8_t cMenu::prev_menu; 
 bool cMenu::pflag[3];
-uint16_t cMenu::potparam[4];
-int8_t cMenu::potpos[3];
+int16_t cMenu::potparam[4];
+int16_t cMenu::potpos[3];
 int16_t cMenu::bparam[8];
-int8_t cMenu::parampos[8];
+int16_t cMenu::parampos[8];
 bool cMenu::menuNeedFlush;
 
 void cMenu::Init()
@@ -52,14 +52,14 @@ void cMenu::mainmenu()
 	setButtonCallback(BUT6, 0, POS0, &cMenu::selectTG);
 	setButtonCallback(BUT7, 0, POS0, &cMenu::selectTG);
 	setButtonCallback(BUT8, 0, POS0, &cMenu::selectTG);
-	buttons.setDBLCallback(BUT1, &cMenu::menuBack);
-	buttons.setDBLCallback(BUT2, &cMenu::menuBack);
-	buttons.setDBLCallback(BUT3, &cMenu::menuBack);
-	buttons.setDBLCallback(BUT4, &cMenu::menuBack);
-	buttons.setDBLCallback(BUT5, &cMenu::menuBack);
-	buttons.setDBLCallback(BUT6, &cMenu::menuBack);
-	buttons.setDBLCallback(BUT7, &cMenu::menuBack);
-	buttons.setDBLCallback(BUT8, &cMenu::menuBack);
+//	buttons.setDBLCallback(BUT1, &cMenu::menuBack);
+//	buttons.setDBLCallback(BUT2, &cMenu::menuBack);
+//	buttons.setDBLCallback(BUT3, &cMenu::menuBack);
+//	buttons.setDBLCallback(BUT4, &cMenu::menuBack);
+//	buttons.setDBLCallback(BUT5, &cMenu::menuBack);
+//	buttons.setDBLCallback(BUT6, &cMenu::menuBack);
+//	buttons.setDBLCallback(BUT7, &cMenu::menuBack);
+//	buttons.setDBLCallback(BUT8, &cMenu::menuBack);
 	Pots.setPotCallback(TOPPOT, NULL);
 	Pots.setPotCallback(MIDPOT, NULL);
 	Pots.setPotCallback(BOTPOT, NULL);
@@ -70,7 +70,7 @@ void cMenu::ShowButtonText(uint8_t button)
 	int16_t offset = 30;
 	int16_t col = 0;
 	int16_t row = 0;
-
+	printf("SHowButtonText %i\n", button);
 	switch (button)
 	{
 	case BUT5:
@@ -148,8 +148,14 @@ void cMenu::ShowValue(int32_t param, int16_t x0, int16_t y0, int16_t w0, int16_t
 	tft.setAddrWindow(0,0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1);
 }
 
+void cMenu::menuBack(uint8_t button)
+{
+	menuBack();
+}
+
 void cMenu::menuBack()
 {
+	
 	menu = prev_menu;
 	switch (menu)
 	{
@@ -171,6 +177,7 @@ void cMenu::menuBack()
 
 void cMenu::Midi(uint8_t button)
 {
+	printf("MIDI Menu\n");
 //	tft.fillScreen(BLACK);
 	menu = M_TG_MIDI;
 	prev_menu = M_TG;
@@ -182,7 +189,9 @@ void cMenu::Midi(uint8_t button)
 	setButtonParm(BUT5, PBANK, POS0, true);
 	setButtonParm(BUT6, PPATCH, POS1, true);
 	setButtonParm(BUT7, PCHANNEL, POS2, true);
+	//setButtonParm(BUT8,32768,POS3, false);
 	clearButtonCB(BUT8);
+	buttons.setCallback(BUT8, &cMenu::menuBack);
 
 	setPotCallback(TOPPOT, PBANK, POS0);
 	setPotCallback(MIDPOT, PPATCH, POS1);
@@ -201,6 +210,7 @@ void cMenu::selectTG(uint8_t button)
 
 void cMenu::selectTG()
 {
+	printf("Select TG\n");
 //	tft.fillScreen(BLACK);
 	menu = M_TG;
 	prev_menu = M_MAIN;
@@ -214,17 +224,21 @@ void cMenu::selectTG()
 	clearButtonCB(BUT7);
 	clearButtonCB(BUT8);
 
-	buttons.setCallback(0, &cMenu::Midi);
-	buttons.setCallback(1, &cMenu::TGMain);
-	buttons.setCallback(2, &cMenu::TGTune);
+	buttons.setCallback(BUT1, &cMenu::Midi);
+	buttons.setCallback(BUT2, &cMenu::TGMain);
+	buttons.setCallback(BUT3, &cMenu::TGTune);
+	buttons.setCallback(BUT8, &cMenu::menuBack);
+//	setButtonParm(BUT8, -1, POS3, false);
 
 	resetPotCB(TOPPOT);
 	resetPotCB(MIDPOT);
 	resetPotCB(BOTPOT);
+	printf("End of selectTG\n");
 }
 
 void cMenu::TGMain(uint8_t button)
 {
+	printf("TG Main\n");
 //	tft.fillScreen(BLACK);
 	menu = M_TG_MAIN;
 	prev_menu = M_TG;
@@ -236,7 +250,9 @@ void cMenu::TGMain(uint8_t button)
 	setButtonParm(BUT5, PFREQ, POS0, true);
 	setButtonParm(BUT6, PRESO, POS1, true);
 	setButtonParm(BUT7, PVERB, POS2, true);
+//	setButtonParm(BUT8, 32768, POS3, false);
 	clearButtonCB(BUT8);
+	buttons.setCallback(BUT8, &cMenu::menuBack);
 
 	setPotCallback(TOPPOT, PFREQ, POS0);
 	setPotCallback(MIDPOT, PRESO, POS1);
@@ -255,21 +271,35 @@ void cMenu::TGTune(uint8_t button)
 
 	setButtonParm(BUT1, PTRANS, POS0, true);
 	setButtonParm(BUT2, PTUNE, POS1, true);
-	setButtonParm(BUT3, PPAN, POS2, true);
-	setButtonParm(BUT4, PVOL, POS3, true);
+	clearButtonCB(BUT3);
+	clearButtonCB(BUT4);
+//	setButtonParm(BUT3, PPAN, POS2, true);
+//	setButtonParm(BUT4, PVOL, POS3, true);
 	setButtonParm(BUT5, PTRANS, POS0, true);
 	setButtonParm(BUT6, PTUNE, POS1, true);
-	setButtonParm(BUT7, PPAN, POS2, true);
-	setButtonParm(BUT8, PVOL, POS3, true);
+	clearButtonCB(BUT7);
+	clearButtonCB(BUT8);
+	buttons.setCallback(BUT8, &cMenu::menuBack);
 
-	setPotCallback(TOPPOT, PTUNE, POS1);
-	setPotCallback(MIDPOT, PPAN, POS2);
-	setPotCallback(BOTPOT, PVOL, POS3);
+//	setButtonParm(BUT7, PPAN, POS2, true);
+//	setButtonParm(BUT8, PVOL, POS3, true);
+//	buttons.setDBLCallback(BUT1, &cMenu::menuBack);
+//	buttons.setDBLCallback(BUT2, &cMenu::menuBack);
+//	buttons.setDBLCallback(BUT3, &cMenu::menuBack);
+//	buttons.setDBLCallback(BUT4, &cMenu::menuBack);
+//	buttons.setDBLCallback(BUT5, &cMenu::menuBack);
+//	buttons.setDBLCallback(BUT6, &cMenu::menuBack);
+//	buttons.setDBLCallback(BUT7, &cMenu::menuBack);
+//	buttons.setDBLCallback(BUT8, &cMenu::menuBack);
+	setPotCallback(TOPPOT, PTRANS, POS1);
+	setPotCallback(MIDPOT, PTUNE, POS2);
+	resetPotCB(BOTPOT);
+	//	setPotCallback(BOTPOT, PVOL, POS3);
 
-	ShowValue(PTRANS, 61, parampos[BUT1], VALUEWIDTH, 21, true, 1);
-	ShowValue(PTUNE, 61, parampos[BUT2], VALUEWIDTH, 21, pflag[TOPPOT], 1);
-	ShowValue(PPAN, 61, parampos[BUT3], VALUEWIDTH, 21, pflag[MIDPOT], 1);
-	ShowValue(PVOL, 61, parampos[BUT4], VALUEWIDTH, 21, pflag[BOTPOT], 1);
+	ShowValue(PTRANS, 61, parampos[BUT1], VALUEWIDTH, 21, pflag[TOPPOT], 1);
+	ShowValue(PTUNE, 61, parampos[BUT2], VALUEWIDTH, 21, pflag[MIDPOT], 1);
+//	ShowValue(PPAN, 61, parampos[BUT3], VALUEWIDTH, 21, pflag[MIDPOT], 1);
+//	ShowValue(PVOL, 61, parampos[BUT4], VALUEWIDTH, 21, pflag[BOTPOT], 1);
 }
 
 void cMenu::ParmSelect(uint8_t button)
@@ -299,8 +329,7 @@ void cMenu::ParmSelect(uint8_t button)
 void cMenu::ParmPot(uint8_t channel)
 {
 	uint16_t param = potparam[channel];
-	int32_t value = map(Pots.getPot(channel), POT_MIN, POT_MAX, ranges[param][RMIN], 1+ranges[param][RMAX]);
-	printf("value(%i): %i\n",channel, value);
+	int32_t value = map(Pots.getPot(channel), POT_MIN, POT_MAX, ranges[param][RMIN], ranges[param][RMAX]);
 	if (value == dexed[currentTG].getValue(param) && !pflag[channel])
 	{
 		pflag[channel] = true;
@@ -313,7 +342,7 @@ void cMenu::ParmPot(uint8_t channel)
 	}
 }
 
-void cMenu::setButtonCallback(uint8_t button, uint16_t param, int8_t pos,void (*callback)(uint8_t button))
+void cMenu::setButtonCallback(uint8_t button, int16_t param, int16_t pos,void (*callback)(uint8_t button))
 {
 	buttons.setCallback(button, callback);
 	if (callback == nullptr)
@@ -323,7 +352,7 @@ void cMenu::setButtonCallback(uint8_t button, uint16_t param, int8_t pos,void (*
 	ShowButtonText(button);
 }
 
-void cMenu::setButtonParm(uint8_t button, uint16_t param, int8_t pos, bool haslongpress)
+void cMenu::setButtonParm(uint8_t button, int16_t param, int16_t pos, bool haslongpress)
 {
 	setButtonCallback(button, param, pos, &cMenu::ParmSelect);
 	if ( haslongpress )
@@ -339,7 +368,7 @@ void cMenu::clearButtonCB(uint8_t button)
 	ShowButtonText(button);
 }
 
-void cMenu::setPotCallback(uint8_t channel, uint16_t param, int8_t pos)
+void cMenu::setPotCallback(uint8_t channel, int16_t param, int16_t pos)
 {
 	Pots.setPotCallback(channel, &cMenu::ParmPot);
 	potparam[channel] = param;

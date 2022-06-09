@@ -20,7 +20,7 @@ extern queue_t tg_fifo;
 #define RMAX	1
 #define ROFFSET	2
 
-enum TGPARAMS { PBANK, PPATCH, PCHANNEL, PFREQ, PRESO, PVERB, PCOMP, PTRANS, PTUNE, PPAN, PVOL};
+enum TGPARAMS { PBANK, PPATCH, PCHANNEL, PFREQ, PRESO, PVERB, PCOMP, PTRANS, PTUNE, PPAN, PVOL, PBEND, PPORTA};
 
 const int16_t ranges[][3] = {
 	{0,MAXBANKS,1}, // PBANK
@@ -41,9 +41,9 @@ typedef struct {
 	uint8_t instance;
 	uint8_t cmd;
 	uint16_t parm;
-	uint8_t val1;
-	uint8_t val2;
-	uint16_t data;
+//	uint8_t val1;
+//	uint8_t val2;
+	int32_t value;
 } dexed_t;
 
 //template <class Obj>
