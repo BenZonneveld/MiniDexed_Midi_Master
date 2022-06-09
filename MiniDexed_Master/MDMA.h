@@ -5,8 +5,8 @@
 
 #define FIFOLENGTH 16
 
-extern queue_t tg_fifo;
-extern queue_t midi_fifo;
+//extern queue_t tg_fifo;
+//extern queue_t midi_fifo;
 
 extern cPots Pots;
 extern cButtons buttons;

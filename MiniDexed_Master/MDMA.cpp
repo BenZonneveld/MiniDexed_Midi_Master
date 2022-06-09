@@ -23,7 +23,7 @@ int main(void)
 {
     queue_init(&tg_fifo, sizeof(dexed_t), FIFOLENGTH);
     queue_init(&midi_fifo, sizeof(dexed_t), FIFOLENGTH);
-
+    queue_init(&sysex_fifo, VOICEDATA_SIZE, FIFOLENGTH);
     cMenu menu;
     board_init();
     set_sys_clock_khz(133000, true);
@@ -36,17 +36,23 @@ int main(void)
 
     multicore_launch_core1(midicore);
  
-    while (midi_ready == false)
-    {
-        tight_loop_contents();
-    }
+//    while (midi_ready == false)
+//    {
+//        tight_loop_contents();
+//    }
     tft.fillScreen(BLACK);
     menu.Show();
 
+    sysex_t raw_sysex;
     while (1)
     {
         Pots.readAll();
         buttons.handleButtons();
+        while (queue_try_remove(&sysex_fifo, &raw_sysex))
+        {
+ //           printf("raw from main: %i\n", raw_sysex.length);
+            menu.handleSysex(raw_sysex);
+        }
     }
 
     return 0;

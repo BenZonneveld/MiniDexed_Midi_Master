@@ -1,9 +1,0 @@
-menu "Hardware Agnostic Graphics Library (HAGL)"
-
-config HAGL_TJPGD_NEEDS_BYTESWAP
-    bool "Swap TJPGD output bytes"
-    default y
-    help
-        If JPG file colours seems wrong change this setting.
-
-endmenu

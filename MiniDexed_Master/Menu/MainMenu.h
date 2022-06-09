@@ -1,15 +1,18 @@
 //void InitMainMenu();
 #include "Adafruit_GFX.h"
 #include "Adafruit_SPITFT.h"
+#include "TG.h"
 #define VALUEWIDTH 37
 #define TOPPOT	0
 #define MIDPOT	1
 #define BOTPOT	2
 
-extern const GFXfont FreeSans9pt7b;
-extern const GFXfont FreeSans12pt7b;
-extern const GFXfont FreeSans18pt7b;
-extern const GFXfont FreeSans24pt7b;
+//extern const GFXfont FreeSans9pt7b;
+//extern const GFXfont FreeSans12pt7b;
+//extern const GFXfont FreeSans18pt7b;
+//extern const GFXfont FreeSans24pt7b;
+//extern const GFXfont Open_Sans_Regular_8;
+
 enum POS { POS0 = 0, POS1 = 34, POS2 = 68, POS3 = 102 };
 extern Adafruit_SPITFT tft;
 
@@ -20,6 +23,7 @@ public:
 	bool NeedUpdate() { return menuNeedFlush; }
 	void Show() { mainmenu(); }
 	static void ShowButtonText(uint8_t button);
+	static void menuBack(uint8_t button);
 	static void menuBack();
 	static void mainmenu();
 	static void selectTG();
@@ -30,21 +34,22 @@ public:
 	static void CompToggle();
 	static void ParmSelect(uint8_t button);
 	static void ParmPot(uint8_t channel);
+	void handleSysex(sysex_t raw_sysex);
 private:
 	static void ShowValue(int32_t param, int16_t x0, int16_t y0, int16_t w0, int16_t h0, bool colorflag, uint8_t fontsize);
-	static void setButtonCallback(uint8_t button,uint16_t param, int8_t pos, void (*callback)(uint8_t button));
-	static void setButtonParm(uint8_t button, uint16_t param, int8_t pos, bool haslongpress);
+	static void setButtonCallback(uint8_t button,int16_t param, int16_t pos, void (*callback)(uint8_t button));
+	static void setButtonParm(uint8_t button, int16_t param, int16_t pos, bool haslongpress);
 	static void clearButtonCB(uint8_t button);
-	static void setPotCallback(uint8_t channel, uint16_t param, int8_t pos);
+	static void setPotCallback(uint8_t channel, int16_t param, int16_t pos);
 	static void resetPotCB(uint8_t channel);
 	static uint8_t menu;
 	static uint8_t prev_menu;
 	static int8_t currentTG;
 	static bool pflag[3];
-	static int8_t potpos[3];
-	static uint16_t potparam[4];
+	static int16_t potpos[3];
+	static int16_t potparam[4];
 	static int16_t bparam[8];
-	static int8_t parampos[8];
+	static int16_t parampos[8];
 	static bool menuNeedFlush;
 };
 

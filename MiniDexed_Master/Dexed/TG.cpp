@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pico/stdlib.h>
+#include <string.h>
 #include "pico/util/queue.h"
 #include "midicore.h"
 #include "TG.h"
@@ -22,6 +23,7 @@ cTG::cTG()
 	mtune = 0;
 	mpan = 0;
 	mvol = 127;
+	sprintf(mvoicename,"Unknown");
 	setParmType(PBANK, &mbank);
 	setParmType(PPATCH, &mpatch);
 	setParmType(PCHANNEL, &mchannel);
@@ -37,20 +39,20 @@ cTG::cTG()
 
 void cTG::setParmType(uint16_t parm, int8_t* data)
 {
-	parms[parm].type = 0;
-	parms[parm].val8s = data;
+	mparms[parm].type = 0;
+	mparms[parm].val8s = data;
 }
 
 void cTG::setParmType(uint16_t parm, uint8_t* data)
 {
-	parms[parm].type = 1;
-	parms[parm].val8t = data;
+	mparms[parm].type = 1;
+	mparms[parm].val8t = data;
 }
 
 void cTG::setParmType(uint16_t parm, uint16_t* data)
 {
-	parms[parm].type = 2;
-	parms[parm].val16t = data;
+	mparms[parm].type = 2;
+	mparms[parm].val16t = data;
 }
 
 int32_t cTG::parmUp(uint16_t parm)
@@ -59,33 +61,33 @@ int32_t cTG::parmUp(uint16_t parm)
 	uint8_t v8t;
 	uint16_t v16t;
 
-	switch (parms[parm].type)
+	switch (mparms[parm].type)
 	{
 	case 0:
-		v8s = *parms[parm].val8s;
+		v8s = *mparms[parm].val8s;
 		if (v8s < ranges[parm][RMAX])
 		{
 			v8s++;
 		}
-		*parms[parm].val8s = v8s;
+		*mparms[parm].val8s = v8s;
 		return v8s;
 		break;
 	case 1:
-		v8t = *parms[parm].val8t;
+		v8t = *mparms[parm].val8t;
 		if (v8t < ranges[parm][RMAX])
 		{
 			v8t++;
 		}
-		*parms[parm].val8t = v8t;
+		*mparms[parm].val8t = v8t;
 		return v8t;
 		break;
 	case 2:
-		v16t = *parms[parm].val16t;
+		v16t = *mparms[parm].val16t;
 		if (v16t < ranges[parm][RMAX])
 		{
 			v16t++;
 		}
-		*parms[parm].val16t = v16t;
+		*mparms[parm].val16t = v16t;
 		return v16t;
 		break;
 	default:
@@ -100,33 +102,33 @@ int32_t cTG::parmDown(uint16_t parm)
 	uint8_t v8t;
 	uint16_t v16t;
 
-	switch (parms[parm].type)
+	switch (mparms[parm].type)
 	{
 	case 0:
-		v8s = *parms[parm].val8s;
+		v8s = *mparms[parm].val8s;
 		if (v8s > ranges[parm][RMIN])
 		{
 			v8s--;
 		}
-		*parms[parm].val8s = v8s;
+		*mparms[parm].val8s = v8s;
 		return v8s;
 		break;
 	case 1:
-		v8t = *parms[parm].val8t; 
+		v8t = *mparms[parm].val8t; 
 		if (v8t > ranges[parm][RMIN])
 		{
 			v8t--;
 		}
-		*parms[parm].val8t = v8t;		
+		*mparms[parm].val8t = v8t;		
 		return v8t;
 		break;
 	case 2:
-		v16t = *parms[parm].val16t;
+		v16t = *mparms[parm].val16t;
 		if (v16t > ranges[parm][RMIN])
 		{
 			v16t--;
 		}
-		*parms[parm].val16t = v16t;
+		*mparms[parm].val16t = v16t;
 		return v16t;
 		break;
 	default:
@@ -139,16 +141,16 @@ int32_t cTG::setValue(uint16_t parm, int32_t value)
 {
 	if (value >= ranges[parm][RMIN] && value < ranges[parm][RMAX])
 	{
-		switch (parms[parm].type)
+		switch (mparms[parm].type)
 		{
 		case 0:
-			*parms[parm].val8s = value;
+			*mparms[parm].val8s = value;
 			break;
 		case 1:
-			*parms[parm].val8t = value;
+			*mparms[parm].val8t = value;
 			break;
 		case 2:
-			*parms[parm].val16t = value;
+			*mparms[parm].val16t = value;
 			break;
 		default:
 			break;
@@ -161,16 +163,16 @@ int32_t cTG::setValue(uint16_t parm, int32_t value)
 
 int32_t cTG::getValue(uint16_t parm)
 {
-	switch (parms[parm].type)
+	switch (mparms[parm].type)
 	{
 	case 0:
-		return *parms[parm].val8s;
+		return *mparms[parm].val8s;
 		break;
 	case 1:
-		return *parms[parm].val8t;
+		return *mparms[parm].val8t;
 		break;
 	case 2:
-		return *parms[parm].val16t;
+		return *mparms[parm].val16t;
 		break;
 	default:
 		printf("Unknown datatype\r\n");
@@ -182,36 +184,53 @@ int32_t cTG::getValue(uint16_t parm)
 void cTG::sendParam(uint16_t parm, uint16_t value)
 {
 	dexed_t tgdata;
-	tgdata.channel = mchannel;
+	if (parm != PCHANNEL)
+
+		tgdata.channel = mchannel;
+	else
+		tgdata.channel = mobject_id;
 	tgdata.instance = mobject_id;
-	tgdata.cmd = parm;
-	tgdata.val1 = value & 0x7f;
-	tgdata.val2 = (value >> 7) & 0x7f;
+	tgdata.cmd = 0;
+//	tgdata.val1 = value & 0x7f;
+//	tgdata.val2 = (value >> 7) & 0x7f;
 	tgdata.parm = parm;
-	tgdata.data = value;
+	tgdata.value = value;
 	queue_add_blocking(&tg_fifo, &tgdata);
 }
 
-void cTG::Cutoff(uint8_t freq)
+void cTG::getPatch()
 {
+	sysex_t raw_sysex;
+	dexed_t tgdata;
+
+	tgdata.instance = mobject_id;
+	tgdata.cmd = 1;
+	tgdata.parm = 0;
+	tgdata.value = mpatch;
+	queue_add_blocking(&tg_fifo, &tgdata);
+	queue_remove_blocking(&sysex_fifo, &raw_sysex);
+	setSysex(raw_sysex);
 }
 
-void cTG::Reso(uint8_t reso)
+void cTG::setSysex(sysex_t sysex)
 {
-}
-
-void cTG::Rvrb(uint8_t level)
-{
-}
-
-void cTG::Detune(int8_t detune)
-{
-}
-
-void cTG::Panning(int8_t pan)
-{
-}
-
-void cTG::Volume(uint8_t vol)
-{
+	//for (size_t i = 0; i <= VOICEDATA_SIZE; i++)
+	//{
+	//	if (i == VNAME_OFFSET +VOICEDATA_HEADER) printf("!");
+	//	printf("%02X, ", sysex[i]);
+	//}
+	//printf("\n");
+//	printf("setSysex size: %i\n", sysex.length);
+	uint8_t offset = VOICEDATA_HEADER;
+	if (sysex.length > 162) offset = offset + (sysex.length - 162);
+//	printf("offset %i\n", offset);
+	memcpy(msysex, sysex.buffer+offset, VOICEDATA_SIZE - VOICEDATA_HEADER);
+	/*for (size_t i = VNAME_OFFSET; i <= VOICEDATA_SIZE; i++)
+	{
+		printf("%02X, ", msysex[i]);
+	}
+	printf("\n");*/
+	memcpy(mvoicename, msysex + VNAME_OFFSET, 10);
+	mvoicename[11] = '\0';
+	//printf("Voice Name: %s\n", mvoicename);
 }

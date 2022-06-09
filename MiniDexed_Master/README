@@ -10,3 +10,5 @@ change and program change events, which have be received from the USB host, will
 be filtered out and ignored.
 
 MiniDexed itself is build in a Debian WSL on my Windows machine
+
+Get fonts at http://oleddisplay.squix.ch/#/home

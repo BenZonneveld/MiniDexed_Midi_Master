@@ -1,35 +1,6 @@
 Sysex Documentation 
 ===================
 
-(Message GUS:472)
-Received: from mailhub.iastate.edu by po-3.iastate.edu 
-	id AA06806; Sat, 25 Sep 93 16:13:53 -0500
-Received: from Waisman.Wisc.EDU (don.waisman.wisc.edu) by mailhub.iastate.edu
-	id AA23002; Sat, 25 Sep 1993 16:14:09 -0500
-Received: from Waisman.Wisc.EDU by Waisman.Wisc.EDU (PMDF V4.2-10 #2484) id
- <01H3DDLUXLDSBMA3H1@Waisman.Wisc.EDU>; Sat, 25 Sep 1993 16:13:40 CDT
-Date: Sat, 25 Sep 1993 16:13:40 -0500 (CDT)
-From: "Ewan A. Macpherson" <MACPHERSON@waisman.wisc.edu>
-Subject: DX7 Data Format
-To: xeno@iastate.edu
-Message-Id: <01H3DDLUY4O2BMA3H1@Waisman.Wisc.EDU>
-Organization: Waisman Center, University of Wisconsin-Madison
-X-Vms-To: IN::"xeno@iastate.edu"
-Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; CHARSET=US-ASCII
-Content-Transfer-Encoding: 7BIT
-
-Gary:
-
-I don't know anything about the differences between the DX7 and DX7s, but this
-DX7 info may be useful.  I posted this to r.m.s. before xmas.
-
-I've seen many requests for public domain / shareware DX editors, but I've
-never seen a definitive reply.  They're usually along the lines of "I was
-roaching around on CompuServe last month, and I think I remember seeing one..."
-
-Anyway, hope this helps ... 
-
 =========================================================================
 
 For those interested in unpacking the uscd.edu DX7 patch data, here is

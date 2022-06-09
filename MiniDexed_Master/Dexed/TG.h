@@ -8,6 +8,10 @@ extern "C"
 #endif
 
 extern queue_t tg_fifo;
+#define VOICEDATA_HEADER 6
+#define VOICEDATA_SIZE 170
+#define VNAME_OFFSET	145
+
 #define PARMS	16
 #define MAXBANKS 256
 #define MAXPATCH 32
@@ -20,7 +24,7 @@ extern queue_t tg_fifo;
 #define RMAX	1
 #define ROFFSET	2
 
-enum TGPARAMS { PBANK, PPATCH, PCHANNEL, PFREQ, PRESO, PVERB, PCOMP, PTRANS, PTUNE, PPAN, PVOL};
+enum TGPARAMS { PBANK, PPATCH, PCHANNEL, PFREQ, PRESO, PVERB, PCOMP, PTRANS, PTUNE, PPAN, PVOL, PBEND, PPORTA};
 
 const int16_t ranges[][3] = {
 	{0,MAXBANKS,1}, // PBANK
@@ -41,10 +45,15 @@ typedef struct {
 	uint8_t instance;
 	uint8_t cmd;
 	uint16_t parm;
-	uint8_t val1;
-	uint8_t val2;
-	uint16_t data;
+//	uint8_t val1;
+//	uint8_t val2;
+	int32_t value;
 } dexed_t;
+
+typedef struct {
+	uint16_t length;
+	uint8_t buffer[VOICEDATA_SIZE];
+} sysex_t;
 
 //template <class Obj>
 class CountedObj
@@ -70,17 +79,18 @@ public:
 	uint8_t setValue(uint16_t parm, uint8_t value);
 	int32_t setValue(uint16_t parm, int32_t value);
 	int32_t getValue(uint16_t parm);
-	uint8_t getParmType(uint16_t parm) { return parms[parm].type; }
+	uint8_t getParmType(uint16_t parm) { return mparms[parm].type; }
 	void sendParam(uint16_t parm, uint16_t value);
-
-	void Patch(uint8_t patch);
-	void Channel(uint8_t channel);
+	void getPatch();
+	void setSysex(sysex_t sysex);
+	char* getVoiceName() { return mvoicename; }
+	/*void Channel(uint8_t channel);
 	void Cutoff(uint8_t freq);
 	void Reso(uint8_t reso);
 	void Rvrb(uint8_t level);
 	void Detune(int8_t detune);
 	void Panning(int8_t pan);
-	void Volume(uint8_t vol);
+	void Volume(uint8_t vol);*/
 private:
 	void setParmType(uint16_t parm, int8_t* data);
 	void setParmType(uint16_t parm, uint8_t* data);
@@ -97,12 +107,14 @@ private:
 	int8_t mtune;
 	int8_t mpan;
 	uint8_t mvol;
+	char mvoicename[11];
+	uint8_t msysex[162];
 	struct s_parms{
 		uint8_t type;
 		int8_t *val8s;
 		uint8_t *val8t;
 		uint16_t *val16t;
-	} parms[PARMS];
+	} mparms[PARMS];
 	unsigned char notes[16]; // Maybe not an array...
 };
 
