@@ -195,5 +195,5 @@ const GFXglyph Open_Sans_Condensed_Bold_16Glyphs[] PROGMEM = {
 		  {   912,   3,  17,   9,    3,  -13 }, // '|'
 		  {   919,   7,  15,   7,    0,  -12 } // '}'
 };
-const GFXfont Open_Sans_Condensed_Bold PROGMEM = {
+const GFXfont Open_Sans_Condensed_Bold_16 PROGMEM = {
 (uint8_t*)Open_Sans_Condensed_Bold_16Bitmaps,(GFXglyph*)Open_Sans_Condensed_Bold_16Glyphs,0x20, 0x7E, 23 };

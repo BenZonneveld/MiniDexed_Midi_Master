@@ -9,7 +9,7 @@
 #include "gpio_pins.h"
 
 std::array<void(*) (uint8_t), 8>cButtons::buttonCallback;
-std::array<void(*)(), 8>cButtons::buttonDBLCallback;
+std::array<void(*)(uint8_t), 8>cButtons::buttonDBLCallback;
 std::array<void(*) (uint8_t), 8>cButtons::buttonLongCallback;
 
 cButtons::cButtons()
@@ -81,7 +81,7 @@ void cButtons::setCallback(uint8_t button, void (* callback)(uint8_t button))
     buttonCallback[button] = callback;
 }
 
-void cButtons::setDBLCallback(uint8_t button, void (*callback)())
+void cButtons::setDBLCallback(uint8_t button, void (*callback)(uint8_t button))
 {
     buttonDBLCallback[button] = callback;
 }
@@ -202,7 +202,7 @@ void cButtons::doCallback(uint8_t button)
     case BTDBLC:
 //        printf("BTDoubleClick Callback\r\n");
         if (buttonDBLCallback[button] != nullptr)
-            buttonDBLCallback[button]();
+            buttonDBLCallback[button](button);
         break;
     case BTHOLD:
         if (buttonLongCallback[button] != nullptr)

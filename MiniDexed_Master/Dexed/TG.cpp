@@ -5,6 +5,7 @@
 #include "pico/util/queue.h"
 #include "midicore.h"
 #include "TG.h"
+#include "tools.h"
 
 queue_t tg_fifo;
 size_t CountedObj::total_;
@@ -23,6 +24,9 @@ cTG::cTG()
 	mtune = 0;
 	mpan = 0;
 	mvol = 127;
+	mbend = 2;
+	mmono = false;
+	mporta = 0;
 	sprintf(mvoicename,"Unknown");
 	setParmType(PBANK, &mbank);
 	setParmType(PPATCH, &mpatch);
@@ -155,7 +159,7 @@ int32_t cTG::setValue(uint16_t parm, int32_t value)
 		default:
 			break;
 		}
-		sendParam(parm, value);
+//		sendParam(parm, value);
 //		printf("data: %08X channel: %i\r\n", tgdata.parm, tgdata.channel);
 	}
 	return value;
@@ -181,7 +185,7 @@ int32_t cTG::getValue(uint16_t parm)
 	}
 }
 
-void cTG::sendParam(uint16_t parm, uint16_t value)
+void cTG::sendParam(uint16_t parm, int32_t value)
 {
 	dexed_t tgdata;
 	if (parm != PCHANNEL)
@@ -194,7 +198,20 @@ void cTG::sendParam(uint16_t parm, uint16_t value)
 //	tgdata.val1 = value & 0x7f;
 //	tgdata.val2 = (value >> 7) & 0x7f;
 	tgdata.parm = parm;
-	tgdata.value = value;
+	switch (parm)
+	{
+	case PTUNE:
+//		printf("value: %i\n", value);
+		value = map(value, ranges[PTUNE][RMIN], ranges[PPAN][RMAX], 3, 126);
+		break;
+	case PPAN:
+//		printf("value: %i\n", value);
+		value = map(value, ranges[PPAN][RMIN], ranges[PPAN][RMAX], 0, 127);
+		break;
+	default:
+		break;
+	}
+	tgdata.value = value & 0xff;
 	queue_add_blocking(&tg_fifo, &tgdata);
 }
 
@@ -203,12 +220,14 @@ void cTG::getPatch()
 	sysex_t raw_sysex;
 	dexed_t tgdata;
 
+	tgdata.channel = 0;
 	tgdata.instance = mobject_id;
+	printf("getPatch data  for instanceID %i\n", mobject_id);
 	tgdata.cmd = 1;
 	tgdata.parm = 0;
 	tgdata.value = mpatch;
 	queue_add_blocking(&tg_fifo, &tgdata);
-	queue_remove_blocking(&sysex_fifo, &raw_sysex);
+//	queue_remove_blocking(&sysex_fifo, &raw_sysex);
 	setSysex(raw_sysex);
 }
 
@@ -225,12 +244,12 @@ void cTG::setSysex(sysex_t sysex)
 	if (sysex.length > 162) offset = offset + (sysex.length - 162);
 //	printf("offset %i\n", offset);
 	memcpy(msysex, sysex.buffer+offset, VOICEDATA_SIZE - VOICEDATA_HEADER);
-	/*for (size_t i = VNAME_OFFSET; i <= VOICEDATA_SIZE; i++)
-	{
-		printf("%02X, ", msysex[i]);
-	}
-	printf("\n");*/
+	//for (size_t i = VNAME_OFFSET; i <= VOICEDATA_SIZE; i++)
+	//{
+	//	printf("%02X, ", msysex[i]);
+	//}
+	//printf("\n");
 	memcpy(mvoicename, msysex + VNAME_OFFSET, 10);
 	mvoicename[11] = '\0';
-	//printf("Voice Name: %s\n", mvoicename);
+//	printf("Voice Name: %s\n", mvoicename);
 }

@@ -2,6 +2,8 @@
 #include "Adafruit_GFX.h"
 #include "Adafruit_SPITFT.h"
 #include "TG.h"
+#ifndef MAIN_MENU_H
+#define MAIN_MENU_H
 #define VALUEWIDTH 37
 #define TOPPOT	0
 #define MIDPOT	1
@@ -13,7 +15,7 @@
 //extern const GFXfont FreeSans24pt7b;
 //extern const GFXfont Open_Sans_Regular_8;
 
-enum POS { POS0 = 0, POS1 = 34, POS2 = 68, POS3 = 102 };
+enum POS { POS0 = 0, POS1 = 34, POS2 = 68, POS3 = 102 , POSA = 38, POSB = 60, POSC = 82, POSD = 104};
 extern Adafruit_SPITFT tft;
 
 class cMenu {
@@ -29,17 +31,20 @@ public:
 	static void selectTG();
 	static void selectTG(uint8_t button);
 	static void Midi(uint8_t button);
-	static void TGMain(uint8_t button);
+	static void TGFilter(uint8_t button);
 	static void TGTune(uint8_t button);
+	static void TGOut(uint8_t button);
+	static void TGPitch(uint8_t button);
 	static void CompToggle();
 	static void ParmSelect(uint8_t button);
 	static void ParmPot(uint8_t channel);
+	static void showTGInfo();
 	void handleSysex(sysex_t raw_sysex);
 private:
 	static void ShowValue(int32_t param, int16_t x0, int16_t y0, int16_t w0, int16_t h0, bool colorflag, uint8_t fontsize);
-	static void setButtonCallback(uint8_t button,int16_t param, int16_t pos, void (*callback)(uint8_t button));
+	static void setButtonCallbackWithParam(uint8_t button,int16_t param, int16_t pos, void (*callback)(uint8_t button));
 	static void setButtonParm(uint8_t button, int16_t param, int16_t pos, bool haslongpress);
-	static void clearButtonCB(uint8_t button);
+	static void clearCallbacks();
 	static void setPotCallback(uint8_t channel, int16_t param, int16_t pos);
 	static void resetPotCB(uint8_t channel);
 	static uint8_t menu;
@@ -68,3 +73,4 @@ private:
 #define YELLOW 0xFFE0
 #define ORANGE 0xFC00
 
+#endif

@@ -23,7 +23,7 @@ extern "C"
         cButtons();
         void handleButtons();
         void setCallback(uint8_t mask, void (* callback)(uint8_t button));
-        void setDBLCallback(uint8_t mask, void (*callback)());
+        void setDBLCallback(uint8_t mask, void (*callback)(uint8_t button));
         void setLongCallback(uint8_t mask, void (*callback)(uint8_t button));
         void doCallback(uint8_t button);
     private:
@@ -33,7 +33,7 @@ extern "C"
         uint64_t last_seen;
         uint8_t cs;
         static std::array<void(*)(uint8_t), 8>buttonCallback;
-        static std::array<void(*)(), 8>buttonDBLCallback;
+        static std::array<void(*)(uint8_t), 8>buttonDBLCallback;
         static std::array<void(*)(uint8_t), 8>buttonLongCallback;
 
         // Button timing variables

@@ -23,7 +23,7 @@ void cPots::capture(uint8_t channel)
 
 
 	for (uint16_t i = 0; i < CAPTURE_DEPTH; ++i) {
-		current += adc_read();
+		current += adc_read() >> 4;
 	}
 	current = current / (CAPTURE_DEPTH);
 	if (current != pot[channel])
@@ -57,6 +57,7 @@ void cPots::readAll()
 
 uint16_t cPots::getPot(uint8_t id)
 {
+//	printf("pot value: %u\n", pot[id]);
 	return pot[id];
 }
 

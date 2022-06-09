@@ -6,13 +6,18 @@
 #include "string_table.h"
 #include "mdma.h"
 #include "tools.h"
+//#include "callback_arrays.h"
 
 #define PROGMEM
-#include "fonts/FreeSans9pt7b.h"
-#include "fonts/FreeSans12pt7b.h"
-#include "fonts/FreeSans18pt7b.h"
-#include "fonts/FreeSans24pt7b.h"
+//#include "fonts/FreeSans9pt7b.h"
+//#include "fonts/FreeSans12pt7b.h"
+//#include "fonts/FreeSans18pt7b.h"
+//#include "fonts/FreeSans24pt7b.h"
+#include "fonts/RobotoMono12.h"
+#include "fonts/RobotoCondensed.h"
 #include "fonts/OpenSansBoldCondensed16.h"
+
+void  (*menucallbacks[][8])() = { &cMenu::selectTG, &cMenu::selectTG ,&cMenu::selectTG ,&cMenu::selectTG ,&cMenu::selectTG ,&cMenu::selectTG ,&cMenu::selectTG ,&cMenu::selectTG };
 
 Adafruit_SPITFT tft = Adafruit_SPITFT();
 
@@ -32,82 +37,62 @@ void cMenu::Init()
 	tft.fillScreen(GREY);
 	tft.setTextSize(0);
 	tft.setTextColor(WHITE);
-	tft.setFont(&Open_Sans_Condensed_Bold);
+	tft.setFont(&Open_Sans_Condensed_Bold_16);
 //	tft.println("INIT");
 
 	currentTG = -1;
 //	mainmenu();
 }
 
-void cMenu::mainmenu()
-{
-	tft.setAddrWindow(0, 0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1);
-	tft.fillScreen(BLACK);
-	menu = M_MAIN;
-	prev_menu = M_MAIN;
-
-	setButtonCallback(BUT1, 0, POS0, &cMenu::selectTG);
-	setButtonCallback(BUT2, 0, POS0, &cMenu::selectTG);
-	setButtonCallback(BUT3, 0, POS0, &cMenu::selectTG);
-	setButtonCallback(BUT4, 0, POS0, &cMenu::selectTG);
-	setButtonCallback(BUT5, 0, POS0, &cMenu::selectTG);
-	setButtonCallback(BUT6, 0, POS0, &cMenu::selectTG);
-	setButtonCallback(BUT7, 0, POS0, &cMenu::selectTG);
-	setButtonCallback(BUT8, 0, POS0, &cMenu::selectTG);
-//	buttons.setDBLCallback(BUT1, &cMenu::menuBack);
-//	buttons.setDBLCallback(BUT2, &cMenu::menuBack);
-//	buttons.setDBLCallback(BUT3, &cMenu::menuBack);
-//	buttons.setDBLCallback(BUT4, &cMenu::menuBack);
-//	buttons.setDBLCallback(BUT5, &cMenu::menuBack);
-//	buttons.setDBLCallback(BUT6, &cMenu::menuBack);
-//	buttons.setDBLCallback(BUT7, &cMenu::menuBack);
-//	buttons.setDBLCallback(BUT8, &cMenu::menuBack);
-	Pots.setPotCallback(TOPPOT, NULL);
-	Pots.setPotCallback(MIDPOT, NULL);
-	Pots.setPotCallback(BOTPOT, NULL);
-}
 
 void cMenu::ShowButtonText(uint8_t button)
 {
+	tft.setFont(&Open_Sans_Condensed_Bold_16);
 	int16_t offset = 30;
 	int16_t col = 0;
 	int16_t row = 0;
+	int16_t  x1, y1;
+	uint16_t w, h;
 
 	switch (button)
 	{
 	case BUT5:
 		col = MIPI_DISPLAY_WIDTH - (2 * offset);
 	case BUT1:
-		row = POS0;
+		row = POSA;
 		break;
 	case BUT6:
 		col = MIPI_DISPLAY_WIDTH - (2 * offset);
 	case BUT2:
-		row = POS1;
+		row = POSB;
 		break;
 	case BUT7:
 		col = MIPI_DISPLAY_WIDTH - (2 * offset);
 	case BUT3:
-		row = POS2;
+		row = POSC;
 		break;
 	case BUT8:
 		col = MIPI_DISPLAY_WIDTH - (2 * offset) -1;
 	case BUT4:
-		row = POS3;
+		row = POSD;
 		break;
 	}
 	if (button < 4)
 	{
+		tft.getTextBounds(menus[menu][button], col, row, &x1, &y1, &w, &h);
+ 		h = 12;
 //		tft.fillRoundRect(col, row, (2 * offset) - 4, 21, 4, tft.color565(128, 64, 64));
-		tft.writeFillRect(col, row, (2 * offset) - 8, 21, tft.color565(128, 64, 64));
-		tft.setCursor(col + 5, row+14);
+		tft.writeFillRect(col, row, (2 * offset) - 8, h + 4, tft.color565(0xff, 0x99, 0));
+		tft.setCursor(col + offset - (w/2) - 4 , row + h + 2);
 		tft.print(menus[menu][button]);
 //		printf("%s\n", menus[menu][button]);
 	}
 	else {
-//		tft.drawRoundRect(col + 4, row, (2 * offset) - 8, 21, 4, tft.color565(128, 64, 64));
-		tft.fillRect(col + 4, row, (2 * offset) - 4, 21, tft.color565(128, 64, 64));
-		tft.setCursor(col + 9, row+14);
+		tft.getTextBounds(menus[menu][button], col, row, &x1 ,&y1, &w, &h);
+		h = 12;
+		//		tft.drawRoundRect(col + 4, row, (2 * offset) - 8, 21, 4, tft.color565(128, 64, 64));
+		tft.fillRect(col + 4, row, (2 * offset) - 4, h + 4, tft.color565(0xff, 0x99, 0));
+		tft.setCursor(col+offset - (w/2) + 4, row + h + 2);
 		tft.print(menus[menu][button]);
 //		printf("%s\n", menus[menu][button]);
 	}
@@ -115,10 +100,11 @@ void cMenu::ShowButtonText(uint8_t button)
 
 void cMenu::ShowValue(int32_t param, int16_t x0, int16_t y0, int16_t w0, int16_t h0, bool colorflag, uint8_t fontsize)
 {	
+	int16_t  x1, y1;
+	uint16_t w, h;
 	int32_t value = dexed[currentTG].getValue(param);
 
 	char text[7];
-	uint8_t offset = 3;
 	itoa(value + ranges[param][ROFFSET], text, 10);
 	tft.setAddrWindow(x0, y0, w0, h0);
 	if ( colorflag)
@@ -129,22 +115,18 @@ void cMenu::ShowValue(int32_t param, int16_t x0, int16_t y0, int16_t w0, int16_t
 		tft.fillRect(x0, y0, w0, h0, tft.color565(64, 64, 255));
 	}
 
-	if (abs(value) > 9)
-		offset = 8;
-	if (abs(value) > 99)
-		offset = 13;
-	if (abs(value) > 999)
-		offset = 16;
-	if (value < 0)
-		offset = offset + 6;
-	if (param == PCHANNEL && value == 16)
+	if (param == PCHANNEL)
 	{
-		sprintf(text, "OMNI");
-		offset = 16;
+		if ( value == 16 )
+			sprintf(text, "OMN");
+		if (value == 17)
+			sprintf(text, "OFF");
 	}
 
 	tft.setTextColor(BLACK);
-	tft.setCursor((x0 + (w0 / 2)) - offset, y0 + 14);
+	tft.setFont(&Open_Sans_Condensed_Bold_16);
+	tft.getTextBounds(text, x0, y0, &x1, &y1, &w, &h);
+	tft.setCursor((x0 +(w0/2) - (w / 2)), y0 + h + 2);
 	tft.print(text);
 	tft.setTextColor(WHITE);
 	tft.setAddrWindow(0,0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1);
@@ -165,148 +147,17 @@ void cMenu::menuBack()
 		mainmenu();
 		break;
 	case M_TG:
-		tft.writeFillRect(61, 0, VALUEWIDTH, 128, BLACK);
 		selectTG();
 		break;
-	case M_TG_MAIN:
+	case M_TG_FILT:
 	case M_TG_MIDI:
 	case M_TG_TUNE:
+	case M_TG_OUT:
+	case M_TG_PITCH:
 	default:
 		printf("default\r\n");
 		break;
 	}
-}
-
-void cMenu::Midi(uint8_t button)
-{
-	printf("MIDI Menu\n");
-//	tft.fillScreen(BLACK);
-	menu = M_TG_MIDI;
-	prev_menu = M_TG;
-
-	setButtonParm(BUT1, PBANK, POS0, true);
-	setButtonParm(BUT2, PPATCH, POS1, true);
-	setButtonParm(BUT3, PCHANNEL, POS2, true);
-	clearButtonCB(BUT4);
-	setButtonParm(BUT5, PBANK, POS0, true);
-	setButtonParm(BUT6, PPATCH, POS1, true);
-	setButtonParm(BUT7, PCHANNEL, POS2, true);
-	//setButtonParm(BUT8,32768,POS3, false);
-	clearButtonCB(BUT8);
-	buttons.setCallback(BUT8, &cMenu::menuBack);
-
-	setPotCallback(TOPPOT, PBANK, POS0);
-	setPotCallback(MIDPOT, PPATCH, POS1);
-	setPotCallback(BOTPOT, PCHANNEL, POS2);
-
-	ShowValue(PBANK, 61, POS0, VALUEWIDTH, 21, pflag[TOPPOT],1);
-	ShowValue(PPATCH, 61, POS1, VALUEWIDTH, 21, pflag[MIDPOT],1);
-	ShowValue(PCHANNEL, 61, POS2, VALUEWIDTH, 21, pflag[BOTPOT],1);
-}
-
-void cMenu::selectTG(uint8_t button)
-{
-	printf("Select TG with button\n");
-	currentTG = button;
-	dexed[currentTG].getPatch();
-	selectTG();
-}
-
-void cMenu::selectTG()
-{
-	printf("Select TG\n");
-	printf("TG: %i Voice: %s\n", currentTG, dexed[currentTG].getVoiceName());
-//	tft.fillScreen(BLACK);
-	menu = M_TG;
-	prev_menu = M_MAIN;
-
-	clearButtonCB(BUT1);
-	clearButtonCB(BUT2);
-	clearButtonCB(BUT3);
-	clearButtonCB(BUT4);
-	clearButtonCB(BUT5);
-	clearButtonCB(BUT6);
-	clearButtonCB(BUT7);
-	clearButtonCB(BUT8);
-
-	buttons.setCallback(BUT1, &cMenu::Midi);
-	buttons.setCallback(BUT2, &cMenu::TGMain);
-	buttons.setCallback(BUT3, &cMenu::TGTune);
-	buttons.setCallback(BUT8, &cMenu::menuBack);
-//	setButtonParm(BUT8, -1, POS3, false);
-
-	resetPotCB(TOPPOT);
-	resetPotCB(MIDPOT);
-	resetPotCB(BOTPOT);
-	tft.setCursor(0, POS3 + 14);
-	tft.writeFillRect(0, POS3, 100, 21, BLACK);
-	tft.print(dexed[currentTG].getVoiceName());
-	printf("End of selectTG\n");
-}
-
-void cMenu::TGMain(uint8_t button)
-{
-	printf("TG Main\n");
-	menu = M_TG_MAIN;
-	prev_menu = M_TG;
-
-	setButtonParm(BUT1, PFREQ, POS0, true);
-	setButtonParm(BUT2, PRESO, POS1, true);
-	setButtonParm(BUT3, PVERB, POS2, true);
-	clearButtonCB(BUT4);
-	setButtonParm(BUT5, PFREQ, POS0, true);
-	setButtonParm(BUT6, PRESO, POS1, true);
-	setButtonParm(BUT7, PVERB, POS2, true);
-//	setButtonParm(BUT8, 32768, POS3, false);
-	clearButtonCB(BUT8);
-	buttons.setCallback(BUT8, &cMenu::menuBack);
-
-	setPotCallback(TOPPOT, PFREQ, POS0);
-	setPotCallback(MIDPOT, PRESO, POS1);
-	setPotCallback(BOTPOT, PVERB, POS2);
-
-	ShowValue(PFREQ, 61, POS0, VALUEWIDTH, 21, pflag[TOPPOT], 1);
-	ShowValue(PRESO, 61, POS1, VALUEWIDTH, 21, pflag[MIDPOT], 1);
-	ShowValue(PVERB, 61, POS2, VALUEWIDTH, 21, pflag[BOTPOT], 1);
-}
-
-void cMenu::TGTune(uint8_t button)
-{
-//	tft.fillScreen(BLACK);
-	menu = M_TG_TUNE;
-	prev_menu = M_TG;
-
-	setButtonParm(BUT1, PTRANS, POS0, true);
-	setButtonParm(BUT2, PTUNE, POS1, true);
-	clearButtonCB(BUT3);
-	clearButtonCB(BUT4);
-//	setButtonParm(BUT3, PPAN, POS2, true);
-//	setButtonParm(BUT4, PVOL, POS3, true);
-	setButtonParm(BUT5, PTRANS, POS0, true);
-	setButtonParm(BUT6, PTUNE, POS1, true);
-	clearButtonCB(BUT7);
-	clearButtonCB(BUT8);
-	buttons.setCallback(BUT8, &cMenu::menuBack);
-
-//	setButtonParm(BUT7, PPAN, POS2, true);
-//	setButtonParm(BUT8, PVOL, POS3, true);
-//	buttons.setDBLCallback(BUT1, &cMenu::menuBack);
-//	buttons.setDBLCallback(BUT2, &cMenu::menuBack);
-//	buttons.setDBLCallback(BUT3, &cMenu::menuBack);
-//	buttons.setDBLCallback(BUT4, &cMenu::menuBack);
-//	buttons.setDBLCallback(BUT5, &cMenu::menuBack);
-//	buttons.setDBLCallback(BUT6, &cMenu::menuBack);
-//	buttons.setDBLCallback(BUT7, &cMenu::menuBack);
-//	buttons.setDBLCallback(BUT8, &cMenu::menuBack);
-	setPotCallback(TOPPOT, PTRANS, POS1);
-	setPotCallback(MIDPOT, PTUNE, POS2);
-	resetPotCB(BOTPOT);
-	//	setPotCallback(BOTPOT, PVOL, POS3);
-
-	ShowValue(PTRANS, 61, parampos[BUT1], VALUEWIDTH, 21, pflag[TOPPOT], 1);
-	ShowValue(PTUNE, 61, parampos[BUT2], VALUEWIDTH, 21, pflag[MIDPOT], 1);
-//	ShowValue(PPAN, 61, parampos[BUT3], VALUEWIDTH, 21, pflag[MIDPOT], 1);
-//	ShowValue(PVOL, 61, parampos[BUT4], VALUEWIDTH, 21, pflag[BOTPOT], 1);
 }
 
 void cMenu::ParmSelect(uint8_t button)
@@ -331,6 +182,7 @@ void cMenu::ParmSelect(uint8_t button)
 	dexed[currentTG].sendParam(bparam[button], dexed[currentTG].getValue(bparam[button]));
 //	dexed[currentTG].sendMidi(bparam[button]);
 	ShowValue(bparam[button], 61, parampos[button], VALUEWIDTH, 21, true, 1);
+	showTGInfo();
 }
 
 void cMenu::ParmPot(uint8_t channel)
@@ -346,10 +198,12 @@ void cMenu::ParmPot(uint8_t channel)
 	{
 		value = dexed[currentTG].setValue(param,value);
 		ShowValue(param, 61, potpos[channel], VALUEWIDTH, 21, pflag[channel], 1);
+		dexed[currentTG].sendParam(param, dexed[currentTG].getValue(param));
 	}
+	showTGInfo();
 }
 
-void cMenu::setButtonCallback(uint8_t button, int16_t param, int16_t pos,void (*callback)(uint8_t button))
+void cMenu::setButtonCallbackWithParam(uint8_t button, int16_t param, int16_t pos,void (*callback)(uint8_t button))
 {
 	buttons.setCallback(button, callback);
 	if (callback == nullptr)
@@ -361,18 +215,31 @@ void cMenu::setButtonCallback(uint8_t button, int16_t param, int16_t pos,void (*
 
 void cMenu::setButtonParm(uint8_t button, int16_t param, int16_t pos, bool haslongpress)
 {
-	setButtonCallback(button, param, pos, &cMenu::ParmSelect);
-	if ( haslongpress )
+	setButtonCallbackWithParam(button, param, pos, &cMenu::ParmSelect);
+	if (haslongpress)
+	{
 		buttons.setLongCallback(button, &cMenu::ParmSelect);
+		buttons.setDBLCallback(button, &cMenu::ParmSelect);
+	}
 	else
-		buttons.setLongCallback(0, NULL);
+	{
+		buttons.setLongCallback(button, NULL);
+		buttons.setDBLCallback(button, NULL);
+	}
 }
 
-void cMenu::clearButtonCB(uint8_t button)
+void cMenu::clearCallbacks()
 {
-	buttons.setCallback(button, NULL);
-	buttons.setLongCallback(button, NULL);
-	ShowButtonText(button);
+	for (uint8_t button = 0; button < 8; button++)
+	{
+		buttons.setCallback(button, NULL);		buttons.setLongCallback(button, NULL);
+		buttons.setDBLCallback(button, NULL);
+		ShowButtonText(button);
+	}
+	resetPotCB(TOPPOT);
+	resetPotCB(MIDPOT);
+	resetPotCB(BOTPOT);
+
 }
 
 void cMenu::setPotCallback(uint8_t channel, int16_t param, int16_t pos)
@@ -393,13 +260,221 @@ void cMenu::resetPotCB(uint8_t channel)
 	Pots.setPotCallback(channel, NULL);
 }
 
+void cMenu::showTGInfo()
+{
+	int16_t  x1, y1;
+	uint16_t w, h;
+	char voicename[11] = { 0 };
+	if (menu != M_MAIN)
+	{
+		tft.writeFillRect(0, 0, 50, 32, BLACK);
+		tft.setFont(&Roboto_Bold_10);
+		sprintf(voicename, "T%1i B %3i", currentTG + 1, dexed[currentTG].getValue(PBANK)+1);
+		tft.getTextBounds(voicename, 0, 14, &x1, &y1, &w, &h);
+		tft.setCursor(0, 9);
+		tft.print(voicename);
+
+		sprintf(voicename, "C %2i P %2i", dexed[currentTG].getValue(PCHANNEL) + 1, dexed[currentTG].getValue(PPATCH) + 1);
+		if (dexed[currentTG].getValue(PCHANNEL) == 16)
+		{
+			sprintf(voicename, "C OM P %2i", dexed[currentTG].getValue(PPATCH) + 1);
+		}
+		if (dexed[currentTG].getValue(PCHANNEL) == 17)
+		{
+			sprintf(voicename, "C -- P %2i", dexed[currentTG].getValue(PPATCH) + 1);
+		}
+		tft.getTextBounds(voicename, 0, 14, &x1, &y1, &w, &h);
+		tft.setCursor(0, 18);
+		tft.print(voicename);
+
+		sprintf(voicename, "%s", dexed[currentTG].getVoiceName());
+		tft.setFont(&Open_Sans_Condensed_Bold_16);
+		tft.getTextBounds(voicename, 0, 14, &x1, &y1, &w, &h);
+		tft.setCursor(105 - (w / 2), 30);
+		tft.writeFillRect(50, 16, 110, 16, GREY);
+		tft.print(voicename);
+	}
+}
+
 void cMenu::handleSysex(sysex_t raw_sysex)
 {
 	dexed[currentTG].setSysex(raw_sysex);
-	if (menu != M_MAIN)
-	{
-		tft.setCursor(0, POS3 + 14);
-		tft.writeFillRect(0, POS3, 100, 21, BLACK);
-		tft.print(dexed[currentTG].getVoiceName());
-	}
+	showTGInfo();
+}
+
+void cMenu::mainmenu()
+{
+	tft.setAddrWindow(0, 0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1);
+	tft.fillScreen(BLACK);
+	menu = M_MAIN;
+	prev_menu = M_MAIN;
+
+	clearCallbacks();
+	setButtonCallbackWithParam(BUT1, 0, POSA, &cMenu::selectTG);
+	setButtonCallbackWithParam(BUT2, 0, POSB, &cMenu::selectTG);
+	setButtonCallbackWithParam(BUT3, 0, POSC, &cMenu::selectTG);
+	setButtonCallbackWithParam(BUT4, 0, POSD, &cMenu::selectTG);
+	setButtonCallbackWithParam(BUT5, 0, POSA, &cMenu::selectTG);
+	setButtonCallbackWithParam(BUT6, 0, POSB, &cMenu::selectTG);
+	setButtonCallbackWithParam(BUT7, 0, POSC, &cMenu::selectTG);
+	setButtonCallbackWithParam(BUT8, 0, POSD, &cMenu::selectTG);
+}
+
+void cMenu::Midi(uint8_t button)
+{
+	printf("MIDI Menu\n");
+	tft.setAddrWindow(0, 0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1);
+	tft.fillScreen(BLACK);
+	//	tft.fillScreen(BLACK);
+	menu = M_TG_MIDI;
+	prev_menu = M_TG;
+
+	clearCallbacks();
+	setButtonParm(BUT1, PBANK, POSA, true);
+	setButtonParm(BUT2, PPATCH, POSB, true);
+	setButtonParm(BUT3, PCHANNEL, POSC, true);
+	setButtonParm(BUT5, PBANK, POSA, true);
+	setButtonParm(BUT6, PPATCH, POSB, true);
+	setButtonParm(BUT7, PCHANNEL, POSC, true);
+	buttons.setCallback(BUT8, &cMenu::menuBack);
+
+	setPotCallback(TOPPOT, PBANK, POSA);
+	setPotCallback(MIDPOT, PPATCH, POSB);
+	setPotCallback(BOTPOT, PCHANNEL, POSC);
+
+	ShowValue(PBANK, 61, potpos[TOPPOT], VALUEWIDTH, 16, pflag[TOPPOT], 1);
+	ShowValue(PPATCH, 61, potpos[MIDPOT], VALUEWIDTH, 16, pflag[MIDPOT], 1);
+	ShowValue(PCHANNEL, 61, potpos[BOTPOT], VALUEWIDTH, 16, pflag[BOTPOT], 1);
+	showTGInfo();
+}
+
+void cMenu::selectTG(uint8_t button)
+{
+	printf("Select TG with button\n");
+	currentTG = button;
+	dexed[currentTG].getPatch();
+	selectTG();
+}
+
+void cMenu::selectTG()
+{
+	tft.setAddrWindow(0, 0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1);
+	tft.fillScreen(BLACK);
+	printf("Select TG\n");
+	printf("TG: %i Voice: %s\n", currentTG, dexed[currentTG].getVoiceName());
+	menu = M_TG;
+	prev_menu = M_MAIN;
+
+	clearCallbacks();
+
+	buttons.setCallback(BUT1, &cMenu::Midi);
+	buttons.setCallback(BUT2, &cMenu::TGFilter);
+	buttons.setCallback(BUT3, &cMenu::TGTune);
+	buttons.setCallback(BUT4, &cMenu::TGOut);
+	buttons.setCallback(BUT5, &cMenu::TGPitch);
+	buttons.setCallback(BUT8, &cMenu::menuBack);
+
+	showTGInfo();
+	printf("End of selectTG\n");
+}
+
+void cMenu::TGFilter(uint8_t button)
+{
+	tft.setAddrWindow(0, 0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1);
+	tft.fillScreen(BLACK);
+
+	printf("TG Filter\n");
+	menu = M_TG_FILT;
+	prev_menu = M_TG;
+
+	clearCallbacks();
+	setButtonParm(BUT1, PFREQ, POSA, true);
+	setButtonParm(BUT2, PRESO, POSB, true);
+	setButtonParm(BUT3, PVERB, POSC, true);
+	setButtonParm(BUT5, PFREQ, POSA, true);
+	setButtonParm(BUT6, PRESO, POSB, true);
+	setButtonParm(BUT7, PVERB, POSC, true);
+	buttons.setCallback(BUT8, &cMenu::menuBack);
+
+	setPotCallback(TOPPOT, PFREQ, POSA);
+	setPotCallback(MIDPOT, PRESO, POSB);
+	setPotCallback(BOTPOT, PVERB, POSC);
+
+	ShowValue(PFREQ, 61, potpos[TOPPOT], VALUEWIDTH, 16, pflag[TOPPOT], 1);
+	ShowValue(PRESO, 61, potpos[MIDPOT], VALUEWIDTH, 16, pflag[MIDPOT], 1);
+	ShowValue(PVERB, 61, potpos[BOTPOT], VALUEWIDTH, 16, pflag[BOTPOT], 1);
+	showTGInfo();
+}
+
+void cMenu::TGTune(uint8_t button)
+{
+	tft.setAddrWindow(0, 0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1);
+	tft.fillScreen(BLACK);
+
+	menu = M_TG_TUNE;
+	prev_menu = M_TG;
+	clearCallbacks();
+
+	setButtonParm(BUT1, PTRANS, POSA, true);
+	setButtonParm(BUT2, PTUNE, POSB, true);
+	setButtonParm(BUT5, PTRANS, POSA, true);
+	setButtonParm(BUT6, PTUNE, POSB, true);
+	buttons.setCallback(BUT8, &cMenu::menuBack);
+
+	setPotCallback(TOPPOT, PTRANS, POSA);
+	setPotCallback(MIDPOT, PTUNE, POSB);
+
+	ShowValue(PTRANS, 61, parampos[BUT1], VALUEWIDTH, 16, pflag[TOPPOT], 1);
+	ShowValue(PTUNE, 61, parampos[BUT2], VALUEWIDTH, 16, pflag[MIDPOT], 1);
+	showTGInfo();
+}
+
+void cMenu::TGOut(uint8_t button)
+{
+	tft.setAddrWindow(0, 0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1);
+	tft.fillScreen(BLACK);
+
+	printf("TG Out\n");
+	menu = M_TG_OUT;
+	prev_menu = M_TG;
+	clearCallbacks();
+
+	setButtonParm(BUT1, PPAN, POSA, true);
+	setButtonParm(BUT2, PVOL, POSB, true);
+	setButtonParm(BUT5, PPAN, POSA, true);
+	setButtonParm(BUT6, PVOL, POSB, true);
+	buttons.setCallback(BUT8, &cMenu::menuBack);
+
+	setPotCallback(TOPPOT, PPAN, POSA);
+	setPotCallback(MIDPOT, PVOL, POSB);
+
+	ShowValue(PPAN, 61, parampos[BUT1], VALUEWIDTH, 16, pflag[TOPPOT], 1);
+	ShowValue(PVOL, 61, parampos[BUT2], VALUEWIDTH, 16, pflag[MIDPOT], 1);
+	showTGInfo();
+}
+
+void cMenu::TGPitch(uint8_t button)
+{
+	tft.setAddrWindow(0, 0, MIPI_DISPLAY_WIDTH - 1, MIPI_DISPLAY_HEIGHT - 1);
+	tft.fillScreen(BLACK);
+
+	printf("TG Pitch\n");
+	menu = M_TG_PITCH;
+	prev_menu = M_TG;
+	clearCallbacks();
+	setButtonParm(BUT1, PBEND, POSA, true);
+	setButtonParm(BUT2, PPORTA, POSB, true);
+	setButtonParm(BUT3, PMONO, POSC, true);
+	setButtonParm(BUT5, PBEND, POSA, true);
+	setButtonParm(BUT6, PPORTA, POSB, true);
+	buttons.setCallback(BUT8, &cMenu::menuBack);
+
+	setPotCallback(TOPPOT, PBEND, POSA);
+	setPotCallback(MIDPOT, PPORTA, POSB);
+	setPotCallback(BOTPOT, PMONO, POSC);
+
+	ShowValue(PBEND, 61, parampos[BUT1], VALUEWIDTH, 16, pflag[TOPPOT], 1);
+	ShowValue(PPORTA, 61, parampos[BUT2], VALUEWIDTH, 16, pflag[MIDPOT], 1);
+	ShowValue(PMONO, 61, parampos[BUT3], VALUEWIDTH, 16, pflag[BOTPOT], 1);
+	showTGInfo();
 }

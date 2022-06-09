@@ -15,7 +15,7 @@ extern queue_t tg_fifo;
 #define PARMS	16
 #define MAXBANKS 256
 #define MAXPATCH 32
-#define MAXCHANNEL 16
+#define MAXCHANNEL 17
 #define MAXFREQ 128
 #define MAXRESO	128
 #define MAXREV	128
@@ -24,7 +24,7 @@ extern queue_t tg_fifo;
 #define RMAX	1
 #define ROFFSET	2
 
-enum TGPARAMS { PBANK, PPATCH, PCHANNEL, PFREQ, PRESO, PVERB, PCOMP, PTRANS, PTUNE, PPAN, PVOL, PBEND, PPORTA};
+enum TGPARAMS { PBANK, PPATCH, PCHANNEL, PFREQ, PRESO, PVERB, PCOMP, PTRANS, PTUNE, PPAN, PVOL, PBEND, PPORTA, PMONO};
 
 const int16_t ranges[][3] = {
 	{0,MAXBANKS,1}, // PBANK
@@ -37,7 +37,10 @@ const int16_t ranges[][3] = {
 	{-8,8,0}, // PTRANS
 	{ -99,99,0}, // PTUNE
 	{ -63, 63,0}, // PPAN
-	{ 0, 127,0} // PVOL
+	{ 0, 127,0}, // PVOL
+	{ -12,12,0}, // PBEND
+	{ 0,1,0}, //PPORTA
+	{ 0,1,0}, // PMONO
 };
 
 typedef struct {
@@ -45,8 +48,6 @@ typedef struct {
 	uint8_t instance;
 	uint8_t cmd;
 	uint16_t parm;
-//	uint8_t val1;
-//	uint8_t val2;
 	int32_t value;
 } dexed_t;
 
@@ -80,7 +81,7 @@ public:
 	int32_t setValue(uint16_t parm, int32_t value);
 	int32_t getValue(uint16_t parm);
 	uint8_t getParmType(uint16_t parm) { return mparms[parm].type; }
-	void sendParam(uint16_t parm, uint16_t value);
+	void sendParam(uint16_t parm, int32_t value);
 	void getPatch();
 	void setSysex(sysex_t sysex);
 	char* getVoiceName() { return mvoicename; }
@@ -107,6 +108,10 @@ private:
 	int8_t mtune;
 	int8_t mpan;
 	uint8_t mvol;
+	uint8_t mporta;
+	uint8_t mmono;
+	int8_t mbend;
+
 	char mvoicename[11];
 	uint8_t msysex[162];
 	struct s_parms{

@@ -94,7 +94,6 @@ void midi_task(void)
     buf_valid = uart_read(DEXED, buffer, sizeof buffer);
     if (buf_valid)
     {
-//        printf("buf valid: %i\n", buf_valid);
         for (size_t i = 0; i < buf_valid; i++)
         {
             if (SEX == true)
@@ -102,26 +101,32 @@ void midi_task(void)
                 sysex_buf.length++;
                 if (sysex_buf.length <= VOICEDATA_SIZE)
                     sysex_buf.buffer[sysex_buf.length] = buffer[i];
-//                printf("%02X, ", buffer[i]);
-//                if ((sysex_buf.length +1) % 16 == 0) printf("\n");
+#ifdef DEBUGSYSEX
+                printf("%02X, ", buffer[i]);
+                if ((sysex_buf.length +1) % 16 == 0) printf("\n");
+#endif
             }
             if (buffer[i] == 0xF0)
             {
                 SEX = true;
                 sysex_buf.length = 0;
                 sysex_buf.buffer[sysex_buf.length] = buffer[i];
- //               printf("Start of Sysex\n");
- //              printf("%02X, ", buffer[i]);
+#ifdef DEBUGSYSEX
+                printf("Start of Sysex\n");
+                printf("%02X, ", buffer[i]);
+#endif
             }
             if (buffer[i] == 0xF7)
             {
                 if (SEX == true)
                 {
-                    if (sysex_buf.length <= VOICEDATA_SIZE)
+                    if (sysex_buf.length >= 155 )
                     {
                         queue_add_blocking(&sysex_fifo, &sysex_buf);
-//                        printf("End of Sysex\n");
-//                        printf("Sysex size: %i\n", sysex_buf.length);
+#ifdef DEBUGSYSEX
+                        printf("\nEnd of Sysex\n");
+                        printf("Sysex size: %i\n", sysex_buf.length);
+#endif
                     }
                 }
                 SEX = false;
@@ -202,10 +207,12 @@ void dispatcher(dexed_t mididata)
         switch (mididata.parm)
         {
         case PBANK:
-            sendCtrl(0x00, mididata);
+            dx7sysex(78, mididata);
+//            sendCtrl(0x00, mididata);
             break;
         case PPATCH:
-            sendCtrl(128, mididata);
+            dx7sysex(79, mididata);
+//            sendCtrl(128, mididata);
             break;
         case PCHANNEL:
             dx7sysex(80, mididata);
@@ -227,21 +234,22 @@ void dispatcher(dexed_t mididata)
             break;
         case PTUNE:
             dx7sysex(84, mididata);
-            //                sendCtrl(94, mididata + 99);
             break;
         case PPAN:
-            break;
             dx7sysex(85, mididata);
-            //                sendCtrl(10, mididata + 99);
+            break;
         case PVOL:
             dx7sysex(86, mididata);
-            //                sendCtrl(7, mididata);
             break;
         case PBEND:
             dx7sysex(87, mididata);
             break;
         case PPORTA:
             dx7sysex(88, mididata);
+            break;
+        case PMONO:
+            dx7sysex(89, mididata);
+            break;
         default:
             break;
         }
@@ -254,9 +262,10 @@ void sendToAllPorts(uint8_t *message, uint8_t len)
     for (size_t i = 0; i < len; i++)
     {
         tud_midi_stream_write(0, message+i, 1);
-//        printf("%02X, ", message[i]);
+        printf("%02X, ", message[i]);
+        if (i % 16 == 15) printf("\n");
     }
-//    printf("\n");
+    printf("\n");
 //    tud_midi_stream_write(0, message, len); // Should be serial !!!
     uart_write_blocking(DEXED, message, len);
 #ifdef MIDIPORT
@@ -275,7 +284,7 @@ void dx7sysex(uint16_t parm, dexed_t mididata)
     // 0xF7   end sysex
     uint8_t val1 = mididata.value & 0x7f;
     uint8_t pgrp = (0x02<<2)|((parm >> 7) & 0x03);
-        uint8_t prm = parm & 0x7F;
+    uint8_t prm = parm & 0x7F;
 //    uint8_t val2 = (mididata.value >> 7) & 0x7f;
     uint8_t sysex[7] = { 
         0xF0,  // Start sysex
