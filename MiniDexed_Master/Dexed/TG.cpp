@@ -20,13 +20,16 @@ cTG::cTG()
 	mreso = 0;
 	mrev = 0;
 	mcomp = false;
-	mtranspose = 0;
+	mshift = 0;
 	mtune = 0;
 	mpan = 0;
 	mvol = 127;
-	mbend = 2;
+	mrange = 2;
+	mstep = 0;
 	mmono = false;
-	mporta = 0;
+	mpmode = 0;
+	mgliss = 0;
+	mtime = 0;
 	sprintf(mvoicename,"Unknown");
 	setParmType(PBANK, &mbank);
 	setParmType(PPATCH, &mpatch);
@@ -35,10 +38,18 @@ cTG::cTG()
 	setParmType(PRESO, &mreso);
 	setParmType(PVERB, &mrev);
 	setParmType(PCOMP, &mcomp);
-	setParmType(PTRANS, &mtranspose);
+	setParmType(PSHIFT, &mshift);
 	setParmType(PTUNE, &mtune);
 	setParmType(PPAN, &mpan);
 	setParmType(PVOL, &mvol);
+	setParmType(PBRANGE, &mrange);
+	setParmType(PPMODE, &mpmode);
+	setParmType(PMONO, &mmono);
+	setParmType(PBSTEP, &mstep);
+	setParmType(PGLISS, &mgliss);
+	setParmType(PTIME, &mtime);
+	setParmType(PLOW, &mlow);
+	setParmType(PHIGH, &mhigh);
 }
 
 void cTG::setParmType(uint16_t parm, int8_t* data)
@@ -202,7 +213,7 @@ void cTG::sendParam(uint16_t parm, int32_t value)
 	{
 	case PTUNE:
 //		printf("value: %i\n", value);
-		value = map(value, ranges[PTUNE][RMIN], ranges[PPAN][RMAX], 3, 126);
+		value = map(value, ranges[PTUNE][RMIN], ranges[PTUNE][RMAX], 3, 126);
 		break;
 	case PPAN:
 //		printf("value: %i\n", value);
@@ -217,7 +228,7 @@ void cTG::sendParam(uint16_t parm, int32_t value)
 
 void cTG::getPatch()
 {
-	sysex_t raw_sysex;
+//	sysex_t raw_sysex;
 	dexed_t tgdata;
 
 	tgdata.channel = 0;
@@ -228,28 +239,36 @@ void cTG::getPatch()
 	tgdata.value = mpatch;
 	queue_add_blocking(&tg_fifo, &tgdata);
 //	queue_remove_blocking(&sysex_fifo, &raw_sysex);
-	setSysex(raw_sysex);
+//	setSysex(raw_sysex);
+}
+
+void cTG::getConfig()
+{
+//	sysex_t raw_sysex;
+	dexed_t tgdata;
+
+	tgdata.channel = 0;
+	tgdata.instance = mobject_id;
+	tgdata.cmd = 2;
+	tgdata.parm = 0;
+	tgdata.value = 0;
+	queue_add_blocking(&tg_fifo, &tgdata);
 }
 
 void cTG::setSysex(sysex_t sysex)
 {
-	//for (size_t i = 0; i <= VOICEDATA_SIZE; i++)
-	//{
-	//	if (i == VNAME_OFFSET +VOICEDATA_HEADER) printf("!");
-	//	printf("%02X, ", sysex[i]);
-	//}
-	//printf("\n");
-//	printf("setSysex size: %i\n", sysex.length);
+	//printf("setSysex size: %i\n", sysex.length);
 	uint8_t offset = VOICEDATA_HEADER;
-	if (sysex.length > 162) offset = offset + (sysex.length - 162);
-//	printf("offset %i\n", offset);
-	memcpy(msysex, sysex.buffer+offset, VOICEDATA_SIZE - VOICEDATA_HEADER);
+	if (sysex.length > VOICEDATA_SIZE ) offset = offset + (sysex.length - VOICEDATA_SIZE);
+	//printf("offset %i\n", offset);
+		
+//	memcpy(msysex, sysex.buffer+offset, VOICEDATA_SIZE);
 	//for (size_t i = VNAME_OFFSET; i <= VOICEDATA_SIZE; i++)
 	//{
 	//	printf("%02X, ", msysex[i]);
 	//}
 	//printf("\n");
-	memcpy(mvoicename, msysex + VNAME_OFFSET, 10);
+	memcpy(mvoicename, sysex.buffer + offset + VNAME_OFFSET, 10);
 	mvoicename[11] = '\0';
-//	printf("Voice Name: %s\n", mvoicename);
+//	printf("Voice Name in setSysex: %s\n", mvoicename);
 }

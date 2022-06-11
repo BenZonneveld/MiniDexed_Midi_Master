@@ -9,7 +9,8 @@ extern "C"
 
 extern queue_t tg_fifo;
 #define VOICEDATA_HEADER 6
-#define VOICEDATA_SIZE 170
+#define VOICEDATA_SIZE 162
+#define SYSEX_BUFFER	200
 #define VNAME_OFFSET	145
 
 #define PARMS	16
@@ -24,7 +25,26 @@ extern queue_t tg_fifo;
 #define RMAX	1
 #define ROFFSET	2
 
-enum TGPARAMS { PBANK, PPATCH, PCHANNEL, PFREQ, PRESO, PVERB, PCOMP, PTRANS, PTUNE, PPAN, PVOL, PBEND, PPORTA, PMONO};
+enum TGPARAMS { PBANK, 
+	PPATCH,
+	PCHANNEL,
+	PFREQ,
+	PRESO,
+	PVERB,
+	PCOMP,
+	PSHIFT,
+	PTUNE,
+	PPAN,
+	PVOL,
+	PBRANGE,
+	PPMODE,
+	PMONO,
+	PBSTEP,
+	PGLISS,
+	PTIME,
+	PLOW,
+	PHIGH
+};
 
 const int16_t ranges[][3] = {
 	{0,MAXBANKS,1}, // PBANK
@@ -38,9 +58,10 @@ const int16_t ranges[][3] = {
 	{ -99,99,0}, // PTUNE
 	{ -63, 63,0}, // PPAN
 	{ 0, 127,0}, // PVOL
-	{ -12,12,0}, // PBEND
+	{ -12,12,0}, // PBRANGE
 	{ 0,1,0}, //PPORTA
 	{ 0,1,0}, // PMONO
+	{0,12,0}, // PBSTEP
 };
 
 typedef struct {
@@ -53,7 +74,7 @@ typedef struct {
 
 typedef struct {
 	uint16_t length;
-	uint8_t buffer[VOICEDATA_SIZE];
+	uint8_t buffer[SYSEX_BUFFER];
 } sysex_t;
 
 //template <class Obj>
@@ -83,6 +104,7 @@ public:
 	uint8_t getParmType(uint16_t parm) { return mparms[parm].type; }
 	void sendParam(uint16_t parm, int32_t value);
 	void getPatch();
+	void getConfig();
 	void setSysex(sysex_t sysex);
 	char* getVoiceName() { return mvoicename; }
 	/*void Channel(uint8_t channel);
@@ -104,14 +126,18 @@ private:
 	uint8_t mreso;
 	uint8_t mrev;
 	uint8_t mcomp;
-	int8_t mtranspose;
+	int8_t mshift;
 	int8_t mtune;
 	int8_t mpan;
 	uint8_t mvol;
-	uint8_t mporta;
+	uint8_t mpmode;
 	uint8_t mmono;
-	int8_t mbend;
-
+	uint8_t mrange;
+	uint8_t mstep;
+	uint8_t mgliss;
+	uint8_t mtime;
+	uint8_t mlow;
+	uint8_t mhigh;
 	char mvoicename[11];
 	uint8_t msysex[162];
 	struct s_parms{

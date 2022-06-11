@@ -5,6 +5,8 @@
 #ifndef MAIN_MENU_H
 #define MAIN_MENU_H
 #define VALUEWIDTH 37
+#define BUTTONHEIGHT 18
+#define VALUEPOS	59
 #define TOPPOT	0
 #define MIDPOT	1
 #define BOTPOT	2
@@ -37,10 +39,13 @@ public:
 	static void TGPitch(uint8_t button);
 	static void CompToggle();
 	static void ParmSelect(uint8_t button);
+	static void ParmToggle(uint8_t button);
 	static void ParmPot(uint8_t channel);
-	static void showTGInfo();
-	void handleSysex(sysex_t raw_sysex);
+	static void showTGInfo(int16_t param);
+	static void handleSysex(sysex_t raw_sysex);
+	static void TGEnable(uint8_t button);
 private:
+	static void setDexedParm(uint16_t parm, int32_t val, uint8_t instance);
 	static void ShowValue(int32_t param, int16_t x0, int16_t y0, int16_t w0, int16_t h0, bool colorflag, uint8_t fontsize);
 	static void setButtonCallbackWithParam(uint8_t button,int16_t param, int16_t pos, void (*callback)(uint8_t button));
 	static void setButtonParm(uint8_t button, int16_t param, int16_t pos, bool haslongpress);
@@ -56,6 +61,7 @@ private:
 	static int16_t bparam[8];
 	static int16_t parampos[8];
 	static bool menuNeedFlush;
+	static bool TGEnabled[8];
 };
 
 #define BLACK 0x0000

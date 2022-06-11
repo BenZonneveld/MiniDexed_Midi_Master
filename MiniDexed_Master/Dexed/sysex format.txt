@@ -261,3 +261,36 @@ And that's it.
 Hope this is useful.
 
 ewan.
+Config Dump
+     11110000  F0   Status byte - start sysex
+     0iiiiiii  43   ID # (i=67; Yamaha)
+     0sss0001  31   Sub-status (s=3)
+
+     00     Bank Number
+     01     VoiceNumber
+     02     MIDIChannel
+     03     Volume
+     04     Pan
+     05     Detune  MSB //
+     06     Detune  LSB // signed 14 bit value
+     07     Cutoff
+     08     Resonance
+     09     Note Limit Low
+     10     Note Limit High
+     11     Note Shift // signed 7 bit value 
+     12     Reverb Send
+     13     Pitch Bend Range
+     14     Pitch Bend Step
+     15     Portamento Mode
+     16     Portamento Glissando
+     17     Portamento Time
+     18     VoiceData
+     19     future use
+     20     future use
+     21     future use
+     22     future use
+     23     future use
+     *** resulting in 24 bytes of config data for each tonegenerator
+
+     repeat for TG's 2 to 8
+     11110111  F7   Status - end sysex

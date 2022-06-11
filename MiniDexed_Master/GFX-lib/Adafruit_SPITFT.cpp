@@ -298,6 +298,7 @@ void inline Adafruit_SPITFT::writeFastHLine(int16_t x, int16_t y, int16_t w,
 */
 void inline Adafruit_SPITFT::writeFastVLine(int16_t x, int16_t y, int16_t h,
                                             uint16_t color) {
+    printf("writeFastVline(x,y,h) (%i,%i,%i)\n", x, y, h);
   if ((x >= 0) && (x < _width) && h) { // X on screen, nonzero height
     if (h < 0) {                       // If negative height...
       y += h + 1;                      //   Move Y to top edge
@@ -314,6 +315,8 @@ void inline Adafruit_SPITFT::writeFastVLine(int16_t x, int16_t y, int16_t h,
         if (y2 >= _height) {
           h = _height - y;
         } // Clip bottom
+        printf("to WriteFillRectClipped(x,y,h) (%i,%i,%i)\n", x, y, h);
+
         writeFillRectPreclipped(x, y, 1, h, color);
       }
     }
@@ -807,45 +810,35 @@ void Adafruit_SPITFT::setAddrWindow(uint16_t x, uint16_t y, uint16_t w,
 //    printf("Set Addr Window\n");
     SPI_CS_LOW();
     uint8_t data[4];
-    static uint16_t prev_x1, prev_x2, prev_y1, prev_y2;
+    static uint16_t prev_x, prev_y, prev_w, prev_h;
 
     x = x + MIPI_DISPLAY_OFFSET_X;
     y = y + MIPI_DISPLAY_OFFSET_Y;
-    w = x+w + MIPI_DISPLAY_OFFSET_X;
+    w = x+w + MIPI_DISPLAY_OFFSET_X - 1;
     h = y+h + MIPI_DISPLAY_OFFSET_Y;
 
     /* Change column address only if it has changed. */
-    if ((prev_x1 != x || prev_x2 != w)) {
+    if ((prev_x != x || prev_w != w)) {
         writeCommand(MIPI_DCS_SET_COLUMN_ADDRESS); // Column addr set
-        data[0] = (x >> 8);
-        data[1] = (x & 0xff);
-        data[2] = (w >> 8);
-        data[3] = (w & 0xff);
-        for (size_t i = 0; i < 4; i++)
-        {
-            spiWrite(data[i]);
-        }
-//        SPI_WRITE32(data); //mipi_display_write_data(data, 4);
-
-        prev_x1 = x;
-        prev_x2 = w;
+        data[0] = x >> 8;
+        data[1] = x & 0xff;
+        data[2] = w >> 8;
+        data[3] = w & 0xff;
+        spi_write_blocking(spi1, data, 4);
+        prev_x = x;
+        prev_w = w;
     }
 
     /* Change page address only if it has changed. */
-    if ((prev_y1 != y || prev_y2 != h)) {
+    if ((prev_y != y || prev_h != h)) {
         writeCommand(MIPI_DCS_SET_PAGE_ADDRESS); // Row addr set
-        data[0] = (y >> 8);
-        data[1] = (y & 0xff);
-        data[2] = (h >> 8);
-        data[3] = (h & 0xff);
-        for (size_t i = 0; i < 4; i++)
-        {
-            spiWrite(data[i]);
-        }
-        //        SPI_WRITE32(data);  //mipi_display_write_data(data, 4);
-
-        prev_y1 = y;
-        prev_y2 = h;
+        data[0] = y >> 8;
+        data[1] = y & 0xff;
+        data[2] = h >> 8;
+        data[3] = h & 0xff;
+        spi_write_blocking(spi1, data, 4); 
+        prev_y = y;
+        prev_h = h;
     }
     writeCommand(MIPI_DCS_WRITE_MEMORY_START); // write to RAM
     SPI_CS_HIGH();
@@ -904,7 +897,7 @@ void Adafruit_SPITFT::enableSleep(bool enable) {
  // clang-format off
 
 static const uint8_t st7789[] = {                // Init commands for 7789 screens
-    6,                              //  9 commands in list:
+    5,                              //  9 commands in list:
     MIPI_DCS_SOFT_RESET,   ST_CMD_DELAY, //  1: Software reset, no args, w/delay
       200,                          //     ~150 ms delay
     MIPI_DCS_SET_ADDRESS_MODE, 1 + ST_CMD_DELAY, //  3: Set color mode, 1 arg + delay:
@@ -916,9 +909,9 @@ static const uint8_t st7789[] = {                // Init commands for 7789 scree
     MIPI_DCS_EXIT_INVERT_MODE , ST_CMD_DELAY,    
       10,                           
     MIPI_DCS_EXIT_SLEEP_MODE , ST_CMD_DELAY,     
-      200,                           
-    MIPI_DCS_SET_DISPLAY_ON , ST_CMD_DELAY,
-      200                           
+      200 //,                           
+//    MIPI_DCS_SET_DISPLAY_ON , ST_CMD_DELAY,
+//      200                           
 };
 
 // clang-format on
@@ -975,7 +968,9 @@ void Adafruit_SPITFT::init(uint16_t width, uint16_t height) {
     windowHeight = height;
 
     displayInit(st7789);
-    setRotation(2);
+    writeFillRect(0, 0, width, height, BLACK);
+    enableDisplay(true);
+//    setRotation(1);
 }
 
 /**************************************************************************/
@@ -1020,5 +1015,5 @@ void Adafruit_SPITFT::setRotation(uint8_t m) {
         break;
     }
 
-    sendCommand(MIPI_DISPLAY_ADDRESS_MODE, &madctl, 1);
+    sendCommand(MIPI_DCS_SET_ADDRESS_MODE, &madctl, 1);
 }

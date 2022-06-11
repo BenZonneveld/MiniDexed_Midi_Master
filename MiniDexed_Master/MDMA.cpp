@@ -23,7 +23,7 @@ int main(void)
 {
     queue_init(&tg_fifo, sizeof(dexed_t), FIFOLENGTH);
     queue_init(&midi_fifo, sizeof(dexed_t), FIFOLENGTH);
-    queue_init(&sysex_fifo, VOICEDATA_SIZE, FIFOLENGTH);
+    queue_init(&sysex_fifo, sizeof(sysex_t), FIFOLENGTH);
     cMenu menu;
     board_init();
     set_sys_clock_khz(133000, true);
@@ -32,7 +32,7 @@ int main(void)
     printf("MDMA Booting\r\n");
     
     Pots.init();
-    menu.Init();
+//    menu.Init();
 
     multicore_launch_core1(midicore);
  
@@ -40,18 +40,17 @@ int main(void)
 //    {
 //        tight_loop_contents();
 //    }
-    tft.fillScreen(BLACK);
-    menu.Show();
+ //   tft.fillScreen(BLACK);
+ //   menu.Show();
 
     sysex_t raw_sysex;
     while (1)
     {
         Pots.readAll();
-        buttons.handleButtons();
+   //     buttons.handleButtons();
         while (queue_try_remove(&sysex_fifo, &raw_sysex))
         {
- //           printf("raw from main: %i\n", raw_sysex.length);
-            menu.handleSysex(raw_sysex);
+     //       menu.handleSysex(raw_sysex);
         }
     }
 

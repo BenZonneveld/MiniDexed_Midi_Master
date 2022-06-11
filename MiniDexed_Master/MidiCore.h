@@ -17,4 +17,4 @@ void sendToAllPorts(uint8_t* message, uint8_t len);
 void sendCtrl(uint8_t ctrl, dexed_t mididata);
 void dx7sysex(uint16_t parm, dexed_t mididata);
 void dexedPatchRequest(dexed_t mididata);
-
+void dexedConfigRequest();

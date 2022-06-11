@@ -8,8 +8,9 @@
 #include "pico/util/queue.h"
 #include "MidiCore.h"
 #include "gpio_pins.h"
-//#include "MIDI/midi.h"
 
+//#define DEBUGSYSEX
+//#define DEBUGMIDI
 queue_t midi_fifo;
 queue_t sysex_fifo;
 bool led_usb_state = false;
@@ -78,7 +79,7 @@ void midi_task(void)
     static uint8_t buffer[CFG_TUD_MIDI_TX_BUFSIZE / 4 * 3];
     static uint8_t buf_pos = 0;
     static uint8_t buf_valid = 0;
-    static bool SEX = false;
+    static bool SysExState = false;
     static sysex_t sysex_buf;
 
     size_t length = buf_valid - buf_pos;
@@ -96,10 +97,15 @@ void midi_task(void)
     {
         for (size_t i = 0; i < buf_valid; i++)
         {
-            if (SEX == true)
+            // Todo Detect bank and program changes
+#ifdef DEBUGMIDI
+            if ((buffer[i] & 80) == 0x80) printf("\n%02X, ", buffer[i]);
+            else printf("%02X, ", buffer[i]);
+#endif
+            if (SysExState == true)
             {
                 sysex_buf.length++;
-                if (sysex_buf.length <= VOICEDATA_SIZE)
+                if (sysex_buf.length <= SYSEX_BUFFER)
                     sysex_buf.buffer[sysex_buf.length] = buffer[i];
 #ifdef DEBUGSYSEX
                 printf("%02X, ", buffer[i]);
@@ -108,7 +114,7 @@ void midi_task(void)
             }
             if (buffer[i] == 0xF0)
             {
-                SEX = true;
+                SysExState = true;
                 sysex_buf.length = 0;
                 sysex_buf.buffer[sysex_buf.length] = buffer[i];
 #ifdef DEBUGSYSEX
@@ -116,20 +122,29 @@ void midi_task(void)
                 printf("%02X, ", buffer[i]);
 #endif
             }
-            if (buffer[i] == 0xF7)
+            if (sysex_buf.length == 3) // Check if this is valid data for us
             {
-                if (SEX == true)
+                if (sysex_buf.buffer[2] == 0x31 ||     // config dump
+                    ((sysex_buf.buffer[2] & 0x70) == 10 && (sysex_buf.buffer[3] >> 2) == 2) || // Function parameters
+                    ((sysex_buf.buffer[2] & 0x70) == 0 && sysex_buf.buffer[3] == 0)) // Voice dumps
                 {
-                    if (sysex_buf.length >= 155 )
-                    {
-                        queue_add_blocking(&sysex_fifo, &sysex_buf);
-#ifdef DEBUGSYSEX
-                        printf("\nEnd of Sysex\n");
-                        printf("Sysex size: %i\n", sysex_buf.length);
-#endif
-                    }
+                    ;
                 }
-                SEX = false;
+                else {
+                    SysExState = false;
+                }
+            }
+            if (sysex_buf.buffer[sysex_buf.length] == 0xF7)
+            {
+                if (SysExState == true)
+                {
+                    queue_add_blocking(&sysex_fifo, &sysex_buf);
+#ifdef DEBUGSYSEX
+                    printf("\nEnd of Sysex\n");
+                    printf("Sysex size: %i\n", sysex_buf.length);
+#endif
+                }
+                SysExState = false;
             }
         }
         buf_pos = tud_midi_stream_write(0, buffer, buf_valid);
@@ -173,7 +188,7 @@ void midicore()
     printf("tusb_init done");
 #endif
     // Initialise UARTs
-    uart_init(DEXED, 31250);
+    uart_init(DEXED, 115200);
     gpio_set_function(TX1, GPIO_FUNC_UART);
     gpio_set_function(RX1, GPIO_FUNC_UART);
 #ifdef MIDIPORT
@@ -198,12 +213,18 @@ void midicore()
 
 void dispatcher(dexed_t mididata)
 {
+    int32_t temp = 0;
     printf("rx chan: %i\tinstance: %i cmd: %02X parm: %02X value: %04X\n", mididata.channel, mididata.instance, mididata.cmd, mididata.parm, mididata.value);
     if (mididata.cmd == 1)
     {
         dexedPatchRequest(mididata);
     }
-    else {
+    if (mididata.cmd == 2)
+    {
+        dexedConfigRequest();
+    }
+    if ( mididata.cmd == 0 )
+    {
         switch (mididata.parm)
         {
         case PBANK:
@@ -215,13 +236,18 @@ void dispatcher(dexed_t mididata)
 //            sendCtrl(128, mididata);
             break;
         case PCHANNEL:
+            temp = mididata.value;
+            mididata.value = 0;
+            sendCtrl(120, mididata);
+            sendCtrl(120, mididata);
+            mididata.value = temp;
             dx7sysex(80, mididata);
             break;
         case PFREQ:
-            sendCtrl(74, mididata);
+            dx7sysex(90, mididata);
             break;
         case PRESO:
-            sendCtrl(71, mididata);
+            dx7sysex(91, mididata);
             break;
         case PVERB:
             dx7sysex(81, mididata);
@@ -229,7 +255,7 @@ void dispatcher(dexed_t mididata)
         case PCOMP:
             dx7sysex(82, mididata);
             break;
-        case PTRANS:
+        case PSHIFT:
             dx7sysex(83, mididata); // Handle transpose on the pico
             break;
         case PTUNE:
@@ -241,10 +267,10 @@ void dispatcher(dexed_t mididata)
         case PVOL:
             dx7sysex(86, mididata);
             break;
-        case PBEND:
+        case PBRANGE:
             dx7sysex(87, mididata);
             break;
-        case PPORTA:
+        case PPMODE:
             dx7sysex(88, mididata);
             break;
         case PMONO:
@@ -259,6 +285,7 @@ void dispatcher(dexed_t mididata)
 void sendToAllPorts(uint8_t *message, uint8_t len)
 {
 //    printf("Send to all ports\t");
+#ifdef DEBUGSYSEX
     for (size_t i = 0; i < len; i++)
     {
         tud_midi_stream_write(0, message+i, 1);
@@ -266,6 +293,7 @@ void sendToAllPorts(uint8_t *message, uint8_t len)
         if (i % 16 == 15) printf("\n");
     }
     printf("\n");
+#endif
 //    tud_midi_stream_write(0, message, len); // Should be serial !!!
     uart_write_blocking(DEXED, message, len);
 #ifdef MIDIPORT
@@ -307,6 +335,17 @@ void dexedPatchRequest(dexed_t mididata)
         0xF7
     };
     sendToAllPorts(voice_req,5);
+}
+
+void dexedConfigRequest()
+{
+    uint8_t config_req[4] = {
+        0xF0,
+        0x43,
+        0x30,
+        0xF7
+    };
+    sendToAllPorts(config_req, 4);
 }
 
 void sendCtrl(uint8_t ctrl, dexed_t mididata)
