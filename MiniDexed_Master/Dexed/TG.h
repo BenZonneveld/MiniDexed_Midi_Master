@@ -42,8 +42,8 @@ enum TGPARAMS { PBANK,
 	PBSTEP,
 	PGLISS,
 	PTIME,
-	PLOW,
-	PHIGH
+	PNLOW,
+	PNHIGH
 };
 
 const int16_t ranges[][3] = {
@@ -62,6 +62,10 @@ const int16_t ranges[][3] = {
 	{ 0,1,0}, //PPORTA
 	{ 0,1,0}, // PMONO
 	{0,12,0}, // PBSTEP
+	{0,99,0}, // PGLISS
+	{0,99,0}, // PTIME
+	{0,127,0}, // PNLOW
+	{0,127,0} // PNHIGH
 };
 
 typedef struct {
@@ -97,11 +101,8 @@ public:
 //	size_t getObjectID() { return mobject_id; }
 	int32_t parmDown(uint16_t parm);
 	int32_t parmUp(uint16_t parm);
-	int8_t setValue(uint16_t parm, int8_t value);
-	uint8_t setValue(uint16_t parm, uint8_t value);
 	int32_t setValue(uint16_t parm, int32_t value);
 	int32_t getValue(uint16_t parm);
-	uint8_t getParmType(uint16_t parm) { return mparms[parm].type; }
 	void sendParam(uint16_t parm, int32_t value);
 	void getPatch();
 	void getConfig();
@@ -115,36 +116,31 @@ public:
 	void Panning(int8_t pan);
 	void Volume(uint8_t vol);*/
 private:
-	void setParmType(uint16_t parm, int8_t* data);
-	void setParmType(uint16_t parm, uint8_t* data);
-	void setParmType(uint16_t parm, uint16_t* data);
-	uint16_t mbank;
-	uint8_t mpatch;
-	uint8_t mchannel;
-	uint8_t mobject_id;
-	uint8_t mfreq;
-	uint8_t mreso;
-	uint8_t mrev;
-	uint8_t mcomp;
-	int8_t mshift;
-	int8_t mtune;
-	int8_t mpan;
-	uint8_t mvol;
-	uint8_t mpmode;
-	uint8_t mmono;
-	uint8_t mrange;
-	uint8_t mstep;
-	uint8_t mgliss;
-	uint8_t mtime;
-	uint8_t mlow;
-	uint8_t mhigh;
+	void setParm(uint16_t parm, int16_t* data);
+	uint16_t mobject_id;
+	int16_t mbank;
+	int16_t mpatch;
+	int16_t mchannel;
+	int16_t mfreq;
+	int16_t mreso;
+	int16_t mrev;
+	int16_t mcomp;
+	int16_t mnote_shift;
+	int16_t mtune;
+	int16_t mpan;
+	int16_t mvol;
+	int16_t mpmode;
+	int16_t mmono;
+	int16_t mrange;
+	int16_t mstep;
+	int16_t mgliss;
+	int16_t mtime;
+	int16_t mnote_low;
+	int16_t mnote_high;
 	char mvoicename[11];
 	uint8_t msysex[162];
 	struct s_parms{
-		uint8_t type;
-		int8_t *val8s;
-		uint8_t *val8t;
-		uint16_t *val16t;
+		int16_t *val16t;
 	} mparms[PARMS];
 	unsigned char notes[16]; // Maybe not an array...
 };

@@ -420,8 +420,8 @@ void cMenu::handleSysex(sysex_t raw_sysex)
 			setDexedParm(PTUNE, detune, i);
 			setDexedParm(PFREQ, raw_sysex.buffer[config++], i);
 			setDexedParm(PRESO, raw_sysex.buffer[config++], i);
-			setDexedParm(PLOW, raw_sysex.buffer[config++],i); // Note Limit Low
-			setDexedParm(PHIGH, raw_sysex.buffer[config++],i); // Note Limit High
+			setDexedParm(PNLOW, raw_sysex.buffer[config++],i); // Note Limit Low
+			setDexedParm(PNHIGH, raw_sysex.buffer[config++],i); // Note Limit High
 			setDexedParm(PSHIFT, raw_sysex.buffer[config++], i); // Note Shift
 			setDexedParm(PVERB, raw_sysex.buffer[config++], i);
 			setDexedParm(PBRANGE, raw_sysex.buffer[config++], i);
