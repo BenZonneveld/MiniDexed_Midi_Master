@@ -256,11 +256,6 @@ byte             bit #
 
 /////////////////////////////////////////////////////////////////////
 
-And that's it.
-
-Hope this is useful.
-
-ewan.
 Config Dump
      11110000  F0   Status byte - start sysex
      0iiiiiii  43   ID # (i=67; Yamaha)
@@ -293,4 +288,26 @@ Config Dump
      *** resulting in 24 bytes of config data for each tonegenerator
 
      repeat for TG's 2 to 8
+     11110111  F7   Status - end sysex
+
+Bank Name Request
+   F0
+   43
+   4x
+   F7
+
+Bank Name Dump
+     11110000  F0   Status byte - start sysex
+     0iiiiiii  43   ID # (i=67; Yamaha)
+     0sssnnnn  50   Sub-status (s=3); n = channel number
+
+     0fffffff  09   format number (f=0; BankName)
+     0bbbbbbb  20   byte count MS byte
+     0bbbbbbb  00   byte count LS byte (b=32;)
+     0ddddddd  **   data byte 1
+
+        |       |       |
+
+     0ddddddd  **   data byte 32
+     0eeeeeee  **   checksum (masked 2's comp. of sum of 32 bytes)
      11110111  F7   Status - end sysex

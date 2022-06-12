@@ -32,7 +32,7 @@ int main(void)
     printf("MDMA Booting\r\n");
     
     Pots.init();
-//    menu.Init();
+    menu.Init();
 
     multicore_launch_core1(midicore);
  
@@ -41,16 +41,16 @@ int main(void)
 //        tight_loop_contents();
 //    }
  //   tft.fillScreen(BLACK);
- //   menu.Show();
+    menu.Show();
 
     sysex_t raw_sysex;
     while (1)
     {
         Pots.readAll();
-   //     buttons.handleButtons();
+        buttons.handleButtons();
         while (queue_try_remove(&sysex_fifo, &raw_sysex))
         {
-     //       menu.handleSysex(raw_sysex);
+            menu.handleSysex(raw_sysex);
         }
     }
 

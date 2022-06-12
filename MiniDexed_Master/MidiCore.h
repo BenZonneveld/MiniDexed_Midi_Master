@@ -17,4 +17,8 @@ void sendToAllPorts(uint8_t* message, uint8_t len);
 void sendCtrl(uint8_t ctrl, dexed_t mididata);
 void dx7sysex(uint16_t parm, dexed_t mididata);
 void dexedPatchRequest(dexed_t mididata);
+void dexedGetBankName(dexed_t mididata);
 void dexedConfigRequest();
+void midiParser(uint8_t *buffer, size_t length);
+void parseSysex(uint8_t buf);
+void parseMidi(uint8_t buf);

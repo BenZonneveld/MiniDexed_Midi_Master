@@ -26,10 +26,10 @@ uint8_t cMenu::menu;
 uint8_t cMenu::prev_menu; 
 bool cMenu::pflag[3] = { false, false, false};
 int16_t cMenu::potparam[4];
-int16_t cMenu::potpos[3];
+//int16_t cMenu::potpos[3];
 int16_t cMenu::bparam[8];
-int16_t cMenu::parampos[8];
-bool cMenu::menuNeedFlush;
+int16_t cMenu::parampos[24];
+//bool cMenu::menuNeedFlush;
 bool cMenu::TGEnabled[8] = { true , true, true, true, true, true, true, true};
 
 void cMenu::Init()
@@ -106,21 +106,30 @@ void cMenu::ShowButtonText(uint8_t button)
 //	tft.setAddrWindow(0, 0, MIPI_DISPLAY_WIDTH, MIPI_DISPLAY_HEIGHT);
 }
 
-void cMenu::ShowValue(int32_t param, int16_t x0, int16_t y0, int16_t w0, int16_t h0, bool colorflag, uint8_t fontsize)
+void cMenu::ShowValue(int32_t param)
 {
+	bool colorflag = false;
+	for (size_t i = 0; i < 3; i++)
+	{
+		if (param == potparam[i] && pflag[i] == true)
+		{
+			colorflag = true;
+			i=2;
+		}
+	}
 	int16_t  x1, y1;
 	uint16_t w, h;
 	int32_t value = dexed[currentTG].getValue(param);
 	//	printf("Showvalue parm %i, value %i\n", param, value);
 	char text[7];
 	itoa(value + ranges[param][ROFFSET], text, 10);
-	tft.setAddrWindow(x0, y0, w0, h0);
+	tft.setAddrWindow(VALUEPOS, parampos[param], VALUEWIDTH, BUTTONHEIGHT);
 	if (colorflag)
 	{
-		tft.writeFillRect(x0, y0, w0, h0, WHITE);
+		tft.writeFillRect(VALUEPOS, parampos[param], VALUEWIDTH, BUTTONHEIGHT, WHITE);
 	}
 	else {
-		tft.writeFillRect(x0, y0, w0, h0, tft.color565(64, 64, 255));
+		tft.writeFillRect(VALUEPOS, parampos[param], VALUEWIDTH, BUTTONHEIGHT, tft.color565(64, 64, 255));
 	}
 
 	if (param == PCHANNEL)
@@ -140,8 +149,8 @@ void cMenu::ShowValue(int32_t param, int16_t x0, int16_t y0, int16_t w0, int16_t
 
 	tft.setTextColor(BLACK);
 	tft.setFont(&Open_Sans_Condensed_Bold_16);
-	tft.getTextBounds(text, x0, y0, &x1, &y1, &w, &h);
-	tft.setCursor((x0 +(w0/2) - (w / 2)), y0 + h + 2);
+	tft.getTextBounds(text, VALUEPOS, parampos[param], &x1, &y1, &w, &h);
+	tft.setCursor((VALUEPOS +(VALUEWIDTH /2) - (w / 2)), parampos[param] + h + 2);
 	tft.print(text);
 	tft.setTextColor(WHITE);
 	tft.setAddrWindow(0,0, MIPI_DISPLAY_WIDTH, MIPI_DISPLAY_HEIGHT);
@@ -186,9 +195,9 @@ void cMenu::ParmToggle(uint8_t button)
 	else {
 		dexed[currentTG].parmUp(bparam[button]);
 	}
-	dexed[currentTG].sendParam(bparam[button], dexed[currentTG].getValue(bparam[button]));
+	dexed[currentTG].sendParam(bparam[button]);
 	//	dexed[currentTG].sendMidi(bparam[button]);
-	ShowValue(bparam[button], 60, parampos[button], VALUEWIDTH, BUTTONHEIGHT, true, 1);
+	ShowValue(bparam[button]);
 	if (menu == M_MAIN)
 		showTGInfo(bparam[button]);
 }
@@ -212,10 +221,9 @@ void cMenu::ParmSelect(uint8_t button)
 	default:
 		break;
 	}
-	dexed[currentTG].sendParam(bparam[button], dexed[currentTG].getValue(bparam[button]));
-//	dexed[currentTG].sendMidi(bparam[button]);
+	dexed[currentTG].sendParam(bparam[button]);
 	if (bparam[button] == PPATCH || bparam[button] == PBANK) dexed[currentTG].getPatch();
-	ShowValue(bparam[button], 60, parampos[button], VALUEWIDTH, BUTTONHEIGHT, true, 1);
+	ShowValue(bparam[button]);
 	if ( menu != M_MAIN)
 		showTGInfo(bparam[button]);
 }
@@ -227,32 +235,53 @@ void cMenu::ParmPot(uint8_t channel)
 	if (value == dexed[currentTG].getValue(param) && !pflag[channel])
 	{
 		pflag[channel] = true;
-		ShowValue(param, 60, potpos[channel], VALUEWIDTH, BUTTONHEIGHT, pflag[channel], 1);
+		ShowValue(param);
 	}
 	if (value != dexed[currentTG].getValue(param) && pflag[channel])
 	{
 		value = dexed[currentTG].setValue(param,value);
-		ShowValue(param, 60, potpos[channel], VALUEWIDTH, BUTTONHEIGHT, pflag[channel], 1);
-		dexed[currentTG].sendParam(param, dexed[currentTG].getValue(param));
+		ShowValue(param);
+		dexed[currentTG].sendParam(param);
 		sleep_ms(10);
 		if (param == PPATCH || param == PBANK) dexed[currentTG].getPatch();
 	}
 	showTGInfo(param);
 }
 
-void cMenu::setButtonCallbackWithParam(uint8_t button, int16_t param, int16_t pos,void (*callback)(uint8_t button))
+void cMenu::setButtonCallbackWithParam(uint8_t button, int16_t param,void (*callback)(uint8_t button))
 {
+	int16_t pos = 0;
+	switch (button)
+	{
+	case BUT1:
+	case BUT5:
+		pos = POSA;
+		break;
+	case BUT2:
+	case BUT6:
+		pos = POSB;
+		break;
+	case BUT3:
+	case BUT7:
+		pos = POSC;
+		break;
+	case BUT4:
+	case BUT8:
+		pos = POSD;
+		break;
+	}
+
 	buttons.setCallback(button, callback);
 	if (callback == nullptr)
-		bparam[button] = -1;
+		bparam[button] = PNOPARAM;
 	bparam[button] = param;
-	parampos[button] = pos;
+	parampos[param] = pos;
 	ShowButtonText(button);
 }
 
-void cMenu::setButtonParm(uint8_t button, int16_t param, int16_t pos, bool haslongpress)
+void cMenu::setButtonParm(uint8_t button, int16_t param, bool haslongpress)
 {
-	setButtonCallbackWithParam(button, param, pos, &cMenu::ParmSelect);
+	setButtonCallbackWithParam(button, param, &cMenu::ParmSelect);
 	if (haslongpress)
 	{
 		buttons.setLongCallback(button, &cMenu::ParmSelect);
@@ -264,7 +293,7 @@ void cMenu::setButtonParm(uint8_t button, int16_t param, int16_t pos, bool haslo
 		buttons.setDBLCallback(button, NULL);
 	}
 }
-
+//m_pMiniDexed->GetSysExFileLoader ()->GetBankName (nValue);
 void cMenu::clearCallbacks()
 {
 	for (uint8_t button = 0; button < 8; button++)
@@ -279,13 +308,13 @@ void cMenu::clearCallbacks()
 
 }
 
-void cMenu::setPotCallback(uint8_t channel, int16_t param, int16_t pos)
+void cMenu::setPotCallback(uint8_t channel, int16_t param)
 {
 	Pots.setPotCallback(channel, &cMenu::ParmPot);
 	potparam[channel] = param;
-	potpos[channel] = pos;
+//	potpos[channel] = pos;
 	pflag[channel] = false;
-
+//	parampos[param] = pos;
 	uint16_t pot = map(Pots.getPot(channel), POT_MIN, POT_MAX, ranges[param][RMIN], ranges[param][RMAX]);
 
 	if (pot == dexed[currentTG].getValue(param))
@@ -294,6 +323,10 @@ void cMenu::setPotCallback(uint8_t channel, int16_t param, int16_t pos)
 
 void cMenu::resetPotCB(uint8_t channel)
 {
+	potparam[channel] = PNOPARAM;
+//	potpos[channel] = -1;
+	pflag[channel] = false;
+
 	Pots.setPotCallback(channel, NULL);
 }
 
@@ -360,7 +393,6 @@ void cMenu::showTGInfo(int16_t param)
 		{
 			// Panning
 			int8_t pan = (dexed[currentTG].getValue(PPAN) + 63) / 4.8f;
-			printf("pan: %i\n", pan);
 			tft.writeFillRect(21, 19, 26, 8, BLACK);
 			tft.fillTriangle(34, 23, 21, 19, 21, 27, GREY);
 			tft.fillTriangle(34, 23, 47, 19, 47, 27, GREY);
@@ -388,7 +420,100 @@ void cMenu::setDexedParm(uint16_t parm, int32_t val, uint8_t instance)
 
 void cMenu::handleSysex(sysex_t raw_sysex)
 {
-	if ( (raw_sysex.buffer[2] & 0x70) == 0 && raw_sysex.buffer[3] == 0)
+	if ((raw_sysex.buffer[0] & 0xF0) == 0xC0) // Program Change
+	{
+		uint8_t instanceID = raw_sysex.buffer[0] & 0xF;
+		uint8_t program = raw_sysex.buffer[1];
+		if (instanceID < 8)
+		{
+			dexed[instanceID].setValue(PPATCH, program);
+			showTGInfo(PPATCH);
+			if (menu == M_TG_MIDI)
+			{
+				ShowValue(PPATCH);
+			}
+			printf("Program Change Received for instance: %i program %i\n", instanceID, program);
+		}
+		return;
+	}
+	if ((raw_sysex.buffer[0] & 0xF0) == 0xB0) // Ctrl Change
+	{
+		uint8_t instanceID = raw_sysex.buffer[0] & 0xF;
+		uint8_t ctrl = raw_sysex.buffer[1];
+		uint8_t val = raw_sysex.buffer[2];
+		static int16_t bank;
+		static int8_t tune;
+		bool setValue = false;
+		if (instanceID < 8)
+		{
+			uint16_t param = 0;
+			switch (ctrl)
+			{
+				case MIDI_CC_VOLUME:
+					param = PVOL;
+					printf("Volume for instance %i, value: %i\n", instanceID, val);
+					setValue = true;
+					break;
+				case MIDI_CC_PAN_POSITION:
+					param = PPAN;
+					setValue = true; 
+					printf("Pan for instance %i, value: %i\n", instanceID, val);
+					break;
+				case MIDI_CC_BANK_SELECT_LSB:
+					param = PBANK;
+					setValue = true; 
+					printf("Bank Select for instance %i, value: %i\n", instanceID, val);
+					break;
+				case MIDI_CC_BANK_SELECT_MSB:
+					param = PBANK;
+					bank = dexed[instanceID].getValue(PBANK);
+					val = bank + 128 * val;
+					setValue = true; 
+					break;
+				case MIDI_CC_RESONANCE:
+					param = PRESO;
+					printf("Resonance for instance %i, value: %i\n", instanceID, val);
+					setValue = true; 
+					break;
+				case MIDI_CC_CUTOFF:
+					param = PFREQ;
+					printf("Cutoff for instance %i, value: %i\n", instanceID, val);
+					setValue = true; 
+					break;
+				case MIDI_CC_REVERB:
+					param = PVERB;
+					printf("Reverb Level for instance %i, value: %i\n", instanceID, val);
+					setValue = true; 
+					break;
+				case MIDI_CC_DETUNE:
+					param = PTUNE;
+					tune = (val<<7);
+					break;
+				case MIDI_CC_DETUNE+32:
+					param = PTUNE;
+					tune = tune|val;
+					dexed[instanceID].setValue(param, tune);
+					val = tune;
+					break;
+				default:
+					return;
+					break;
+			}
+			if ( setValue )
+				dexed[instanceID].setValue(param, val);
+			showTGInfo(param);
+			if ( ((menu == M_TG_FILT || menu == M_TG) && (param == PFREQ || param == PRESO || param == PVERB)) ||
+				( menu == M_TG_MIDI && (param == PBANK || param == PCHANNEL)) ||
+				( menu == M_TG_OUT && (param == PPAN || param == PVOL )) ||
+				( menu == M_TG_TUNE && (param == PSHIFT || param== PTUNE )) ||
+				( menu == M_TG_PITCH && ( param == PBRANGE || param == PBSTEP)) )
+			{
+				ShowValue(param);
+			}
+		}
+		return;
+	}
+	if ((raw_sysex.buffer[2] & 0xF0) == 0x20 && raw_sysex.buffer[3] == 0)
 	{
 		uint8_t channel = (raw_sysex.buffer[2] & 0xf);
 		if (channel < 8)
@@ -399,6 +524,12 @@ void cMenu::handleSysex(sysex_t raw_sysex)
 			dexed[currentTG].setSysex(raw_sysex);
 		}
 		showTGInfo(-1);
+	}
+	if ((raw_sysex.buffer[2] & 0x70) == 0x50 && raw_sysex.buffer[3] == 0)
+	{
+		uint8_t instanceID = raw_sysex.buffer[2] & 0xF;
+		dexed[instanceID].setBankName(raw_sysex);
+		printf("Bankname: %s\n", dexed[instanceID].getBankName());
 	}
 	if (raw_sysex.buffer[2] == 0x31)
 	{
@@ -420,8 +551,8 @@ void cMenu::handleSysex(sysex_t raw_sysex)
 			setDexedParm(PTUNE, detune, i);
 			setDexedParm(PFREQ, raw_sysex.buffer[config++], i);
 			setDexedParm(PRESO, raw_sysex.buffer[config++], i);
-			setDexedParm(PLOW, raw_sysex.buffer[config++],i); // Note Limit Low
-			setDexedParm(PHIGH, raw_sysex.buffer[config++],i); // Note Limit High
+			setDexedParm(PNLOW, raw_sysex.buffer[config++],i); // Note Limit Low
+			setDexedParm(PNHIGH, raw_sysex.buffer[config++],i); // Note Limit High
 			setDexedParm(PSHIFT, raw_sysex.buffer[config++], i); // Note Shift
 			setDexedParm(PVERB, raw_sysex.buffer[config++], i);
 			setDexedParm(PBRANGE, raw_sysex.buffer[config++], i);
@@ -441,14 +572,18 @@ void cMenu::handleSysex(sysex_t raw_sysex)
 
 void cMenu::TGEnable(uint8_t button)
 {
+	static uint8_t channels[8];
 	if (TGEnabled[button] == true)
 	{
+		channels[button] = dexed[button].getValue(PCHANNEL);
 		TGEnabled[button] = false;
-		dexed[button].sendParam(PCHANNEL, 17); // Set TG Off
+		dexed[button].setValue(PCHANNEL, 17);
+		dexed[button].sendParam(PCHANNEL); // Set TG Off
 	}
 	else {
 		TGEnabled[button] = true;
-		dexed[button].sendParam(PCHANNEL, dexed[button].getValue(PCHANNEL));
+		dexed[button].setValue(PCHANNEL, channels[button]);
+		dexed[button].sendParam(PCHANNEL);
 	}
 	ShowButtonText(button);
 	printf("TGEnable");
@@ -462,14 +597,14 @@ void cMenu::mainmenu()
 	prev_menu = M_MAIN;
 	dexed[0].getConfig();
 	clearCallbacks();
-	setButtonCallbackWithParam(BUT1, 0, POSA, &cMenu::selectTG);
-	setButtonCallbackWithParam(BUT2, 0, POSB, &cMenu::selectTG);
-	setButtonCallbackWithParam(BUT3, 0, POSC, &cMenu::selectTG);
-	setButtonCallbackWithParam(BUT4, 0, POSD, &cMenu::selectTG);
-	setButtonCallbackWithParam(BUT5, 0, POSA, &cMenu::selectTG);
-	setButtonCallbackWithParam(BUT6, 0, POSB, &cMenu::selectTG);
-	setButtonCallbackWithParam(BUT7, 0, POSC, &cMenu::selectTG);
-	setButtonCallbackWithParam(BUT8, 0, POSD, &cMenu::selectTG);
+	setButtonCallbackWithParam(BUT1, PNOPARAM, &cMenu::selectTG);
+	setButtonCallbackWithParam(BUT2, PNOPARAM, &cMenu::selectTG);
+	setButtonCallbackWithParam(BUT3, PNOPARAM, &cMenu::selectTG);
+	setButtonCallbackWithParam(BUT4, PNOPARAM, &cMenu::selectTG);
+	setButtonCallbackWithParam(BUT5, PNOPARAM, &cMenu::selectTG);
+	setButtonCallbackWithParam(BUT6, PNOPARAM, &cMenu::selectTG);
+	setButtonCallbackWithParam(BUT7, PNOPARAM, &cMenu::selectTG);
+	setButtonCallbackWithParam(BUT8, PNOPARAM, &cMenu::selectTG);
 	buttons.setDBLCallback(BUT1, &cMenu::TGEnable);
 	buttons.setDBLCallback(BUT2, &cMenu::TGEnable);
 	buttons.setDBLCallback(BUT3, &cMenu::TGEnable);
@@ -490,21 +625,21 @@ void cMenu::Midi(uint8_t button)
 	prev_menu = M_TG;
 
 	clearCallbacks();
-	setButtonParm(BUT1, PBANK, POSA, true);
-	setButtonParm(BUT2, PPATCH, POSB, true);
-	setButtonParm(BUT3, PCHANNEL, POSC, true);
-	setButtonParm(BUT5, PBANK, POSA, true);
-	setButtonParm(BUT6, PPATCH, POSB, true);
-	setButtonParm(BUT7, PCHANNEL, POSC, true);
+	setButtonParm(BUT1, PBANK, true);
+	setButtonParm(BUT2, PPATCH, true);
+	setButtonParm(BUT3, PCHANNEL, true);
+	setButtonParm(BUT5, PBANK, true);
+	setButtonParm(BUT6, PPATCH, true);
+	setButtonParm(BUT7, PCHANNEL, true);
 	buttons.setCallback(BUT8, &cMenu::menuBack);
 
-	setPotCallback(TOPPOT, PBANK, POSA);
-	setPotCallback(MIDPOT, PPATCH, POSB);
-	setPotCallback(BOTPOT, PCHANNEL, POSC);
+	setPotCallback(TOPPOT, PBANK);
+	setPotCallback(MIDPOT, PPATCH);
+	setPotCallback(BOTPOT, PCHANNEL);
 
-	ShowValue(PBANK, VALUEPOS, potpos[TOPPOT], VALUEWIDTH, BUTTONHEIGHT, pflag[TOPPOT], 1);
-	ShowValue(PPATCH, VALUEPOS, potpos[MIDPOT], VALUEWIDTH, BUTTONHEIGHT, pflag[MIDPOT], 1);
-	ShowValue(PCHANNEL, VALUEPOS, potpos[BOTPOT], VALUEWIDTH, BUTTONHEIGHT, pflag[BOTPOT], 1);
+	ShowValue(PBANK);
+	ShowValue(PPATCH);
+	ShowValue(PCHANNEL);
 	showTGInfo(-1);
 }
 
@@ -532,14 +667,18 @@ void cMenu::selectTG()
 	buttons.setCallback(BUT5, &cMenu::TGPitch);
 	buttons.setCallback(BUT8, &cMenu::menuBack);
 
-	setPotCallback(TOPPOT, PFREQ, POSA);
-	setPotCallback(MIDPOT, PRESO, POSB);
-	setPotCallback(BOTPOT, PVERB, POSC);
+	setPotCallback(TOPPOT, PFREQ);
+	setPotCallback(MIDPOT, PRESO);
+	setPotCallback(BOTPOT, PVERB);
+	parampos[PFREQ] = POSA;
+	parampos[PRESO] = POSB;
+	parampos[PVERB] = POSC;
+
 	pflag[TOPPOT] = pflag[MIDPOT] = pflag[BOTPOT] = true;
 
-	ShowValue(PFREQ, VALUEPOS, potpos[TOPPOT], VALUEWIDTH, BUTTONHEIGHT, pflag[TOPPOT], 1);
-	ShowValue(PRESO, VALUEPOS, potpos[MIDPOT], VALUEWIDTH, BUTTONHEIGHT, pflag[MIDPOT], 1);
-	ShowValue(PVERB, VALUEPOS, potpos[BOTPOT], VALUEWIDTH, BUTTONHEIGHT, pflag[BOTPOT], 1);
+	ShowValue(PFREQ);
+	ShowValue(PRESO);
+	ShowValue(PVERB);
 
 	showTGInfo(-1);
 }
@@ -553,22 +692,22 @@ void cMenu::TGFilter(uint8_t button)
 	prev_menu = M_TG;
 
 	clearCallbacks();
-	setButtonParm(BUT1, PFREQ, POSA, true);
-	setButtonParm(BUT2, PRESO, POSB, true);
-	setButtonParm(BUT3, PVERB, POSC, true);
-	setButtonParm(BUT5, PFREQ, POSA, true);
-	setButtonParm(BUT6, PRESO, POSB, true);
-	setButtonParm(BUT7, PVERB, POSC, true);
+	setButtonParm(BUT1, PFREQ, true);
+	setButtonParm(BUT2, PRESO, true);
+	setButtonParm(BUT3, PVERB, true);
+	setButtonParm(BUT5, PFREQ, true);
+	setButtonParm(BUT6, PRESO, true);
+	setButtonParm(BUT7, PVERB, true);
 	buttons.setCallback(BUT8, &cMenu::menuBack);
 
-	setPotCallback(TOPPOT, PFREQ, POSA);
-	setPotCallback(MIDPOT, PRESO, POSB);
-	setPotCallback(BOTPOT, PVERB, POSC);
+	setPotCallback(TOPPOT, PFREQ);
+	setPotCallback(MIDPOT, PRESO);
+	setPotCallback(BOTPOT, PVERB);
 	pflag[TOPPOT] = pflag[MIDPOT] = pflag[BOTPOT] = true;
 
-	ShowValue(PFREQ, VALUEPOS, potpos[TOPPOT], VALUEWIDTH, BUTTONHEIGHT, pflag[TOPPOT], 1);
-	ShowValue(PRESO, VALUEPOS, potpos[MIDPOT], VALUEWIDTH, BUTTONHEIGHT, pflag[MIDPOT], 1);
-	ShowValue(PVERB, VALUEPOS, potpos[BOTPOT], VALUEWIDTH, BUTTONHEIGHT, pflag[BOTPOT], 1);
+	ShowValue(PFREQ);
+	ShowValue(PRESO);
+	ShowValue(PVERB);
 	showTGInfo(-1);
 }
 
@@ -581,17 +720,17 @@ void cMenu::TGTune(uint8_t button)
 	prev_menu = M_TG;
 	clearCallbacks();
 
-	setButtonParm(BUT1, PSHIFT, POSA, true);
-	setButtonParm(BUT2, PTUNE, POSB, true);
-	setButtonParm(BUT5, PSHIFT, POSA, true);
-	setButtonParm(BUT6, PTUNE, POSB, true);
+	setButtonParm(BUT1, PSHIFT, true);
+	setButtonParm(BUT2, PTUNE, true);
+	setButtonParm(BUT5, PSHIFT, true);
+	setButtonParm(BUT6, PTUNE, true);
 	buttons.setCallback(BUT8, &cMenu::menuBack);
 
-	setPotCallback(TOPPOT, PSHIFT, POSA);
-	setPotCallback(MIDPOT, PTUNE, POSB);
+	setPotCallback(TOPPOT, PSHIFT);
+	setPotCallback(MIDPOT, PTUNE);
 
-	ShowValue(PSHIFT, VALUEPOS, parampos[BUT1], VALUEWIDTH, BUTTONHEIGHT, pflag[TOPPOT], 1);
-	ShowValue(PTUNE, VALUEPOS, parampos[BUT2], VALUEWIDTH, BUTTONHEIGHT, pflag[MIDPOT], 1);
+	ShowValue(PSHIFT);
+	ShowValue(PTUNE);
 	showTGInfo(-1);
 }
 
@@ -604,17 +743,17 @@ void cMenu::TGOut(uint8_t button)
 	prev_menu = M_TG;
 	clearCallbacks();
 
-	setButtonParm(BUT1, PPAN, POSA, true);
-	setButtonParm(BUT2, PVOL, POSB, true);
-	setButtonParm(BUT5, PPAN, POSA, true);
-	setButtonParm(BUT6, PVOL, POSB, true);
+	setButtonParm(BUT1, PPAN, true);
+	setButtonParm(BUT2, PVOL, true);
+	setButtonParm(BUT5, PPAN, true);
+	setButtonParm(BUT6, PVOL, true);
 	buttons.setCallback(BUT8, &cMenu::menuBack);
 
-	setPotCallback(TOPPOT, PPAN, POSA);
-	setPotCallback(MIDPOT, PVOL, POSB);
+	setPotCallback(TOPPOT, PPAN);
+	setPotCallback(MIDPOT, PVOL);
 
-	ShowValue(PPAN, VALUEPOS, parampos[BUT1], VALUEWIDTH, BUTTONHEIGHT, pflag[TOPPOT], 1);
-	ShowValue(PVOL, VALUEPOS, parampos[BUT2], VALUEWIDTH, BUTTONHEIGHT, pflag[MIDPOT], 1);
+	ShowValue(PPAN);
+	ShowValue(PVOL);
 	showTGInfo(-1);
 }
 
@@ -626,21 +765,21 @@ void cMenu::TGPitch(uint8_t button)
 	menu = M_TG_PITCH;
 	prev_menu = M_TG;
 	clearCallbacks();
-	setButtonParm(BUT1, PBRANGE, POSA, true);
-	setButtonParm(BUT2, PBSTEP, POSB, true);
+	setButtonParm(BUT1, PBRANGE, true);
+	setButtonParm(BUT2, PBSTEP, true);
 	// Todo: Portamento menu
-	setButtonCallbackWithParam(BUT4, PMONO, POSC, &cMenu::ParmToggle);
+	setButtonCallbackWithParam(BUT4, PMONO, &cMenu::ParmToggle);
 //	setButtonParm(BUT3, PMONO, POSC, true);
-	setButtonParm(BUT5, PBRANGE, POSA, true);
-	setButtonParm(BUT6, PBSTEP, POSB, true);
+	setButtonParm(BUT5, PBRANGE, true);
+	setButtonParm(BUT6, PBSTEP, true);
 	buttons.setCallback(BUT8, &cMenu::menuBack);
 
-	setPotCallback(TOPPOT, PBRANGE, POSA);
-	setPotCallback(MIDPOT, PBSTEP, POSB);
-	setPotCallback(BOTPOT, PMONO, POSC);
+	setPotCallback(TOPPOT, PBRANGE);
+	setPotCallback(MIDPOT, PBSTEP);
+	setPotCallback(BOTPOT, PMONO);
 
-	ShowValue(PBRANGE, VALUEPOS, parampos[BUT1], VALUEWIDTH, BUTTONHEIGHT, pflag[TOPPOT], 1);
-	ShowValue(PBSTEP, VALUEPOS, parampos[BUT2], VALUEWIDTH, BUTTONHEIGHT, pflag[MIDPOT], 1);
-	ShowValue(PMONO, VALUEPOS, parampos[BUT3], VALUEWIDTH, BUTTONHEIGHT, pflag[BOTPOT], 1);
+	ShowValue(PBRANGE);
+	ShowValue(PBSTEP);
+	ShowValue(PMONO);
 	showTGInfo(-1);
 }

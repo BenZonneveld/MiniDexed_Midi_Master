@@ -11,6 +11,18 @@
 #define MIDPOT	1
 #define BOTPOT	2
 
+#define MIDI_CC_BANK_SELECT_MSB          0       // TODO
+#define MIDI_CC_MODULATION               1
+#define MIDI_CC_VOLUME                   7
+#define MIDI_CC_PAN_POSITION            10
+#define MIDI_CC_BANK_SELECT_LSB         32
+#define MIDI_CC_BANK_SUSTAIN            64
+#define MIDI_CC_RESONANCE               71
+#define MIDI_CC_CUTOFF					74
+#define MIDI_CC_REVERB				    91
+#define MIDI_CC_DETUNE		            94
+#define MIDI_CC_ALL_SOUND_OFF           120
+#define MIDI_CC_ALL_NOTES_OFF           123
 //extern const GFXfont FreeSans9pt7b;
 //extern const GFXfont FreeSans12pt7b;
 //extern const GFXfont FreeSans18pt7b;
@@ -23,8 +35,8 @@ extern Adafruit_SPITFT tft;
 class cMenu {
 public:
 	void Init();
-	void ClearNeedUpdate() { menuNeedFlush = false; }
-	bool NeedUpdate() { return menuNeedFlush; }
+//	void ClearNeedUpdate() { menuNeedFlush = false; }
+//	bool NeedUpdate() { return menuNeedFlush; }
 	void Show() { mainmenu(); }
 	static void ShowButtonText(uint8_t button);
 	static void menuBack(uint8_t button);
@@ -46,21 +58,21 @@ public:
 	static void TGEnable(uint8_t button);
 private:
 	static void setDexedParm(uint16_t parm, int32_t val, uint8_t instance);
-	static void ShowValue(int32_t param, int16_t x0, int16_t y0, int16_t w0, int16_t h0, bool colorflag, uint8_t fontsize);
-	static void setButtonCallbackWithParam(uint8_t button,int16_t param, int16_t pos, void (*callback)(uint8_t button));
-	static void setButtonParm(uint8_t button, int16_t param, int16_t pos, bool haslongpress);
+	static void ShowValue(int32_t param);
+	static void setButtonCallbackWithParam(uint8_t button,int16_t param, void (*callback)(uint8_t button));
+	static void setButtonParm(uint8_t button, int16_t param, bool haslongpress);
 	static void clearCallbacks();
-	static void setPotCallback(uint8_t channel, int16_t param, int16_t pos);
+	static void setPotCallback(uint8_t channel, int16_t param);
 	static void resetPotCB(uint8_t channel);
 	static uint8_t menu;
 	static uint8_t prev_menu;
 	static int8_t currentTG;
 	static bool pflag[3];
-	static int16_t potpos[3];
+//	static int16_t potpos[3];
 	static int16_t potparam[4];
 	static int16_t bparam[8];
-	static int16_t parampos[8];
-	static bool menuNeedFlush;
+	static int16_t parampos[24];
+//	static bool menuNeedFlush;
 	static bool TGEnabled[8];
 };
 

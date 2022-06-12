@@ -79,8 +79,6 @@ void midi_task(void)
     static uint8_t buffer[CFG_TUD_MIDI_TX_BUFSIZE / 4 * 3];
     static uint8_t buf_pos = 0;
     static uint8_t buf_valid = 0;
-    static bool SysExState = false;
-    static sysex_t sysex_buf;
 
     size_t length = buf_valid - buf_pos;
     if (length)
@@ -95,58 +93,7 @@ void midi_task(void)
     buf_valid = uart_read(DEXED, buffer, sizeof buffer);
     if (buf_valid)
     {
-        for (size_t i = 0; i < buf_valid; i++)
-        {
-            // Todo Detect bank and program changes
-#ifdef DEBUGMIDI
-            if ((buffer[i] & 80) == 0x80) printf("\n%02X, ", buffer[i]);
-            else printf("%02X, ", buffer[i]);
-#endif
-            if (SysExState == true)
-            {
-                sysex_buf.length++;
-                if (sysex_buf.length <= SYSEX_BUFFER)
-                    sysex_buf.buffer[sysex_buf.length] = buffer[i];
-#ifdef DEBUGSYSEX
-                printf("%02X, ", buffer[i]);
-                if ((sysex_buf.length +1) % 16 == 0) printf("\n");
-#endif
-            }
-            if (buffer[i] == 0xF0)
-            {
-                SysExState = true;
-                sysex_buf.length = 0;
-                sysex_buf.buffer[sysex_buf.length] = buffer[i];
-#ifdef DEBUGSYSEX
-                printf("Start of Sysex\n");
-                printf("%02X, ", buffer[i]);
-#endif
-            }
-            if (sysex_buf.length == 3) // Check if this is valid data for us
-            {
-                if (sysex_buf.buffer[2] == 0x31 ||     // config dump
-                    ((sysex_buf.buffer[2] & 0x70) == 10 && (sysex_buf.buffer[3] >> 2) == 2) || // Function parameters
-                    ((sysex_buf.buffer[2] & 0x70) == 0 && sysex_buf.buffer[3] == 0)) // Voice dumps
-                {
-                    ;
-                }
-                else {
-                    SysExState = false;
-                }
-            }
-            if (sysex_buf.buffer[sysex_buf.length] == 0xF7)
-            {
-                if (SysExState == true)
-                {
-                    queue_add_blocking(&sysex_fifo, &sysex_buf);
-#ifdef DEBUGSYSEX
-                    printf("\nEnd of Sysex\n");
-                    printf("Sysex size: %i\n", sysex_buf.length);
-#endif
-                }
-                SysExState = false;
-            }
-        }
+        midiParser(buffer, buf_valid);
         buf_pos = tud_midi_stream_write(0, buffer, buf_valid);
 
         led_uart_state = true;
@@ -188,7 +135,7 @@ void midicore()
     printf("tusb_init done");
 #endif
     // Initialise UARTs
-    uart_init(DEXED, 115200);
+    uart_init(DEXED, 230400);
     gpio_set_function(TX1, GPIO_FUNC_UART);
     gpio_set_function(RX1, GPIO_FUNC_UART);
 #ifdef MIDIPORT
@@ -222,6 +169,10 @@ void dispatcher(dexed_t mididata)
     if (mididata.cmd == 2)
     {
         dexedConfigRequest();
+    }
+    if (mididata.cmd == 3)
+    {
+        dexedGetBankName(mididata);
     }
     if ( mididata.cmd == 0 )
     {
@@ -285,7 +236,7 @@ void dispatcher(dexed_t mididata)
 void sendToAllPorts(uint8_t *message, uint8_t len)
 {
 //    printf("Send to all ports\t");
-#ifdef DEBUGSYSEX
+#if 1==1
     for (size_t i = 0; i < len; i++)
     {
         tud_midi_stream_write(0, message+i, 1);
@@ -323,6 +274,17 @@ void dx7sysex(uint16_t parm, dexed_t mididata)
         val1,
         0xF7 };
     sendToAllPorts(sysex, 7);
+}
+
+void dexedGetBankName(dexed_t mididata)
+{
+    uint8_t bankname_req[4] = {
+        0xF0,
+        0x43,
+        0x40 | (mididata.instance & 0xF),
+        0xF7
+    };
+    sendToAllPorts(bankname_req, 4);
 }
 
 void dexedPatchRequest(dexed_t mididata)
@@ -367,5 +329,123 @@ void sendCtrl(uint8_t ctrl, dexed_t mididata)
     } else {
         uint8_t ctrlchange[3] = { 0xB0 | (mididata.channel & 0xF), ctrl, val1 };
         sendToAllPorts(ctrlchange, 3);
+    }
+}
+
+void midiParser(uint8_t* buffer, size_t length)
+{
+    for (size_t i = 0; i < length; i++)
+    {
+        parseMidi(buffer[i]);
+        parseSysex(buffer[i]);
+        // Todo Detect bank and program changes
+#ifdef DEBUGMIDI
+        if ((buffer[i] & 80) == 0x80) printf("\n%02X, ", buffer[i]);
+        else printf("%02X, ", buffer[i]);
+#endif
+    }
+}
+
+void parseMidi(uint8_t buf)
+{
+    static sysex_t ctrl_buf;
+    static bool CtrlState = false;
+    static uint8_t eventbytes = 0;
+    if (CtrlState == true)
+    {
+        ctrl_buf.length++;
+        if (ctrl_buf.length < eventbytes)
+            ctrl_buf.buffer[ctrl_buf.length] = buf;
+#ifdef DEBUGSYSEX
+        printf("%02X, ", buf);
+        if ((ctrl_buf.length + 1) % 16 == 0) printf("\n");
+#endif
+    }
+    if ( (buf&0xF0) == 0xC0 || ( buf&0xF0) == 0xB0)
+    {
+        CtrlState = true;
+        if ( (buf&0xf0) == 0xC0)  
+            eventbytes = 2;
+        else
+            eventbytes = 3;
+
+        ctrl_buf.length = 0;
+        ctrl_buf.buffer[ctrl_buf.length] = buf;
+#ifdef DEBUGSYSEX
+        printf("Start of Ctrlr\n");
+        printf("%02X, ", buf);
+#endif
+    }
+    if (  ctrl_buf.length == eventbytes-1 ) // 
+    {
+        if (CtrlState == true)
+        {
+            queue_add_blocking(&sysex_fifo, &ctrl_buf);
+#ifdef DEBUGSYSEX
+            printf("\nEnd of Ctrl\n");
+            printf("Ctrl size: %i\n", ctrl_buf.length);
+#endif
+        }
+        eventbytes = 0;
+        ctrl_buf.length = 0;
+        CtrlState = false;
+    }
+    if (eventbytes > 3)
+    {
+        eventbytes = 0;
+        ctrl_buf.length = 0;
+        CtrlState = false;
+    }
+}
+
+void parseSysex(uint8_t buf)
+{
+    static sysex_t sysex_buf;
+    static bool SysExState = false;
+    
+    if (SysExState == true)
+    {
+        sysex_buf.length++;
+        if (sysex_buf.length <= SYSEX_BUFFER)
+            sysex_buf.buffer[sysex_buf.length] = buf;
+#ifdef DEBUGSYSEX
+        printf("%02X, ", buf);
+        if ((sysex_buf.length + 1) % 16 == 0) printf("\n");
+#endif
+    }
+    if (buf == 0xF0)
+    {
+        SysExState = true;
+        sysex_buf.length = 0;
+        sysex_buf.buffer[sysex_buf.length] = buf;
+#ifdef DEBUGSYSEX
+        printf("Start of Sysex\n");
+        printf("%02X, ", buf);
+#endif
+    }
+    if (sysex_buf.length == 3) // Check if this is valid data for us
+    {
+        if (sysex_buf.buffer[2] == 0x31 ||     // config dump
+            ((sysex_buf.buffer[2] & 0x70) == 0x50 && sysex_buf.buffer[3] == 0) || // Bank Name Dump
+            ((sysex_buf.buffer[2] & 0x70) == 0x10 && (sysex_buf.buffer[3] >> 2) == 2) || // Function parameters
+            ((sysex_buf.buffer[2] & 0x70) == 0 && sysex_buf.buffer[3] == 0)) // Voice dumps
+        {
+            ;
+        }
+        else {
+            SysExState = false;
+        }
+    }
+    if (sysex_buf.buffer[sysex_buf.length] == 0xF7)
+    {
+        if (SysExState == true)
+        {
+            queue_add_blocking(&sysex_fifo, &sysex_buf);
+#ifdef DEBUGSYSEX
+            printf("\nEnd of Sysex\n");
+            printf("Sysex size: %i\n", sysex_buf.length);
+#endif
+        }
+        SysExState = false;
     }
 }
