@@ -236,7 +236,7 @@ void dispatcher(dexed_t mididata)
 void sendToAllPorts(uint8_t *message, uint8_t len)
 {
 //    printf("Send to all ports\t");
-#if 1==1
+#if SYSEXDEBUG
     for (size_t i = 0; i < len; i++)
     {
         tud_midi_stream_write(0, message+i, 1);
