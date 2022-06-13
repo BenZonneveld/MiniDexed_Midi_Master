@@ -190,6 +190,7 @@ BTNEVNT cButtons::checkButton(bool buttonVal, uint8_t btn) {
 
 void cButtons::doCallback(uint8_t button)
 {
+//    if ( event[button] != BTNONE ) printf("do callback for %i to %08X\n", button, buttonCallback[button]);
     switch (event[button])
     {
     case BTNONE:

@@ -10,102 +10,104 @@
 queue_t tg_fifo;
 size_t CountedObj::total_;
 
+tg_params tg_parameters[] = {
+	{ 0,0,0,"---", 0 },			// PNOPARAM
+	{ 0, MAXBANKS, 1, "BNK", F_BANK },	// PBANK
+	{ 0, MAXPATCH, 1, "PGM", F_PATCH },	// PPATCH
+	{ 0, MAXCHANNEL, 1, "CHN",F_CHANNEL },// PCHANNEL
+	{ 0, MAXFREQ,0, "CUT", F_FREQ },	// PFREQ
+	{ 0, MAXRESO, 0, "RES", F_RESO },	// PRESO
+	{ 0, MAXREV, 0, "REV", F_VERB },	// PVERB
+	{ -48,48,0, "SHF", F_SHIFT },		// PSHIFT
+	{ -99, 99, 0, "DET",F_TUNE },		// PTUNE
+	{ -64,64,0, "PAN", F_PAN },		// PPAN
+	{ 0, 127, 0, "VOL",F_VOL },		// PVOL
+	{ 0,12,0, "PBR", F_BRANGE },			// PBRANGE
+	{ 0, 1,0, "MOD", F_PMODE },			// PPMODE
+	{ 0,1,0, "MON", F_MONO },			// PMONO
+	{ 0,12, 0, "PBS", F_BSTEP },			// PBSTEP
+	{ 0,1,0, "GLS", F_GLISS },			// PGLISS
+	{ 0,99,0, "TIM", F_TIME },			// PTIME
+	{ 0,127,0, "NLL", F_NLOW },			// PNLOW
+	{ 0,127,0, "NLH", F_NHIGH },			// PNHIGH
+	{ 0,1,0, "CMP", F_COMP_EN },			//	FCOMP_EN,
+	{ 0,1,0, "VRB", F_REV_EN },			// FREV_EN,
+	{0,99,0, "SIZ", F_SIZE },			// FSIZE,
+	{0,99,0, "LDP", F_LOWDAMP},			// FLOWDAMP,
+	{0,99,0, "HDP", F_HIGHDAMP},			// FHIGHDAMP,
+	{0,99,0, "LPS", F_LOWPASS},			// FLOWPASS,
+	{0,99,0, "DIF", F_DIFF},			// FDIFF,
+	{0,99,0, "LEV", F_RLEVEL}				// FRLEVEL,
+};
+
 cTG::cTG()
 {
 	mobject_id = CountedObj::showCount() -1;
 	sprintf(mvoicename,"Unknown");
-	mbank = 0;
-	setParm(PBANK, &mbank);
-	mpatch = 0;
-	setParm(PPATCH, &mpatch);
-	mchannel = 17;
-	setParm(PCHANNEL, &mchannel);
-	mfreq = 127;
-	setParm(PFREQ, &mfreq);
-	mreso = 0;
-	setParm(PRESO, &mreso);
-	mrev = 0;
-	setParm(PVERB, &mrev);
-	mcomp = 0;
-	setParm(PCOMP, &mcomp);
-	mnote_shift = 0;
-	setParm(PSHIFT, &mnote_shift);
-	mtune = 0;
-	setParm(PTUNE, &mtune);
-	mpan = 64;
-	setParm(PPAN, &mpan);
-	mvol = 127;
-	setParm(PVOL, &mvol);
-	mrange = 2;
-	setParm(PBRANGE, &mrange);
-	mpmode = 0;
-	setParm(PPMODE, &mpmode);
-	mmono = 0;
-	setParm(PMONO, &mmono);
-	mstep = 0;
-	setParm(PBSTEP, &mstep);
-	mgliss = 0;
-	setParm(PGLISS, &mgliss);
-	mtime = 0;
-	setParm(PTIME, &mtime);
-	mnote_low = 0;
-	setParm(PNLOW, &mnote_low);
-	mnote_high = 127;
-	setParm(PNHIGH, &mnote_high);
+	setParm(PBANK, 0);
+	setParm(PPATCH, 0);
+	setParm(PCHANNEL, 0);
+	setParm(PFREQ, 99);
+	setParm(PRESO, 0);
+	setParm(PVERB, 0);
+	setParm(PSHIFT, 0);
+	setParm(PTUNE, 0);
+	setParm(PPAN, 0);
+	setParm(PVOL, 99);
+	setParm(PBRANGE, 2);
+	setParm(PPMODE, 0);
+	setParm(PMONO, 0);
+	setParm(PBSTEP, 0);
+	setParm(PGLISS, 0);
+	setParm(PTIME, 0);
+	setParm(PNLOW, 0);
+	setParm(PNHIGH, 127);
 }
 
-void cTG::setParm(int16_t parm, int16_t* data)
+void cTG::setParm(int16_t parm, int16_t value)
 {
-	mparms[parm].val16t = data;
+	mparms[parm] = value;
 }
 
 int32_t cTG::parmUp(int16_t parm)
 {
-	int16_t v16t;
-
-	v16t = *mparms[parm].val16t;
-	if (v16t < ranges[parm][RMAX])
+	if (mparms[parm] <= tg_parameters[parm].high)
 	{
-		v16t++;
+		mparms[parm]++;
 	}
-	*mparms[parm].val16t = v16t;
-	return v16t;
+	return mparms[parm];
 }
 
 int32_t cTG::parmDown(int16_t parm)
 {
-	int16_t v16t;
-
-	v16t = *mparms[parm].val16t;
-	if (v16t > ranges[parm][RMIN])
+	if (mparms[parm] >= tg_parameters[parm].low)
 	{
-		v16t--;
+		mparms[parm]--;
 	}
-	*mparms[parm].val16t = v16t;
-	return v16t;
+	return mparms[parm];
 }
 
 int32_t cTG::setValue(int16_t parm, int32_t value)
 {
-	if (value >= ranges[parm][RMIN] && value < ranges[parm][RMAX])
+	if (value >= tg_parameters[parm].low && value <= tg_parameters[parm].high)
 	{
-		*mparms[parm].val16t = value;
+		mparms[parm] = value;
 	}
 	return value;
 }
 
 int32_t cTG::getValue(int16_t parm)
 {
-	return *mparms[parm].val16t;
+	return mparms[parm];
 }
 
 void cTG::sendParam(int16_t parm)
 {
-	int32_t value = *mparms[parm].val16t;
+	int32_t value = mparms[parm];
 	dexed_t tgdata;
 	if (parm != PCHANNEL)
 
-		tgdata.channel = mchannel;
+		tgdata.channel = mparms[PCHANNEL];
 	else
 		tgdata.channel = mobject_id;
 	tgdata.instance = mobject_id;
@@ -117,18 +119,18 @@ void cTG::sendParam(int16_t parm)
 	{
 	case PTUNE:
 //		printf("value: %i\n", value);
-		value = map(value, ranges[PTUNE][RMIN], ranges[PTUNE][RMAX], 3, 126);
+		value = map(value, tg_parameters[PTUNE].low, tg_parameters[PTUNE].high, 3, 126);
 		break;
 	case PPAN:
 //		printf("value: %i\n", value);
-		value = map(value, ranges[PPAN][RMIN], ranges[PPAN][RMAX], 0, 127);
+		value = map(value, tg_parameters[PPAN].low, tg_parameters[PPAN].high, 0, 127);
 		break;
 	default:
 		break;
 	}
 	tgdata.value = value & 0xff;
 	queue_add_blocking(&tg_fifo, &tgdata);
-	if (parm = PBANK) getBank();
+	if (parm == PBANK) getBank();
 }
 
 void cTG::getPatch()
@@ -141,7 +143,7 @@ void cTG::getPatch()
 	printf("getPatch data  for instanceID %i\n", mobject_id);
 	tgdata.cmd = 1;
 	tgdata.parm = 0;
-	tgdata.value = mpatch;
+	tgdata.value = mparms[PPATCH];
 	queue_add_blocking(&tg_fifo, &tgdata);
 //	queue_remove_blocking(&sysex_fifo, &raw_sysex);
 //	setSysex(raw_sysex);

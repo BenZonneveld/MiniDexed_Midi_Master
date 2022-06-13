@@ -10,29 +10,24 @@ extern "C"
 extern queue_t tg_fifo;
 #define VOICEDATA_HEADER 6
 #define VOICEDATA_SIZE 162
-#define SYSEX_BUFFER	200
+#define SYSEX_BUFFER	204
 #define VNAME_OFFSET	145
 
-#define PARMS	24
-#define MAXBANKS 128
-#define MAXPATCH 32
-#define MAXCHANNEL 17
-#define MAXFREQ 128
-#define MAXRESO	128
-#define MAXREV	128
+#define MAXBANKS 127
+#define MAXPATCH 31
+#define MAXCHANNEL 16
+#define MAXFREQ 99
+#define MAXRESO	99
+#define MAXREV	99
 
-#define RMIN	0
-#define RMAX	1
-#define ROFFSET	2
-
-enum TGPARAMS { PNOPARAM,
-	PBANK, 
+enum TGPARAMS {
+	PNOPARAM,
+	PBANK,
 	PPATCH,
 	PCHANNEL,
 	PFREQ,
 	PRESO,
 	PVERB,
-	PCOMP,
 	PSHIFT,
 	PTUNE,
 	PPAN,
@@ -44,31 +39,58 @@ enum TGPARAMS { PNOPARAM,
 	PGLISS,
 	PTIME,
 	PNLOW,
-	PNHIGH
+	PNHIGH,
+	FCOMP_EN,
+	FREV_EN,
+	FSIZE,
+	FLOWDAMP,
+	FHIGHDAMP,
+	FLOWPASS,
+	FDIFF,
+	FRLEVEL,
+	PLAST
 };
 
-const int16_t ranges[][3] = {
-	{0,0,0}, // PNOPARAM
-	{0,MAXBANKS,1}, // PBANK
-	{ 0, MAXPATCH,1}, // PPATCH
-	{ 0, MAXCHANNEL,1}, // PCHANNEL
-	{ 0, MAXFREQ,0}, // PFREQ
-	{ 0, MAXRESO,0}, // PRESO
-	{ 0, MAXREV,0}, // PVERB
-	{0,1,0}, // PCOMP
-	{-8,8,0}, // PTRANS
-	{ -99,99,0}, // PTUNE
-	{ -63, 63,0}, // PPAN
-	{ 0, 127,0}, // PVOL
-	{ -12,12,0}, // PBRANGE
-	{ 0,1,0}, //PPORTA
-	{ 0,1,0}, // PMONO
-	{0,12,0}, // PBSTEP
-	{0,99,0}, // PGLISS
-	{0,99,0}, // PTIME
-	{0,127,0}, // PNLOW
-	{0,127,0} // PNHIGH
+enum sysfunc {
+	F_NOPARAM = 0 ,
+	F_BANK = 78,
+	F_PATCH = 79,
+	F_CHANNEL = 80,
+	F_FREQ = 81,
+	F_RESO = 82,
+	F_VERB = 83,
+	F_SHIFT = 84,
+	F_TUNE = 85,
+	F_PAN = 86,
+	F_VOL = 76,
+	F_BRANGE = 65,
+	F_PMODE = 67,
+	F_MONO = 64,
+	F_BSTEP = 66,
+	F_GLISS = 68,
+	F_TIME = 69,
+	F_NLOW = 87,
+	F_NHIGH = 88,
+	F_COMP_EN = 89,
+	F_REV_EN = 90,
+	F_SIZE = 91,
+	F_LOWDAMP = 92,
+	F_HIGHDAMP = 93,
+	F_LOWPASS = 94,
+	F_DIFF = 95,
+	F_RLEVEL = 96,
 };
+
+typedef struct {
+	int16_t	low;
+	int16_t	high;
+	uint8_t offset;
+	char	shortname[4];
+	uint8_t sysex_function;
+} tg_params;
+
+extern tg_params tg_parameters[];
+extern uint8_t function_param[];
 
 typedef struct {
 	uint8_t channel;
@@ -121,33 +143,12 @@ public:
 	void Panning(int8_t pan);
 	void Volume(uint8_t vol);*/
 private:
-	void setParm(int16_t parm, int16_t* data);
+	void setParm(int16_t parm, int16_t value);
 	uint16_t mobject_id;
-	int16_t mbank;
-	int16_t mpatch;
-	int16_t mchannel;
-	int16_t mfreq;
-	int16_t mreso;
-	int16_t mrev;
-	int16_t mcomp;
-	int16_t mnote_shift;
-	int16_t mtune;
-	int16_t mpan;
-	int16_t mvol;
-	int16_t mpmode;
-	int16_t mmono;
-	int16_t mrange;
-	int16_t mstep;
-	int16_t mgliss;
-	int16_t mtime;
-	int16_t mnote_low;
-	int16_t mnote_high;
 	char mvoicename[11];
 	char mbankname[32];
-	uint8_t msysex[162];
-	struct s_parms{
-		int16_t *val16t;
-	} mparms[PARMS];
+//	uint8_t msysex[162];
+	int16_t mparms[PLAST];
 	unsigned char notes[16]; // Maybe not an array...
 };
 

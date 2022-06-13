@@ -29,38 +29,84 @@
 //extern const GFXfont FreeSans24pt7b;
 //extern const GFXfont Open_Sans_Regular_8;
 
-enum POS { POS0 = 0, POS1 = 34, POS2 = 68, POS3 = 102 , POSA = 38, POSB = 60, POSC = 82, POSD = 104};
-extern Adafruit_SPITFT tft;
+enum POS { POSA = 38, POSB = 60, POSC = 82, POSD = 104};
+//extern Adafruit_SPITFT tft;
+enum menulvl { M_MAIN = 0,
+	M_TG,
+	M_TG_MIDI,
+	M_TG_FILT,
+	M_TG_TUNE,
+	M_TG_OUT,
+	M_TG_PITCH,
+	M_TG_PORTA,
+	M_DEXED,
+	M_FX1,
+	M_FX2,
+	M_ROUTING,
+	M_CARD
+};
+
+typedef struct {
+//	const uint8_t menulvl;
+	uint8_t prev;
+	uint16_t potparams[3];
+	bool potflags[3];
+	uint16_t showvalue[4];
+	struct {
+		char name[8];
+		uint16_t parameter;
+		void (*callback)(uint8_t cbparam);
+		void (*dblcallback)(uint8_t cbparam);
+		void (*longcallback)(uint8_t cbparam);
+	} button[8];
+} s_menu;
+
+typedef struct {
+	bool comp_enable;
+	bool reverb_enable;
+	uint8_t verbsize;
+	uint8_t highdamp;
+	uint8_t lowdamp;
+	uint8_t lowpass;
+	uint8_t diffusion;
+	uint8_t level;
+} s_fx;
+
+extern s_fx fx_settings;
 
 class cMenu {
 public:
 	void Init();
-//	void ClearNeedUpdate() { menuNeedFlush = false; }
-//	bool NeedUpdate() { return menuNeedFlush; }
-	void Show() { mainmenu(); }
-	static void ShowButtonText(uint8_t button);
+	//	void ClearNeedUpdate() { menuNeedFlush = false; }
+	//	bool NeedUpdate() { return menuNeedFlush; }
+	void Show() { mainmenu(0); }
+	uint8_t currentMenu() { return menu; }
 	static void menuBack(uint8_t button);
-	static void menuBack();
-	static void mainmenu();
-	static void selectTG();
+	static void mainmenu(uint8_t cbparam);
+	static void selectTGcb(uint8_t cbparam);
 	static void selectTG(uint8_t button);
 	static void Midi(uint8_t button);
 	static void TGFilter(uint8_t button);
 	static void TGTune(uint8_t button);
 	static void TGOut(uint8_t button);
 	static void TGPitch(uint8_t button);
-	static void CompToggle();
+	static void TGPorta(uint8_t button);
 	static void ParmSelect(uint8_t button);
 	static void ParmToggle(uint8_t button);
 	static void ParmPot(uint8_t channel);
-	static void showTGInfo(int16_t param);
-	static void handleSysex(sysex_t raw_sysex);
 	static void TGEnable(uint8_t button);
-private:
 	static void setDexedParm(uint16_t parm, int32_t val, uint8_t instance);
+	static void showTGInfo(int16_t param);
 	static void ShowValue(int32_t param);
-	static void setButtonCallbackWithParam(uint8_t button,int16_t param, void (*callback)(uint8_t button));
-	static void setButtonParm(uint8_t button, int16_t param, bool haslongpress);
+	static void Dexed(uint8_t cbparam);
+	static void FX1(uint8_t cbparam);
+	static void FX2(uint8_t cbparam);
+	static void Routing(uint8_t cbparam);
+	static void Card(uint8_t cbparam);
+private:
+	static void buildMenu(uint8_t men);
+	static void ShowButtonText(uint8_t button);
+	static void setButtonCallback(uint8_t button,int16_t param, void (*callback)(uint8_t button));
 	static void clearCallbacks();
 	static void setPotCallback(uint8_t channel, int16_t param);
 	static void resetPotCB(uint8_t channel);
@@ -68,11 +114,9 @@ private:
 	static uint8_t prev_menu;
 	static int8_t currentTG;
 	static bool pflag[3];
-//	static int16_t potpos[3];
-	static int16_t potparam[4];
+	static int16_t potparam[3];
 	static int16_t bparam[8];
-	static int16_t parampos[24];
-//	static bool menuNeedFlush;
+	static int16_t parampos[PLAST];
 	static bool TGEnabled[8];
 };
 

@@ -21,4 +21,5 @@ void dexedGetBankName(dexed_t mididata);
 void dexedConfigRequest();
 void midiParser(uint8_t *buffer, size_t length);
 void parseSysex(uint8_t buf);
-void parseMidi(uint8_t buf);
+void parseCtrls(uint8_t buf);
+void handleMidi(sysex_t raw_sysex);

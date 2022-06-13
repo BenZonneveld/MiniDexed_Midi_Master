@@ -17,6 +17,7 @@
 cPots Pots = cPots();
 cButtons buttons = cButtons();
 cTG dexed[8];
+cMenu menu;
 
 /*------------- MAIN -------------*/
 int main(void)
@@ -24,7 +25,6 @@ int main(void)
     queue_init(&tg_fifo, sizeof(dexed_t), FIFOLENGTH);
     queue_init(&midi_fifo, sizeof(dexed_t), FIFOLENGTH);
     queue_init(&sysex_fifo, sizeof(sysex_t), FIFOLENGTH);
-    cMenu menu;
     board_init();
     set_sys_clock_khz(133000, true);
 
@@ -50,7 +50,7 @@ int main(void)
         buttons.handleButtons();
         while (queue_try_remove(&sysex_fifo, &raw_sysex))
         {
-            menu.handleSysex(raw_sysex);
+            handleMidi(raw_sysex);
         }
     }
 
