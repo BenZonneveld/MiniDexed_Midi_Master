@@ -20,7 +20,6 @@ target_sources(${PROJECT} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/usb_descriptors.c
         ${CMAKE_CURRENT_SOURCE_DIR}/tud_callbacks.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/utils/tools.c
-#        ${CMAKE_CURRENT_SOURCE_DIR}/MIDI/midi.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Pots/Pots.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Buttons/Buttons.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Menu/MainMenu.cpp
@@ -35,7 +34,6 @@ pico_enable_stdio_uart(${PROJECT} 1)
 target_include_directories(${PROJECT} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/utils
-#        ${CMAKE_CURRENT_SOURCE_DIR}/MIDI
         ${CMAKE_CURRENT_SOURCE_DIR}/Pots
         ${CMAKE_CURRENT_SOURCE_DIR}/Buttons
         ${CMAKE_CURRENT_SOURCE_DIR}/Menu
