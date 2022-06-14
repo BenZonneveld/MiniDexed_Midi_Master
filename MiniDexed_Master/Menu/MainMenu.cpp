@@ -140,7 +140,7 @@ s_menu menuEntry[] = {
 	{ // M_DEXED
 		M_MAIN,
 		{PNOPARAM, PNOPARAM, PNOPARAM}, { false, false, false},
-		{PNOPARAM, PNOPARAM, PNOPARAM, F_COMP_EN},
+		{PNOPARAM, PNOPARAM, F_COMP_EN, PNOPARAM},
 		{
 			{ "Rev 1", PNOPARAM, &cMenu::FX1, &cMenu::FX1, NULL},
 			{ "Rev 2", PNOPARAM, &cMenu::FX2, &cMenu::FX2, NULL},
@@ -310,6 +310,10 @@ void cMenu::ShowButtonText(uint8_t button)
 void cMenu::ShowValue(int32_t param)
 {
 	bool colorflag = false;
+	int16_t  x1, y1;
+	uint16_t w, h;
+	int32_t value;
+
 	for (size_t i = 0; i < 3; i++)
 	{
 		if (param == potparam[i] && pflag[i] == true)
@@ -318,9 +322,45 @@ void cMenu::ShowValue(int32_t param)
 			i=2;
 		}
 	}
-	int16_t  x1, y1;
-	uint16_t w, h;
-	int32_t value = dexed[currentTG].getValue(param);
+	if (param > PNHIGH)
+	{
+		switch (param)
+		{
+		case FCOMP_EN:
+			value = fx_settings.comp_enable;
+			break;
+		case FREV_EN:
+			value = fx_settings.reverb_enable;
+			break;
+		case FSIZE:
+			value = fx_settings.verbsize;
+			break;
+		case FDIFF:
+			value = fx_settings.diffusion;
+			break;
+		case FRLEVEL:
+			value = fx_settings.level;
+			break;
+		case FHIGHDAMP:
+			value = fx_settings.highdamp;
+			break;
+		case FLOWDAMP:
+			value = fx_settings.lowdamp;
+			break;
+		case FLOWPASS:
+			value = fx_settings.lowpass;
+			break;
+		case MASTERVOLUME:
+			value = fx_settings.mastervolume;
+			break;
+		default:
+			break;
+		}
+
+	}
+	else {
+		value = dexed[currentTG].getValue(param);
+	}
 	//	printf("Showvalue parm %i, value %i\n", param, value);
 	char text[7];
 	itoa(value + tg_parameters[param].offset, text, 10);
@@ -341,7 +381,7 @@ void cMenu::ShowValue(int32_t param)
 			sprintf(text, "OFF");
 	}
 
-	if (param == PMONO || param == PGLISS)
+	if (param == PMONO || param == PGLISS || param == FCOMP_EN || param == FREV_EN )
 	{
 		sprintf(text, "OFF");
 		if (value == 1)
@@ -350,7 +390,7 @@ void cMenu::ShowValue(int32_t param)
 
 	if (param == PPMODE)
 	{
-		sprintf(text, "Fing");
+		sprintf(text, "Fin");
 		if (value == 1)
 			sprintf(text, "Full");
 	}
@@ -394,42 +434,158 @@ void cMenu::menuBack(uint8_t cbparam)
 void cMenu::ParmToggle(uint8_t button)
 {
 	uint16_t parm = bparam[button];
-	uint16_t val = dexed[currentTG].getValue(parm);
-	if ( val == 1)
+	if (parm < FCOMP_EN)
 	{
-		dexed[currentTG].parmDown(bparam[button]);
+		uint16_t val = dexed[currentTG].getValue(parm);
+		if (val == 1)
+		{
+			dexed[currentTG].parmDown(bparam[button]);
+		}
+		else {
+			dexed[currentTG].parmUp(bparam[button]);
+		}
+		dexed[currentTG].sendParam(bparam[button]);
 	}
 	else {
-		dexed[currentTG].parmUp(bparam[button]);
+		switch (parm)
+		{
+		case FCOMP_EN:
+			if (fx_settings.comp_enable)
+				fx_settings.comp_enable = false;
+			else
+				fx_settings.comp_enable = true;
+			break;
+		case FREV_EN:
+			if (fx_settings.reverb_enable)
+				fx_settings.reverb_enable = false;
+			else
+				fx_settings.reverb_enable = true;
+			break;
+		default:
+			break;
+		}
 	}
-	dexed[currentTG].sendParam(bparam[button]);
 	//	dexed[currentTG].sendMidi(bparam[button]);
-	ShowValue(bparam[button]);
+	ShowValue(parm);
 	if (menu == M_MAIN)
-		showTGInfo(bparam[button]);
+		showTGInfo(parm);
 }
 
 void cMenu::ParmSelect(uint8_t button)
 {
+	uint16_t parm = bparam[button];
+	bool up = false;
 	switch (button)
 	{
 	case BUT1:
 	case BUT2:
 	case BUT3:
 	case BUT4:
-		dexed[currentTG].parmDown(bparam[button]);
+		up = false;
 		break;
 	case BUT5:
 	case BUT6:
 	case BUT7:
 	case BUT8:
-		dexed[currentTG].parmUp(bparam[button]);
+		up = true;
 		break;
 	default:
 		break;
 	}
-	dexed[currentTG].sendParam(bparam[button]);
-	if (bparam[button] == PPATCH || bparam[button] == PBANK) dexed[currentTG].getPatch();
+
+	if (parm < FCOMP_EN)
+	{
+		if ( up)
+			dexed[currentTG].parmUp(bparam[button]);
+		else
+			dexed[currentTG].parmDown(bparam[button]);
+		dexed[currentTG].sendParam(bparam[button]);
+		if (bparam[button] == PPATCH || bparam[button] == PBANK) dexed[currentTG].getPatch();
+	}
+	else
+	{
+		switch (parm)
+		{
+		case FSIZE:
+			if (up)
+			{
+				if (fx_settings.verbsize < tg_parameters[FSIZE].high)
+					fx_settings.verbsize++;
+			}
+			else {
+				if (fx_settings.verbsize > tg_parameters[FSIZE].low)
+					fx_settings.verbsize--;
+			}
+			break;
+		case FLOWDAMP:
+			if (up)
+			{
+				if (fx_settings.lowdamp < tg_parameters[FLOWDAMP].high)
+					fx_settings.lowdamp++;
+			}
+			else {
+				if (fx_settings.lowdamp > tg_parameters[FLOWDAMP].low)
+					fx_settings.lowdamp--;
+			}
+			break;
+		case FHIGHDAMP:
+			if (up)
+			{
+				if (fx_settings.highdamp < tg_parameters[FHIGHDAMP].high)
+					fx_settings.highdamp++;
+			}
+			else {
+				if (fx_settings.highdamp > tg_parameters[FHIGHDAMP].low)
+					fx_settings.highdamp--;
+			}
+			break;
+		case FLOWPASS:
+			if (up)
+			{
+				if (fx_settings.lowpass < tg_parameters[FLOWPASS].high)
+					fx_settings.lowpass++;
+			}
+			else {
+				if (fx_settings.lowpass > tg_parameters[FLOWPASS].low)
+					fx_settings.lowpass--;
+			}
+			break;
+		case FDIFF:
+			if (up)
+			{
+				if (fx_settings.diffusion < tg_parameters[FDIFF].high)
+					fx_settings.diffusion++;
+			}
+			else {
+				if (fx_settings.diffusion > tg_parameters[FDIFF].low)
+					fx_settings.diffusion--;
+			}
+			break;
+		case FRLEVEL:
+			if (up)
+			{
+				if (fx_settings.level < tg_parameters[FRLEVEL].high)
+					fx_settings.level++;
+			}
+			else {
+				if (fx_settings.level > tg_parameters[FRLEVEL].low)
+					fx_settings.level--;
+			}
+			break;
+		case MASTERVOLUME:
+			if (up)
+			{
+				if (fx_settings.mastervolume < tg_parameters[MASTERVOLUME].high)
+					fx_settings.mastervolume++;
+			}
+			else {
+				if (fx_settings.mastervolume > tg_parameters[MASTERVOLUME].low)
+					fx_settings.mastervolume--;
+			}
+			break;
+		}
+		dexed[0].sendParam(parm);
+	}
 	ShowValue(bparam[button]);
 	if ( menu != M_MAIN)
 		showTGInfo(bparam[button]);
@@ -439,18 +595,24 @@ void cMenu::ParmPot(uint8_t channel)
 {
 	uint16_t param = potparam[channel];
 	int32_t value = map(Pots.getPot(channel), POT_MIN, POT_MAX, tg_parameters[param].low, tg_parameters[param].high);
-	if (value == dexed[currentTG].getValue(param) && !pflag[channel])
+	if (param < FCOMP_EN)
 	{
-		pflag[channel] = true;
-		ShowValue(param);
+		if (value == dexed[currentTG].getValue(param) && !pflag[channel])
+		{
+			pflag[channel] = true;
+			ShowValue(param);
+		}
+		if (value != dexed[currentTG].getValue(param) && pflag[channel])
+		{
+			value = dexed[currentTG].setValue(param, value);
+			ShowValue(param);
+			dexed[currentTG].sendParam(param);
+			sleep_ms(10);
+			if (param == PPATCH || param == PBANK) dexed[currentTG].getPatch();
+		}
 	}
-	if (value != dexed[currentTG].getValue(param) && pflag[channel])
-	{
-		value = dexed[currentTG].setValue(param,value);
-		ShowValue(param);
-		dexed[currentTG].sendParam(param);
-		sleep_ms(10);
-		if (param == PPATCH || param == PBANK) dexed[currentTG].getPatch();
+	else {
+		printf("TO DO ParmPOT for fx_settings\n");
 	}
 	showTGInfo(param);
 }
@@ -605,9 +767,9 @@ void cMenu::showTGInfo(int16_t param)
 				tft.fillTriangle(0, 27, (vol / 8), 27, (vol / 8), 27 - (vol / 16), WHITE);
 		}
 
+		// Panning
 		if (param == -1 || param == PPAN)
 		{
-			// Panning
 			tft.setFont(&Roboto_Bold_10);
 			int8_t pan = (dexed[currentTG].getValue(PPAN) + 63) / 4.8f;
 			tft.writeFillRect(21, 19, 26, 8, BLACK);
@@ -618,11 +780,101 @@ void cMenu::showTGInfo(int16_t param)
 		
 		tft.drawFastHLine(50, 17, 110, BLACK);
 	}
+	if ( menu == M_MAIN || menu >= M_DEXED ) {
+		// Show Comp & Rev Enabled
+		// Rev Size
+		// Rev Diff
+		// Rev Level
+		// Rev LDamp
+		// Rev HDamp
+		// Rev LPass
+		// Master Volume ?
+		tft.setFont(&Roboto_Condensed);
+		if (param == -1 || param == FCOMP_EN )
+		{
+			tft.writeFillRect(0, 0, 23, 9, BLACK);
+			tft.setTextColor(tft.color565(0x4f,0xff,0x4f));
+			if (!fx_settings.comp_enable) 
+				tft.setTextColor(DARKGREY);
+			sprintf(infostring, "CMP");
+			tft.setCursor(0, 9);
+			tft.print(infostring);
+			tft.setTextColor(WHITE);
+		}
+		//MASTERVOLUME Must be placed here to get the correct text color
+		if (param == -1 || param == MASTERVOLUME)
+		{
+			;
+		//	tft.setFont(&Roboto_Bold_10);
+		//	tft.writeFillRect(0, 0, 23, 9, BLACK);
+		//	sprintf(infostring, "MVol %1i", fx_settings.reverb_enable);
+		//	tft.setCursor(24, 9);
+		//	tft.print(infostring);
+		}
+
+		if (fx_settings.reverb_enable)
+		{
+			tft.setTextColor(WHITE);
+		}
+		else {
+			tft.setTextColor(GREY);
+		}
+
+//		tft.setFont(&Roboto_Bold_10);
+		if (param == -1 || param == FSIZE)
+		{
+//			tft.writeFillRect(30, 0, 23, 9, BLACK);
+			sprintf(infostring, "Size %2i", fx_settings.verbsize);
+			tft.setCursor(35, 9);
+			tft.print(infostring);
+		}
+		if (param == -1 || param == FDIFF)
+		{
+//			tft.writeFillRect(0, 0, 23, 9, BLACK);
+			sprintf(infostring, "Diff %2i", fx_settings.diffusion);
+			tft.setCursor(35, 22);
+			tft.print(infostring);
+		}
+		if (param == -1 || param == FRLEVEL)
+		{
+//			tft.writeFillRect(0, 0, 23, 9, BLACK);
+			sprintf(infostring, "Level %2i", fx_settings.level);
+			tft.setCursor(35, 35);
+			tft.print(infostring);
+		}
+		if (param == -1 || param == FHIGHDAMP)
+		{
+//			tft.writeFillRect(0, 0, 23, 9, BLACK);
+			sprintf(infostring, "H Damp %1i", fx_settings.highdamp);
+			tft.setCursor(100, 9);
+			tft.print(infostring);
+		}
+		if (param == -1 || param == FLOWDAMP)
+		{
+//			tft.writeFillRect(0, 0, 23, 9, BLACK);
+			sprintf(infostring, "L Damp %1i", fx_settings.lowdamp);
+			tft.setCursor(100, 22);
+			tft.print(infostring);
+		}
+		if (param == -1 || param == FLOWPASS)
+		{
+//			tft.writeFillRect(0, 0, 23, 9, BLACK);
+			sprintf(infostring, "LPass %1i", fx_settings.lowpass);
+			tft.setCursor(100, 35);
+			tft.print(infostring);
+		}
+	}
 }
 
 void cMenu::setDexedParm(uint16_t parm, int32_t val, uint8_t instance)
 {
-	int32_t rval = dexed[instance].setValue(parm, val);
+	if (parm < FCOMP_EN)
+	{
+		int32_t rval = dexed[instance].setValue(parm, val);
+	}
+	else {
+		printf("handle fx settings in cMenu::setDexedParm\n");
+	}
 //	printf("parm %02X sysex: %02X dexed[%i] %04X\n", parm, val, instance, rval);
 }
 
@@ -669,8 +921,7 @@ void cMenu::buildMenu(uint8_t men)
 		pflag[pot] = menuEntry[menu].potflags[pot];
 	}
 
-	if (menu != M_MAIN)
-		showTGInfo(-1);
+	showTGInfo(-1);
 
 	for (size_t i = 0; i < 4; i++)
 	{

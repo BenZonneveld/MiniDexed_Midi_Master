@@ -6,6 +6,7 @@
 #include "midicore.h"
 #include "TG.h"
 #include "tools.h"
+#include "mainmenu.h"
 
 queue_t tg_fifo;
 size_t CountedObj::total_;
@@ -103,7 +104,44 @@ int32_t cTG::getValue(int16_t parm)
 
 void cTG::sendParam(int16_t parm)
 {
-	int32_t value = mparms[parm];
+	int32_t value;
+	if ( parm < FCOMP_EN )
+		value = mparms[parm];
+	else
+	{
+		switch(parm)
+		{
+		case FCOMP_EN:
+			value = fx_settings.comp_enable;
+			break;
+		case FREV_EN:
+			value = fx_settings.reverb_enable;
+			break;
+		case FSIZE:
+			value = fx_settings.verbsize;
+			break;
+		case FDIFF:
+			value = fx_settings.diffusion;
+			break;
+		case FRLEVEL:
+			value = fx_settings.level;
+			break;
+		case FHIGHDAMP:
+			value = fx_settings.highdamp;
+			break;
+		case FLOWDAMP:
+			value = fx_settings.lowdamp;
+			break;
+		case FLOWPASS:
+			value = fx_settings.lowpass;
+			break;
+		case MASTERVOLUME:
+			value = fx_settings.mastervolume;
+			break;
+		default:
+			break;
+		}
+	}
 	dexed_t tgdata;
 	if (parm != PCHANNEL)
 

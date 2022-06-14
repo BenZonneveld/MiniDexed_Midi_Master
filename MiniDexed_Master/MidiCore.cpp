@@ -488,10 +488,14 @@ void parseSysex(uint8_t buf)
 
 void handleMidi(sysex_t raw_sysex)
 {
+#ifdef DEBUGSYSEX
     printf("handle sysex: ");
+#endif
     if ((raw_sysex.buffer[0] & 0xF0) == 0xC0) // Program Change
     {
+#ifdef DEBUGSYSEX
         printf("Program Change\n");
+#endif
         uint8_t instanceID = raw_sysex.buffer[0] & 0xF;
         uint8_t program = raw_sysex.buffer[1];
         if (instanceID < 8)
@@ -502,7 +506,9 @@ void handleMidi(sysex_t raw_sysex)
             {
                 menu.ShowValue(PPATCH);
             }
+#ifdef DEBUGSYSEX
             printf("Program Change Received for instance: %i program %i\n", instanceID, program);
+#endif
         }
         dexed[instanceID].getPatch();
         return;
@@ -589,7 +595,9 @@ void handleMidi(sysex_t raw_sysex)
     }
     if ((raw_sysex.buffer[2] & 0xF0) == 0x0 && raw_sysex.buffer[3] == 0)
     {
+#ifdef DEBUGSYSEX
         printf("Sysex Voice Dump\n");
+#endif
         uint8_t channel = (raw_sysex.buffer[2] & 0xf);
         if (channel < 8)
         {
@@ -599,7 +607,9 @@ void handleMidi(sysex_t raw_sysex)
     }
     if ((raw_sysex.buffer[2] & 0x70) == 0x50 && raw_sysex.buffer[3] == 0)
     {
+#ifdef DEBUGSYSEX
         printf("Bank Name Received\n");
+#endif
 
         uint8_t instanceID = raw_sysex.buffer[2] & 0xF;
         dexed[instanceID].setBankName(raw_sysex);
@@ -607,7 +617,9 @@ void handleMidi(sysex_t raw_sysex)
     }
     if (raw_sysex.buffer[2] == 0x31)
     {
+#ifdef DEBUGSYSEX
         printf("Config Dump Received\n");
+#endif
 
         uint8_t config = 3;
         uint8_t fx_state = raw_sysex.buffer[config++];
@@ -619,6 +631,16 @@ void handleMidi(sysex_t raw_sysex)
         fx_settings.lowpass = raw_sysex.buffer[config++];
         fx_settings.diffusion = raw_sysex.buffer[config++];
         fx_settings.level = raw_sysex.buffer[config++];
+
+        printf("Comp: %i Verb: %i, Size: %i, HDamp: %i, LDamp: %i LPass %i Diff: %i RLevel: %i\n",
+            fx_settings.comp_enable,
+            fx_settings.reverb_enable,
+            fx_settings.verbsize,
+            fx_settings.highdamp,
+            fx_settings.lowdamp,
+            fx_settings.lowpass,
+            fx_settings.diffusion,
+            fx_settings.level);
 
         for (uint8_t i = 0; i < 8; i++)
         {
@@ -653,5 +675,7 @@ void handleMidi(sysex_t raw_sysex)
             config++; // Unused
         }
     }
+#ifdef DEBUGSYSEX
     printf("\nSysex should be handled\n");
+#endif
 }
