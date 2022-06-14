@@ -70,6 +70,7 @@ typedef struct {
 	uint8_t lowpass;
 	uint8_t diffusion;
 	uint8_t level;
+	uint8_t mastervolume;
 } s_fx;
 
 extern s_fx fx_settings;
