@@ -72,7 +72,7 @@ void cTG::setParm(int16_t parm, int16_t value)
 
 int32_t cTG::parmUp(int16_t parm)
 {
-	if (mparms[parm] <= tg_parameters[parm].high)
+	if (mparms[parm] < tg_parameters[parm].high)
 	{
 		mparms[parm]++;
 	}
@@ -81,7 +81,7 @@ int32_t cTG::parmUp(int16_t parm)
 
 int32_t cTG::parmDown(int16_t parm)
 {
-	if (mparms[parm] >= tg_parameters[parm].low)
+	if (mparms[parm] > tg_parameters[parm].low)
 	{
 		mparms[parm]--;
 	}

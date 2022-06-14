@@ -25,8 +25,9 @@ int main(void)
     queue_init(&tg_fifo, sizeof(dexed_t), FIFOLENGTH);
     queue_init(&midi_fifo, sizeof(dexed_t), FIFOLENGTH);
     queue_init(&sysex_fifo, sizeof(sysex_t), FIFOLENGTH);
+//    set_sys_clock_khz(140000, true);
+
     board_init();
-    set_sys_clock_khz(133000, true);
 
     stdio_init_all();
     printf("MDMA Booting\r\n");

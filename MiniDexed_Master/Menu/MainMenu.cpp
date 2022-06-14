@@ -326,9 +326,11 @@ void cMenu::ShowValue(uint16_t param)
 		{
 		case FCOMP_EN:
 			value = fx_settings.comp_enable;
+			colorflag = true;
 			break;
 		case FREV_EN:
 			value = fx_settings.reverb_enable;
+			colorflag = true; 
 			break;
 		case FSIZE:
 			value = fx_settings.verbsize;
@@ -379,6 +381,7 @@ void cMenu::ShowValue(uint16_t param)
 
 	if (param == PMONO || param == PGLISS || param == FCOMP_EN || param == FREV_EN )
 	{
+		colorflag = true;
 		sprintf(text, "OFF");
 		if (value == 1)
 			sprintf(text, "ON");
@@ -386,6 +389,7 @@ void cMenu::ShowValue(uint16_t param)
 
 	if (param == PPMODE)
 	{
+		colorflag = true;
 		sprintf(text, "Fin");
 		if (value == 1)
 			sprintf(text, "Full");
@@ -447,9 +451,13 @@ void cMenu::ParmToggle(uint8_t button)
 		{
 		case FCOMP_EN:
 			if (fx_settings.comp_enable)
+			{
 				fx_settings.comp_enable = false;
+			}
 			else
+			{
 				fx_settings.comp_enable = true;
+			}
 			break;
 		case FREV_EN:
 			if (fx_settings.reverb_enable)
@@ -460,6 +468,7 @@ void cMenu::ParmToggle(uint8_t button)
 		default:
 			break;
 		}
+		dexed[0].sendParam(bparam[button]);
 	}
 	//	dexed[currentTG].sendMidi(bparam[button]);
 	ShowValue(parm);
@@ -591,6 +600,7 @@ void cMenu::ParmPot(uint8_t channel)
 	int32_t value = map(Pots.getPot(channel), POT_MIN, POT_MAX, tg_parameters[param].low, tg_parameters[param].high);
 	if (param < FCOMP_EN)
 	{
+		printf("TG Param\n");
 		if (value == dexed[currentTG].getValue(param) && !pflag[channel])
 		{
 			pflag[channel] = true;
@@ -601,8 +611,8 @@ void cMenu::ParmPot(uint8_t channel)
 			value = dexed[currentTG].setValue(param, value);
 			ShowValue(param);
 			dexed[currentTG].sendParam(param);
-			sleep_ms(10);
 			if (param == PPATCH || param == PBANK) dexed[currentTG].getPatch();
+			showTGInfo(param);
 		}
 	}
 	else {
@@ -651,15 +661,14 @@ void cMenu::ParmPot(uint8_t channel)
 			pflag[channel] = true;
 			ShowValue(param);
 		}
-		if (value != v)
+		if (value != v && pflag[channel])
 		{
 			*fxvalue = value;
 			ShowValue(param);
-			dexed[currentTG].sendParam(param);
-			sleep_ms(10);
+			dexed[0].sendParam(param);
+			showTGInfo(param);
 		}
 	}
-	showTGInfo(param);
 }
 
 void cMenu::setButtonCallback(uint8_t button, uint16_t param, void (*callback)(uint8_t button))
@@ -836,25 +845,27 @@ void cMenu::showDexedInfo(int16_t param)
 	tft.setFont(&Roboto_Condensed);
 	if (param == -1 || param == FCOMP_EN)
 	{
-		tft.writeFillRect(0, 0, 23, 9, BLACK);
+//		tft.writeFillRect(0, 0, 23, 9, BLACK);
 		tft.setTextColor(tft.color565(0, 0, 0xFF)); // Green
 		if (!fx_settings.comp_enable)
 			tft.setTextColor(tft.color565(0xff, 0, 0)); // Red
 		sprintf(infostring, "CMP");
-		tft.setCursor(0, 22);
+		tft.setCursor(0, 35);
 		tft.print(infostring);
 		tft.setTextColor(WHITE);
 	}
 	//MASTERVOLUME Must be placed here to get the correct text color
 	if (param == -1 || param == MASTERVOLUME)
 	{
-		;
-		//	tft.setFont(&Roboto_Bold_10);
+		tft.fillTriangle(0, 22, 32, 12, 32, 22, WHITE);
+		tft.setFont(&Roboto_Bold_10);
 		//	tft.writeFillRect(0, 0, 23, 9, BLACK);
-		//	sprintf(infostring, "MVol %1i", fx_settings.reverb_enable);
-		//	tft.setCursor(24, 9);
-		//	tft.print(infostring);
+		//sprintf(infostring, "MVol %1i", fx_settings.reverb_enable);
+		tft.setCursor(5, 9);
+		tft.print("Main");
 	}
+
+	tft.setFont(&Roboto_Condensed);
 
 	if (fx_settings.reverb_enable)
 	{
@@ -930,10 +941,6 @@ void cMenu::setDexedParm(uint16_t parm, int32_t val, uint8_t instance)
 	{
 		int32_t rval = dexed[instance].setValue(parm, val);
 	}
-	else {
-		printf("handle fx settings in cMenu::setDexedParm\n");
-	}
-//	printf("parm %02X sysex: %02X dexed[%i] %04X\n", parm, val, instance, rval);
 }
 
 void cMenu::TGEnable(uint8_t button)

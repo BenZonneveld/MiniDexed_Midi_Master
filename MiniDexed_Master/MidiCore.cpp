@@ -13,6 +13,7 @@
 
 //#define DEBUGSYSEX
 //#define DEBUGMIDI
+
 queue_t midi_fifo;
 queue_t sysex_fifo;
 bool led_usb_state = false;
@@ -140,6 +141,8 @@ void midicore()
     uart_init(DEXED, 230400);
     gpio_set_function(TX1, GPIO_FUNC_UART);
     gpio_set_function(RX1, GPIO_FUNC_UART);
+//    uint dexedbaudrate = uart_set_baudrate(DEXED, 230400);
+ //   printf("UART to DEXED baudrate: %lu\n", dexedbaudrate);
 #ifdef MIDIPORT
     uart_init(MIDIPORT, 31250);
     // Set the GPIO pin mux to the UART - 0 is TX, 1 is RX
@@ -332,13 +335,17 @@ void dexedPatchRequest(dexed_t mididata)
         (uint8_t)(mididata.value&0x7F),
         0xF7
     };
+#ifdef DEBUGSYSEX
     printf("Send Patch Request\n");
+#endif
     sendToAllPorts(voice_req,5);
 }
 
 void dexedConfigRequest()
 {
-    printf("Config Request\n");
+#ifdef DEBUGSYSEX
+    printf("Send Config Request\n");
+#endif
     uint8_t config_req[4] = {
         0xF0,
         0x43,
@@ -381,9 +388,15 @@ void midiParser(uint8_t* buffer, size_t length)
         parseSysex(buffer[i]);
         // Todo Detect bank and program changes
 #ifdef DEBUGMIDI
+        if (buffer[i] == 0xF0)
+        {
+            printf("\n");
+            bc = 0;
+        }
         printf("%02X, ", buffer[i]);
         bc++;
-        if (bc == 17 ) 
+        if (buffer[i] == 0xF7 && bc < 17) printf("\n");
+        if (bc == 17 )
         {
             printf("\n");
             bc = 0;
@@ -468,12 +481,16 @@ void parseSysex(uint8_t buf)
         }
         else {
             SysExState = false;
+#ifdef DEBUGSYSEX
             printf("\naborting\n");
+#endif
         }
     }
     if (sysex_buf.buffer[sysex_buf.length] == 0xF7)
     {
+#ifdef DEBUGSYSEX
         printf("\n");
+#endif
         if (SysExState == true)
         {
             queue_add_blocking(&sysex_fifo, &sysex_buf);
@@ -598,12 +615,14 @@ void handleMidi(sysex_t raw_sysex)
 #ifdef DEBUGSYSEX
         printf("Sysex Voice Dump\n");
 #endif
-        uint8_t channel = (raw_sysex.buffer[2] & 0xf);
+        uint8_t channel = (raw_sysex.buffer[2] & 0xf && raw_sysex.length == 162 );
         if (channel < 8)
         {
+            printf("Voice Dump Size: %i\n", raw_sysex.length);
             dexed[channel].setSysex(raw_sysex);
         }
         menu.showTGInfo(PPATCH);
+        return;
     }
     if ((raw_sysex.buffer[2] & 0x70) == 0x50 && raw_sysex.buffer[3] == 0)
     {
@@ -614,11 +633,12 @@ void handleMidi(sysex_t raw_sysex)
         uint8_t instanceID = raw_sysex.buffer[2] & 0xF;
         dexed[instanceID].setBankName(raw_sysex);
         menu.showTGInfo(PBANK);
+        return;
     }
-    if (raw_sysex.buffer[2] == 0x31)
+    if (raw_sysex.buffer[2] == 0x31 && raw_sysex.length == 203 )
     {
 #ifdef DEBUGSYSEX
-        printf("Config Dump Received\n");
+        printf("Config Dump Received size %i\n", raw_sysex.length);
 #endif
 
         uint8_t config = 3;
@@ -631,8 +651,9 @@ void handleMidi(sysex_t raw_sysex)
         fx_settings.lowpass = raw_sysex.buffer[config++];
         fx_settings.diffusion = raw_sysex.buffer[config++];
         fx_settings.level = raw_sysex.buffer[config++];
+        fx_settings.mastervolume = raw_sysex.buffer[config++];
 
-        printf("Comp: %i Verb: %i, Size: %i, HDamp: %i, LDamp: %i LPass %i Diff: %i RLevel: %i\n",
+        printf("Comp: %i Verb: %i, Size: %i, HDamp: %i, LDamp: %i LPass %i Diff: %i RLevel: %i Master Volume: %i\n",
             fx_settings.comp_enable,
             fx_settings.reverb_enable,
             fx_settings.verbsize,
@@ -640,7 +661,8 @@ void handleMidi(sysex_t raw_sysex)
             fx_settings.lowdamp,
             fx_settings.lowpass,
             fx_settings.diffusion,
-            fx_settings.level);
+            fx_settings.level,
+            fx_settings.mastervolume);
 
         for (uint8_t i = 0; i < 8; i++)
         {
@@ -674,6 +696,7 @@ void handleMidi(sysex_t raw_sysex)
             config++; // Unused
             config++; // Unused
         }
+        return;
     }
 #ifdef DEBUGSYSEX
     printf("\nSysex should be handled\n");
