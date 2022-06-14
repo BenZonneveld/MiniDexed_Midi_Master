@@ -98,7 +98,8 @@ public:
 	static void TGEnable(uint8_t button);
 	static void setDexedParm(uint16_t parm, int32_t val, uint8_t instance);
 	static void showTGInfo(int16_t param);
-	static void ShowValue(int32_t param);
+	static void showDexedInfo(int16_t param);
+	static void ShowValue(uint16_t param);
 	static void Dexed(uint8_t cbparam);
 	static void FX1(uint8_t cbparam);
 	static void FX2(uint8_t cbparam);
@@ -107,16 +108,15 @@ public:
 private:
 	static void buildMenu(uint8_t men);
 	static void ShowButtonText(uint8_t button);
-	static void setButtonCallback(uint8_t button,int16_t param, void (*callback)(uint8_t button));
+	static void setButtonCallback(uint8_t button,uint16_t param, void (*callback)(uint8_t button));
 	static void clearCallbacks();
-	static void setPotCallback(uint8_t channel, int16_t param);
+	static void setPotCallback(uint8_t channel, uint16_t param);
 	static void resetPotCB(uint8_t channel);
 	static uint8_t menu;
-	static uint8_t prev_menu;
-	static int8_t currentTG;
+	static uint8_t currentTG;
 	static bool pflag[3];
-	static int16_t potparam[3];
-	static int16_t bparam[8];
+	static uint16_t potparam[3];
+	static uint16_t bparam[8];
 	static int16_t parampos[PLAST];
 	static bool TGEnabled[8];
 };

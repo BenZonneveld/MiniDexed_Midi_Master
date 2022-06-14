@@ -140,7 +140,7 @@ s_menu menuEntry[] = {
 	{ // M_DEXED
 		M_MAIN,
 		{PNOPARAM, PNOPARAM, PNOPARAM}, { false, false, false},
-		{PNOPARAM, PNOPARAM, F_COMP_EN, PNOPARAM},
+		{PNOPARAM, PNOPARAM, FCOMP_EN, PNOPARAM},
 		{
 			{ "Rev 1", PNOPARAM, &cMenu::FX1, &cMenu::FX1, NULL},
 			{ "Rev 2", PNOPARAM, &cMenu::FX2, &cMenu::FX2, NULL},
@@ -155,7 +155,7 @@ s_menu menuEntry[] = {
 	{ // M_FX1
 		M_DEXED,
 		{FSIZE, FDIFF, FRLEVEL}, { false, false, false},
-		{FSIZE, FDIFF, FRLEVEL, F_REV_EN},
+		{FSIZE, FDIFF, FRLEVEL, FREV_EN},
 		{
 			{ "Size -", FSIZE, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
 			{ "Diff -", FDIFF,&cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
@@ -169,16 +169,16 @@ s_menu menuEntry[] = {
 	},
 	{ // M_FX2
 		M_DEXED,
-		{ PNOPARAM, PNOPARAM, PNOPARAM }, { false, false, false },
-		{ PNOPARAM, PNOPARAM, PNOPARAM, PNOPARAM },
+		{ FHIGHDAMP, FLOWDAMP, FLOWPASS }, { false, false, false },
+		{ FHIGHDAMP, FLOWDAMP, FLOWPASS, PNOPARAM },
 		{
-			{ "HDamp -", PNOPARAM, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
-			{ "LDamp -", PNOPARAM, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
-			{ "LPass -", PNOPARAM, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
+			{ "HDamp -", FHIGHDAMP, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
+			{ "LDamp -", FLOWDAMP, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
+			{ "LPass -", FLOWPASS, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
 			{ " ", PNOPARAM, NULL, NULL, NULL},
-			{ "HDamp +", PNOPARAM, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
-			{ "LDamp +", PNOPARAM, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
-			{ "LPass +", PNOPARAM, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
+			{ "HDamp +", FHIGHDAMP, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
+			{ "LDamp +", FLOWDAMP, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
+			{ "LPass +", FLOWPASS, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
 			{ "Back", PNOPARAM, &cMenu::menuBack, &cMenu::menuBack, NULL},
 		},
 	},
@@ -227,15 +227,13 @@ s_fx fx_settings = {
 
 Adafruit_SPITFT tft = Adafruit_SPITFT();
 
-int8_t cMenu::currentTG;
+uint8_t cMenu::currentTG;
 uint8_t cMenu::menu;
-uint8_t cMenu::prev_menu; 
 bool cMenu::pflag[3] = { false, false, false};
-int16_t cMenu::potparam[3];
-//int16_t cMenu::potpos[3];
-int16_t cMenu::bparam[8];
+uint16_t cMenu::potparam[3];
+uint16_t cMenu::bparam[8];
 int16_t cMenu::parampos[PLAST];
-//bool cMenu::menuNeedFlush;
+
 bool cMenu::TGEnabled[8] = { true , true, true, true, true, true, true, true};
 
 void cMenu::Init()
@@ -307,7 +305,7 @@ void cMenu::ShowButtonText(uint8_t button)
 	tft.print(menuEntry[menu].button[button].name);
 }
 
-void cMenu::ShowValue(int32_t param)
+void cMenu::ShowValue(uint16_t param)
 {
 	bool colorflag = false;
 	int16_t  x1, y1;
@@ -356,9 +354,7 @@ void cMenu::ShowValue(int32_t param)
 		default:
 			break;
 		}
-
-	}
-	else {
+	} else {
 		value = dexed[currentTG].getValue(param);
 	}
 	//	printf("Showvalue parm %i, value %i\n", param, value);
@@ -467,8 +463,7 @@ void cMenu::ParmToggle(uint8_t button)
 	}
 	//	dexed[currentTG].sendMidi(bparam[button]);
 	ShowValue(parm);
-	if (menu == M_MAIN)
-		showTGInfo(parm);
+	showTGInfo(parm);
 }
 
 void cMenu::ParmSelect(uint8_t button)
@@ -587,8 +582,7 @@ void cMenu::ParmSelect(uint8_t button)
 		dexed[0].sendParam(parm);
 	}
 	ShowValue(bparam[button]);
-	if ( menu != M_MAIN)
-		showTGInfo(bparam[button]);
+	showTGInfo(bparam[button]);
 }
 
 void cMenu::ParmPot(uint8_t channel)
@@ -612,12 +606,63 @@ void cMenu::ParmPot(uint8_t channel)
 		}
 	}
 	else {
-		printf("TO DO ParmPOT for fx_settings\n");
+		uint8_t *fxvalue;
+		switch (param)
+		{
+		case FCOMP_EN:
+			if (fx_settings.comp_enable)
+				*fxvalue = 1;
+			else
+				*fxvalue = 0;
+			break;
+		case FREV_EN:
+			if (fx_settings.reverb_enable)
+				*fxvalue = 1;
+			else
+				*fxvalue = 0;
+			break;
+		case FSIZE:
+			fxvalue = &fx_settings.verbsize;
+			break;
+		case FDIFF:
+			fxvalue = &fx_settings.diffusion;
+			break;
+		case FRLEVEL:
+			fxvalue = &fx_settings.level;
+			break;
+		case FHIGHDAMP:
+			fxvalue = &fx_settings.highdamp;
+			break;
+		case FLOWDAMP:
+			fxvalue = &fx_settings.lowdamp;
+			break;
+		case FLOWPASS:
+			fxvalue = &fx_settings.lowpass;
+			break;
+		case MASTERVOLUME:
+			fxvalue = &fx_settings.mastervolume;
+			break;
+		default:
+			break;
+		}
+		uint8_t v = *fxvalue;
+		if (value == v && !pflag[channel])
+		{
+			pflag[channel] = true;
+			ShowValue(param);
+		}
+		if (value != v)
+		{
+			*fxvalue = value;
+			ShowValue(param);
+			dexed[currentTG].sendParam(param);
+			sleep_ms(10);
+		}
 	}
 	showTGInfo(param);
 }
 
-void cMenu::setButtonCallback(uint8_t button, int16_t param, void (*callback)(uint8_t button))
+void cMenu::setButtonCallback(uint8_t button, uint16_t param, void (*callback)(uint8_t button))
 {
 	int16_t pos = 0;
 	switch (button)
@@ -662,7 +707,7 @@ void cMenu::clearCallbacks()
 	resetPotCB(BOTPOT);
 }
 
-void cMenu::setPotCallback(uint8_t channel, int16_t param)
+void cMenu::setPotCallback(uint8_t channel, uint16_t param)
 {
 	if (param == PNOPARAM)
 	{
@@ -694,9 +739,10 @@ void cMenu::showTGInfo(int16_t param)
 	uint16_t w, h;
 	char infostring[11] = { 0 };
 	tft.setTextColor(WHITE);
+	if (param == -1)
+		tft.writeFillRect(0, 0, 160, 37, BLACK);
 	if (menu != M_MAIN && menu < M_DEXED)
 	{
-//		tft.writeFillRect(0, 0, 50, 32, BLACK);
 //		tft.setAddrWindow(0, 0, MIPI_DISPLAY_WIDTH, MIPI_DISPLAY_HEIGHT);
 		
 		// Current TG
@@ -780,89 +826,101 @@ void cMenu::showTGInfo(int16_t param)
 		
 		tft.drawFastHLine(50, 17, 110, BLACK);
 	}
-	if ( menu == M_MAIN || menu >= M_DEXED ) {
-		// Show Comp & Rev Enabled
-		// Rev Size
-		// Rev Diff
-		// Rev Level
-		// Rev LDamp
-		// Rev HDamp
-		// Rev LPass
-		// Master Volume ?
-		tft.setFont(&Roboto_Condensed);
-		if (param == -1 || param == FCOMP_EN )
-		{
-			tft.writeFillRect(0, 0, 23, 9, BLACK);
-			tft.setTextColor(tft.color565(0,0,0xFF)); // Green
-			if (!fx_settings.comp_enable) 
-				tft.setTextColor(tft.color565(0xff,0,0)); // Red
-			sprintf(infostring, "CMP");
-			tft.setCursor(0, 9);
-			tft.print(infostring);
-			tft.setTextColor(WHITE);
-		}
-		//MASTERVOLUME Must be placed here to get the correct text color
-		if (param == -1 || param == MASTERVOLUME)
-		{
-			;
+	if (menu == M_MAIN || menu >= M_DEXED) showDexedInfo(param);
+}
+
+void cMenu::showDexedInfo(int16_t param)
+{
+	char infostring[11] = { 0 };
+	tft.setTextColor(WHITE);
+	tft.setFont(&Roboto_Condensed);
+	if (param == -1 || param == FCOMP_EN)
+	{
+		tft.writeFillRect(0, 0, 23, 9, BLACK);
+		tft.setTextColor(tft.color565(0, 0, 0xFF)); // Green
+		if (!fx_settings.comp_enable)
+			tft.setTextColor(tft.color565(0xff, 0, 0)); // Red
+		sprintf(infostring, "CMP");
+		tft.setCursor(0, 22);
+		tft.print(infostring);
+		tft.setTextColor(WHITE);
+	}
+	//MASTERVOLUME Must be placed here to get the correct text color
+	if (param == -1 || param == MASTERVOLUME)
+	{
+		;
 		//	tft.setFont(&Roboto_Bold_10);
 		//	tft.writeFillRect(0, 0, 23, 9, BLACK);
 		//	sprintf(infostring, "MVol %1i", fx_settings.reverb_enable);
 		//	tft.setCursor(24, 9);
 		//	tft.print(infostring);
-		}
+	}
 
-		if (fx_settings.reverb_enable)
-		{
-			tft.setTextColor(WHITE);
-		}
-		else {
-			tft.setTextColor(tft.color565(0xAF, 0, 0)); // A Darker Red
-		}
+	if (fx_settings.reverb_enable)
+	{
+		tft.setTextColor(WHITE);
+	}
+	else {
+		tft.setTextColor(tft.color565(0xFF, 0, 0)); // A Darker Red
+	}
 
-//		tft.setFont(&Roboto_Bold_10);
-		if (param == -1 || param == FSIZE)
+	if (param == FREV_EN || param == FCOMP_EN) param = -1;
+	char names[6][7] = {"Level", "Size", "Diff", "H Damp", "L Damp", "L Pass"};
+	uint8_t xpos = 35;
+	uint8_t ypos = 9;
+	for (size_t i = 0; i < 6; i++)
+	{
+		tft.setCursor(xpos, ypos);
+		tft.print(names[i]);
+		ypos = ypos + 13;
+		if (ypos > 35)
 		{
-//			tft.writeFillRect(30, 0, 23, 9, BLACK);
-			sprintf(infostring, "Size %2i", fx_settings.verbsize);
-			tft.setCursor(35, 9);
-			tft.print(infostring);
+			ypos = 9;
+			xpos = 95;
 		}
-		if (param == -1 || param == FDIFF)
-		{
-//			tft.writeFillRect(0, 0, 23, 9, BLACK);
-			sprintf(infostring, "Diff %2i", fx_settings.diffusion);
-			tft.setCursor(35, 22);
-			tft.print(infostring);
-		}
-		if (param == -1 || param == FRLEVEL)
-		{
-//			tft.writeFillRect(0, 0, 23, 9, BLACK);
-			sprintf(infostring, "Level %2i", fx_settings.level);
-			tft.setCursor(35, 35);
-			tft.print(infostring);
-		}
-		if (param == -1 || param == FHIGHDAMP)
-		{
-//			tft.writeFillRect(0, 0, 23, 9, BLACK);
-			sprintf(infostring, "H Damp %1i", fx_settings.highdamp);
-			tft.setCursor(100, 9);
-			tft.print(infostring);
-		}
-		if (param == -1 || param == FLOWDAMP)
-		{
-//			tft.writeFillRect(0, 0, 23, 9, BLACK);
-			sprintf(infostring, "L Damp %1i", fx_settings.lowdamp);
-			tft.setCursor(100, 22);
-			tft.print(infostring);
-		}
-		if (param == -1 || param == FLOWPASS)
-		{
-//			tft.writeFillRect(0, 0, 23, 9, BLACK);
-			sprintf(infostring, "LPass %1i", fx_settings.lowpass);
-			tft.setCursor(100, 35);
-			tft.print(infostring);
-		}
+	}
+	//		tft.setFont(&Roboto_Bold_10);
+	if (param == -1 || param == FSIZE)
+	{
+		tft.writeFillRect(70, 12, 25, 12, BLACK);
+		sprintf(infostring, "%2i", fx_settings.verbsize);
+		tft.setCursor(70, 22);
+		tft.print(infostring);
+	}
+	if (param == -1 || param == FDIFF)
+	{
+		tft.writeFillRect(70, 24, 25, 12, BLACK);
+		sprintf(infostring, "%2i", fx_settings.diffusion);
+		tft.setCursor(70, 35);
+		tft.print(infostring);
+	}
+	if (param == -1 || param == FRLEVEL)
+	{
+		tft.writeFillRect(70, 0, 25, 12, BLACK);
+		sprintf(infostring, "%2i", fx_settings.level);
+		tft.setCursor(70, 9);
+		tft.print(infostring);
+	}
+	if (param == -1 || param == FHIGHDAMP)
+	{
+		tft.writeFillRect(145, 0, 25, 12, BLACK);
+		sprintf(infostring, "%1i", fx_settings.highdamp);
+		tft.setCursor(145, 9);
+		tft.print(infostring);
+	}
+	if (param == -1 || param == FLOWDAMP)
+	{
+		tft.writeFillRect(145, 12, 25, 12, BLACK);
+		sprintf(infostring, "%1i", fx_settings.lowdamp);
+		tft.setCursor(145, 22);
+		tft.print(infostring);
+	}
+	if (param == -1 || param == FLOWPASS)
+	{
+		tft.writeFillRect(145, 24, 25, 12, BLACK);
+		sprintf(infostring, "%1i", fx_settings.lowpass);
+		tft.setCursor(145, 35);
+		tft.print(infostring);
 	}
 }
 
