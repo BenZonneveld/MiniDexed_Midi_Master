@@ -178,7 +178,7 @@ void Adafruit_SPITFT::writeColor(uint16_t color, uint32_t len) {
     if (!len)
         return; // Avoid 0-byte transfers
 
-    uint8_t hi = color >> 8, lo = color;
+//    uint8_t hi = color >> 8, lo = color;
 
     // All other cases (non-DMA hard SPI, bitbang SPI, parallel)...
 
