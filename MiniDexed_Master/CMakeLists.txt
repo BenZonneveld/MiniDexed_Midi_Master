@@ -13,16 +13,19 @@ family_initialize_project(${PROJECT} ${CMAKE_CURRENT_LIST_DIR})
 add_executable(${PROJECT})
 
 add_subdirectory(GFX-lib)
+add_subdirectory(FatFS build)
 
 target_sources(${PROJECT} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/MDMA.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/MidiCore.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usb_descriptors.c
         ${CMAKE_CURRENT_SOURCE_DIR}/tud_callbacks.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/fatfs_config.c
         ${CMAKE_CURRENT_SOURCE_DIR}/utils/tools.c
         ${CMAKE_CURRENT_SOURCE_DIR}/Pots/Pots.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Buttons/Buttons.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Menu/MainMenu.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Menu/card_menu.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Dexed/TG.cpp
 )
 
@@ -39,6 +42,7 @@ target_include_directories(${PROJECT} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/Menu
         ${CMAKE_CURRENT_SOURCE_DIR}/Dexed
         ${CMAKE_CURRENT_SOURCE_DIR}/GFX-lib
+        ${CMAKE_CURRENT_SOURCE_DIR}/FatFs/include
 )
 
 target_link_libraries(${PROJECT} PUBLIC
@@ -49,6 +53,7 @@ target_link_libraries(${PROJECT} PUBLIC
     hardware_gpio
     pico_bootsel_via_double_reset
     GFX-lib
+    FatFs_SPI
 )
 
 target_compile_definitions(${PROJECT} PRIVATE

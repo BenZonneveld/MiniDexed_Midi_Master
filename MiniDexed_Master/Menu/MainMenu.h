@@ -2,8 +2,17 @@
 #include "Adafruit_GFX.h"
 #include "Adafruit_SPITFT.h"
 #include "TG.h"
+
 #ifndef MAIN_MENU_H
 #define MAIN_MENU_H
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+#include "f_util.h"
+#include "ff.h"
+
 #define VALUEWIDTH 37
 #define BUTTONHEIGHT 18
 #define VALUEPOS	59
@@ -74,7 +83,7 @@ typedef struct {
 } s_fx;
 
 extern s_fx fx_settings;
-
+extern Adafruit_SPITFT tft;
 class cMenu {
 public:
 	void Init();
@@ -105,6 +114,7 @@ public:
 	static void FX2(uint8_t cbparam);
 	static void Routing(uint8_t cbparam);
 	static void Card(uint8_t cbparam);
+#include "card_menu.h"
 private:
 	static void buildMenu(uint8_t men);
 	static void ShowButtonText(uint8_t button);
@@ -135,5 +145,8 @@ private:
 #define MAGENTA 0xF81F
 #define YELLOW 0xFFE0
 #define ORANGE 0xFC00
+#ifdef __cplusplus
+}
+#endif
 
 #endif

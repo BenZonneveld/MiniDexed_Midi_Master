@@ -3,6 +3,8 @@
 #include <pico/stdlib.h>
 
 #include "MainMenu.h"
+//#include "card_menu.h"
+
 #include "mdma.h"
 #include "tools.h"
 //#include "callback_arrays.h"
@@ -146,7 +148,7 @@ s_menu menuEntry[] = {
 			{ "Rev 2", PNOPARAM, &cMenu::FX2, &cMenu::FX2, NULL},
 			{ "Comp", FCOMP_EN, &cMenu::ParmToggle, &cMenu::ParmToggle, NULL},
 			{ " ", PNOPARAM, NULL, NULL, NULL},
-			{ "Card", PNOPARAM, &cMenu::Card, &cMenu::Card, NULL},
+			{ "Card", PNOPARAM, &cMenu::mCard::CardMenu, &cMenu::mCard::CardMenu, NULL},
 			{ "Router", PNOPARAM, &cMenu::Routing, &cMenu::Routing, NULL},
 			{ " ", PNOPARAM, NULL, NULL, NULL},
 			{ "Back", PNOPARAM, &cMenu::menuBack, &cMenu::menuBack, NULL},
@@ -707,9 +709,9 @@ void cMenu::clearCallbacks()
 {
 	for (uint8_t button = 0; button < 8; button++)
 	{
-		buttons.setCallback(button, NULL);		buttons.setLongCallback(button, NULL);
+		buttons.setCallback(button, NULL);		
+		buttons.setLongCallback(button, NULL);
 		buttons.setDBLCallback(button, NULL);
-		ShowButtonText(button);
 	}
 	resetPotCB(TOPPOT);
 	resetPotCB(MIDPOT);
@@ -939,7 +941,7 @@ void cMenu::setDexedParm(uint16_t parm, int32_t val, uint8_t instance)
 {
 	if (parm < FCOMP_EN)
 	{
-		int32_t rval = dexed[instance].setValue(parm, val);
+		dexed[instance].setValue(parm, val);
 	}
 }
 
@@ -1069,5 +1071,4 @@ void cMenu::Routing(uint8_t button)
 
 void cMenu::Card(uint8_t button)
 {
-	buildMenu(M_CARD);
 }
