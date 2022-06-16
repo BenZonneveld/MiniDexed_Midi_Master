@@ -501,12 +501,17 @@ void cMenu::ParmSelect(uint8_t button)
 
 	if (parm < FCOMP_EN)
 	{
-		if ( up)
-			dexed[currentTG].parmUp(bparam[button]);
+		if (up)
+		{
+			dexed[currentTG].parmUp(parm);
+			printf("Dexed param %i up\n", parm);
+		}
 		else
-			dexed[currentTG].parmDown(bparam[button]);
-		dexed[currentTG].sendParam(bparam[button]);
-		if (bparam[button] == PPATCH || bparam[button] == PBANK) dexed[currentTG].getPatch();
+		{
+			dexed[currentTG].parmDown(parm);
+		}
+		dexed[currentTG].sendParam(parm);
+		if (parm == PPATCH || parm == PBANK) dexed[currentTG].getPatch();
 	}
 	else
 	{
@@ -954,14 +959,15 @@ void cMenu::TGEnable(uint8_t button)
 		TGEnabled[button] = false;
 		dexed[button].setValue(PCHANNEL, 17);
 		dexed[button].sendParam(PCHANNEL); // Set TG Off
+		printf("TG Enable OFF: %i\n", dexed[button].getValue(PCHANNEL));
 	}
 	else {
 		TGEnabled[button] = true;
 		dexed[button].setValue(PCHANNEL, channels[button]);
 		dexed[button].sendParam(PCHANNEL);
+		printf("TG Enable ON: %i\n", dexed[button].getValue(PCHANNEL));
 	}
 	ShowButtonText(button);
-	printf("TGEnable");
 }
 
 void cMenu::buildMenu(uint8_t men)

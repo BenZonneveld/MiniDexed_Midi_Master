@@ -15,7 +15,7 @@ extern queue_t tg_fifo;
 
 #define MAXBANKS 127
 #define MAXPATCH 31
-#define MAXCHANNEL 16
+#define MAXCHANNEL 17
 #define MAXFREQ 99
 #define MAXRESO	99
 #define MAXREV	99

@@ -1,8 +1,8 @@
 
 //#include "MainMenu.h"
 
-#define MAX_FILES	10
-
+#define MAXDISPLAYFILES	10
+#define MAXDIRENTRIES 512
 	// GUI
 #define DIRLEFTPOS 30
 
@@ -18,10 +18,11 @@ private:
 	static uint32_t getDir();
 	static void ShowEntries();
 
-	static FILINFO mfileEntry[MAX_FILES];
+	static FILINFO mfileEntry[MAXDISPLAYFILES];
 	static char mCurrentDir[256];
 	static char mCurrentFile[256];
 //	static char mFilenames[25][256];
 	static uint32_t mFileCount;
 	static uint32_t mCurrentEntry;
+	static uint32_t mFirstEntryToShow;
 };

@@ -192,7 +192,7 @@ void dispatcher(dexed_t mididata)
         case PCHANNEL:
             temp = mididata.value;
             mididata.value = 0;
-            sendCtrl(120, mididata);
+            sendCtrl(123, mididata);
             sendCtrl(120, mididata);
             mididata.value = temp;
             dx7sysex(F_CHANNEL, mididata);
@@ -532,7 +532,7 @@ void handleMidi(sysex_t raw_sysex)
     }
     if ((raw_sysex.buffer[0] & 0xF0) == 0xB0) // Ctrl Change
     {
-        printf("Ctrl Change\n");
+        printf("Ctrl %02X Change\n", raw_sysex.buffer[1]);
         uint8_t instanceID = raw_sysex.buffer[0] & 0xF;
         uint8_t ctrl = raw_sysex.buffer[1];
         uint8_t val = raw_sysex.buffer[2];
@@ -581,7 +581,8 @@ void handleMidi(sysex_t raw_sysex)
                 printf("Reverb Level for instance %i, value: %i\n", instanceID, val);
                 setValue = true;
                 break;
-            case MIDI_CC_DETUNE:
+            case MIDI_CC_DETUNE:         /// Ignore Detune
+                return; 
                 param = PTUNE;
                 tune = (val << 7);
                 break;
