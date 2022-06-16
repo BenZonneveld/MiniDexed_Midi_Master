@@ -13,11 +13,17 @@ public:
 	static void ListDown(uint8_t button);
 	static void OpenEntry(uint8_t button);
 	static void CloseEntry(uint8_t button);
+	static void VoiceHandling(uint8_t button);
+	static void BankHandling(uint8_t button);
+	static void CartHandling(uint8_t button);
+
 private:
 	static uint8_t tryMount();
 	static uint32_t getDir();
 	static void ShowEntries();
-
+	static void ExtractVoiceFromBank();
+	static uint8_t mCurrentVoice;
+	static char mVoiceNames[32][12];
 	static FILINFO mfileEntry[MAXDISPLAYFILES];
 	static char mCurrentDir[256];
 	static char mCurrentFile[256];
@@ -25,4 +31,5 @@ private:
 	static uint32_t mFileCount;
 	static uint32_t mCurrentEntry;
 	static uint32_t mFirstEntryToShow;
+	static uint8_t mSysexbuf[9000];
 };

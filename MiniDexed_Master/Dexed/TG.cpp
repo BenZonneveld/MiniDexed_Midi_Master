@@ -216,7 +216,7 @@ void cTG::getBank()
 void cTG::setSysex(sysex_t sysex)
 {
 	//printf("setSysex size: %i\n", sysex.length);
-	uint8_t offset = VOICEDATA_HEADER;
+	uint8_t offset = DATA_HEADER;
 	if (sysex.length > VOICEDATA_SIZE ) offset = offset + (sysex.length - VOICEDATA_SIZE);
 	//printf("offset %i\n", offset);
 		
