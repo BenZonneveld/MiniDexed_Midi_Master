@@ -3,7 +3,8 @@
 
 #define MAXDISPLAYFILES	10
 #define MAXDIRENTRIES 512
-	// GUI
+#define CARDSYSEXBYFFER 9000
+// GUI
 #define DIRLEFTPOS 30
 
 class mCard {
@@ -31,5 +32,5 @@ private:
 	static uint32_t mFileCount;
 	static uint32_t mCurrentEntry;
 	static uint32_t mFirstEntryToShow;
-	static uint8_t mSysexbuf[9000];
+	static uint8_t mSysexbuf[CARDSYSEXBYFFER];
 };

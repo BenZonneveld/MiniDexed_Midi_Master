@@ -146,7 +146,7 @@ Parameter
 152        VOICE NAME CHAR 8           ASCII
 153        VOICE NAME CHAR 9           ASCII
 154        VOICE NAME CHAR 10          ASCII
-155        OPERATOR ON/OFF
+155        OPERATOR ON/OFF                                              **** See Note ****
               bit6 = 0 / bit 5: OP1 / ... / bit 0: OP6
 
 Note that there are actually 156 parameters listed here, one more than in 

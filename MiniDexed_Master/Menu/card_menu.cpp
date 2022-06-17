@@ -26,7 +26,7 @@ uint32_t cMenu::mCard::mFirstEntryToShow;
 FILINFO cMenu::mCard::mfileEntry[MAXDISPLAYFILES];
 char cMenu::mCard::mVoiceNames[32][12];
 uint8_t cMenu::mCard::mCurrentVoice;
-uint8_t cMenu::mCard::mSysexbuf[9000];
+uint8_t cMenu::mCard::mSysexbuf[CARDSYSEXBYFFER];
 
 void cMenu::mCard::CardMenu(uint8_t button)
 {
@@ -107,6 +107,9 @@ uint32_t cMenu::mCard::getDir()
 
 void cMenu::mCard::ShowEntries()
 { 
+    char name[32];
+    char lowercase[256];
+
     tft.setFont(&Roboto_Condensed);
 
     for (size_t i = 0; i < MAXDISPLAYFILES; i++)
@@ -123,12 +126,13 @@ void cMenu::mCard::ShowEntries()
 
             tft.setCursor(DIRLEFTPOS - 24, 9 + 12 * i);
 
-            char lowercase[256];
             for (size_t lc = 0; lc <= strlen(mfileEntry[i].fname); lc++)
             {
                 lowercase[lc] = tolower(mfileEntry[i].fname[lc]);
             }
 
+            tft.writeFillRect(DIRLEFTPOS - 24, 12 * i, 24, 12, DARKERGREY);
+            
             if (strstr(lowercase, ".syx") != NULL)
             {
                 switch (mfileEntry[i].fsize)
@@ -156,7 +160,8 @@ void cMenu::mCard::ShowEntries()
             else {
                 tft.writeFillRect(DIRLEFTPOS, 12 * i, 160 - DIRLEFTPOS, 12, DARKERGREY);
             }
-            tft.print(mfileEntry[i].fname);
+            sprintf(name, "%.15s", mfileEntry[i].fname);
+            tft.print(name);
         }
         else {
             tft.writeFillRect(DIRLEFTPOS-24, 12 * i, 160 - DIRLEFTPOS + 24, 12, DARKERGREY);
@@ -205,14 +210,15 @@ void cMenu::mCard::OpenEntry(uint8_t button)
         {
             if (mSysexbuf[sysexsize] == 0xF7)
             {
+                sysexsize++;
                 break;
             }
             sysexsize++;
         }
-        printf("Sysex Size: %i\n", sysexsize++);
+        printf("Sysex Size: %i\n", sysexsize);
         switch (sysexsize)
         {
-        case 162:
+        case 163:
             VoiceHandling(8);
             break;
         case 4104:
@@ -278,7 +284,14 @@ void cMenu::mCard::VoiceHandling(uint8_t button)
     memset(voiceName, 0, 12);
     memcpy(voiceName, mSysexbuf + DATA_HEADER + VNAME_OFFSET, 10);
     printf("Voicename: %s\n", voiceName);
-    printf("Byte 155: %02X\n", mSysexbuf + DATA_HEADER + 155);
+
+    uint32_t checksum = 0;
+    for (size_t i = DATA_HEADER; i < VOICEDATA_SIZE-1; i++)
+    {
+        checksum += mSysexbuf[i];
+    }
+    checksum = (~checksum + 1) & 0x7f; 
+    printf("Checksum %02X Calculated checksum: %02X\n", mSysexbuf[VOICEDATA_SIZE-1],checksum);
     //    sendToAllPorts(sysexbuf, sysexsize);
 }
 
@@ -286,14 +299,6 @@ void cMenu::mCard::BankHandling(uint8_t button)
 {
 
     printf("BankHandling\n");
-    //for (size_t i = 0; i < 9000; i++)
-    //{
-    //    printf("%02X, ", mSysexbuf[i]);
-    //    if (mSysexbuf[i] == 0xF7) break;
-    //    if ((i + 1) % 16 == 0) printf("\n");
-    //}
-    //printf("\n");
-
     char voiceName[12];
     memset(voiceName, 0, 12);
     for (size_t v = 0; v < MAXPATCH; v++)
@@ -301,6 +306,7 @@ void cMenu::mCard::BankHandling(uint8_t button)
         memcpy(voiceName, mSysexbuf + DATA_HEADER + (v*BANKVOICE_SIZE) + BANKVNAME_OFFSET, 10);
         printf("Voice[%i]: %s\n",v+1, voiceName);
     }
+
     ExtractVoiceFromBank();
 //    sendToAllPorts(sysexbuf, sysexsize);
 }
@@ -313,79 +319,91 @@ void cMenu::mCard::ExtractVoiceFromBank()
     memcpy(packedvoice, mSysexbuf + DATA_HEADER + (v * BANKVOICE_SIZE), BANKVOICE_SIZE);
     uint8_t i = 0, o = DATA_HEADER;
     uint8_t temp;
-    while (i<128)
+    voicebuffer[0] = 0xF0;
+    voicebuffer[1] = 0x43;
+    voicebuffer[2] = 0x00 | currentTG;
+    voicebuffer[3] = 0;
+    voicebuffer[4] = 0x01;
+    voicebuffer[5] = 0x1B;
+     // Parse data for the 6 operators
+    for (size_t osc = 0; osc < 6; osc++)
     {
-        // Parse data for the 6 operators
-        for (size_t osc = 0; osc < 6; osc++)
-        {
-            voicebuffer[o++] = packedvoice[i++]; // r1
-            voicebuffer[o++] = packedvoice[i++]; // r2
-            voicebuffer[o++] = packedvoice[i++]; // r3
-            voicebuffer[o++] = packedvoice[i++]; // r4
-            voicebuffer[o++] = packedvoice[i++]; // l1
-            voicebuffer[o++] = packedvoice[i++]; // l2
-            voicebuffer[o++] = packedvoice[i++]; // l3
-            voicebuffer[o++] = packedvoice[i++]; // l4
-            voicebuffer[o++] = packedvoice[i++]; // bp
-            voicebuffer[o++] = packedvoice[i++]; // ld
-            voicebuffer[o++] = packedvoice[i++]; // rd
-            temp = packedvoice[i++];
-            voicebuffer[o++] = temp & 0x3;      // scl left curve
-            voicebuffer[o++] = (temp >> 2) & 0x3; // scl right curve
-            temp = packedvoice[i++];
-            voicebuffer[o++] = temp & 0x7; // OSC Rate scale
+        voicebuffer[o++] = packedvoice[i++]; // r1
+        voicebuffer[o++] = packedvoice[i++]; // r2
+        voicebuffer[o++] = packedvoice[i++]; // r3
+        voicebuffer[o++] = packedvoice[i++]; // r4
+        voicebuffer[o++] = packedvoice[i++]; // l1
+        voicebuffer[o++] = packedvoice[i++]; // l2
+        voicebuffer[o++] = packedvoice[i++]; // l3
+        voicebuffer[o++] = packedvoice[i++]; // l4
+        voicebuffer[o++] = packedvoice[i++]; // bp
+        voicebuffer[o++] = packedvoice[i++]; // ld
+        voicebuffer[o++] = packedvoice[i++]; // rd
+        temp = packedvoice[i++];
+        voicebuffer[o++] = temp & 0x3;      // scl left curve
+        voicebuffer[o++] = (temp >> 2) & 0x3; // scl right curve
+        temp = packedvoice[i++];
+        voicebuffer[o++] = temp & 0x7; // OSC Rate scale
 // Special case
-            voicebuffer[7+o++] = (temp >> 3); // Osc Detune
+        voicebuffer[7 + o++] = (temp >> 3); // Osc Detune
 
-            temp = packedvoice[i++];
-            voicebuffer[o++] = (temp & 0x3); // AMS
-            voicebuffer[o++] = (temp >> 2); // Key Vel Sens
-            voicebuffer[o++] = packedvoice[i++]; // Output level;
-            temp = packedvoice[i++];
-            voicebuffer[o++] = temp & 0x1; // Osc mode
-            voicebuffer[o++] = (temp >> 1); // Freq coarse
-            voicebuffer[o++] = packedvoice[i++]; // Freq fine;
-        }
-        printf("i == %i\n", i);
-        voicebuffer[o++] = packedvoice[i++]; // PE R1
-        voicebuffer[o++] = packedvoice[i++]; // PE R2
-        voicebuffer[o++] = packedvoice[i++]; // PE R3
-        voicebuffer[o++] = packedvoice[i++]; // PE R4
-        voicebuffer[o++] = packedvoice[i++]; // PE L1
-        voicebuffer[o++] = packedvoice[i++]; // PE L2
-        voicebuffer[o++] = packedvoice[i++]; // PE L3
-        voicebuffer[o++] = packedvoice[i++]; // PE L4
-        voicebuffer[o++] = packedvoice[i++]; // Algorithm
         temp = packedvoice[i++];
-        voicebuffer[o++] = temp & 0x7; // Feedback
-        voicebuffer[o++] = (temp >> 3); // Key Sync
-        voicebuffer[o++] = packedvoice[i++]; // LFO Speed
-        voicebuffer[o++] = packedvoice[i++]; // LFO Delay
-        voicebuffer[o++] = packedvoice[i++]; // LF PT Mod Dep
-        voicebuffer[o++] = packedvoice[i++]; // LF AM Mod Dep
+        voicebuffer[o++] = (temp & 0x3); // AMS
+        voicebuffer[o++] = (temp >> 2); // Key Vel Sens
+        voicebuffer[o++] = packedvoice[i++]; // Output level;
         temp = packedvoice[i++];
-        voicebuffer[o++] = temp & 0x1; // LF Sync 
-        voicebuffer[o++] = (temp >> 1) & 0x7; // LF Wave
-        voicebuffer[o++] = (temp >> 4) & 0x7; // LF PT Mod Sns
-        voicebuffer[o++] = packedvoice[i++]; // Transpose
-        printf("i == %i\n", i);
-        voicebuffer[o++] = packedvoice[i++]; // Voice name 1
-        voicebuffer[o++] = packedvoice[i++]; // Voice name 2
-        voicebuffer[o++] = packedvoice[i++]; // Voice name 3
-        voicebuffer[o++] = packedvoice[i++]; // Voice name 4
-        voicebuffer[o++] = packedvoice[i++]; // Voice name 5
-        voicebuffer[o++] = packedvoice[i++]; // Voice name 6
-        voicebuffer[o++] = packedvoice[i++]; // Voice name 7
-        voicebuffer[o++] = packedvoice[i++]; // Voice name 8
-        voicebuffer[o++] = packedvoice[i++]; // Voice name 9
-        voicebuffer[o++] = packedvoice[i++]; // Voice name 10
-
-        printf("i == %i\n", i);
-        printf("o == %i\n", o- DATA_HEADER);
-
-        i = 128;
+        voicebuffer[o++] = temp & 0x1; // Osc mode
+        voicebuffer[o++] = (temp >> 1); // Freq coarse
+        voicebuffer[o++] = packedvoice[i++]; // Freq fine;
     }
-    printf("\n");
+    voicebuffer[o++] = packedvoice[i++]; // PE R1
+    voicebuffer[o++] = packedvoice[i++]; // PE R2
+    voicebuffer[o++] = packedvoice[i++]; // PE R3
+    voicebuffer[o++] = packedvoice[i++]; // PE R4
+    voicebuffer[o++] = packedvoice[i++]; // PE L1
+    voicebuffer[o++] = packedvoice[i++]; // PE L2
+    voicebuffer[o++] = packedvoice[i++]; // PE L3
+    voicebuffer[o++] = packedvoice[i++]; // PE L4
+    voicebuffer[o++] = packedvoice[i++]; // Algorithm
+    temp = packedvoice[i++];
+    voicebuffer[o++] = temp & 0x7; // Feedback
+    voicebuffer[o++] = (temp >> 3); // Key Sync
+    voicebuffer[o++] = packedvoice[i++]; // LFO Speed
+    voicebuffer[o++] = packedvoice[i++]; // LFO Delay
+    voicebuffer[o++] = packedvoice[i++]; // LF PT Mod Dep
+    voicebuffer[o++] = packedvoice[i++]; // LF AM Mod Dep
+    temp = packedvoice[i++];
+    voicebuffer[o++] = temp & 0x1; // LF Sync 
+    voicebuffer[o++] = (temp >> 1) & 0x7; // LF Wave
+    voicebuffer[o++] = (temp >> 4) & 0x7; // LF PT Mod Sns
+    voicebuffer[o++] = packedvoice[i++]; // Transpose
+    voicebuffer[o++] = packedvoice[i++]; // Voice name 1
+    voicebuffer[o++] = packedvoice[i++]; // Voice name 2
+    voicebuffer[o++] = packedvoice[i++]; // Voice name 3
+    voicebuffer[o++] = packedvoice[i++]; // Voice name 4
+    voicebuffer[o++] = packedvoice[i++]; // Voice name 5
+    voicebuffer[o++] = packedvoice[i++]; // Voice name 6
+    voicebuffer[o++] = packedvoice[i++]; // Voice name 7
+    voicebuffer[o++] = packedvoice[i++]; // Voice name 8
+    voicebuffer[o++] = packedvoice[i++]; // Voice name 9
+    voicebuffer[o++] = packedvoice[i++]; // Voice name 10
+
+    // From byte 6 (message start is byte 0) add all the data values until message length - 2 
+    // (so do not include checksum and final F7 byte), which gives you "sum"
+    //And then compute checksum by checksum = (NOT sum + 1) AND 0x7F where NOT is a bitwise invert
+    // and the AND constrains the checksum to a seven bit value.
+    uint32_t checksum = 0;
+    for (size_t i = DATA_HEADER; i < VOICEDATA_SIZE - 1; i++)
+    {
+        checksum += mSysexbuf[i];
+    }
+    checksum = (~checksum + 1) & 0x7f;
+
+    voicebuffer[o++] = checksum; // Checksum
+    voicebuffer[o++] = 0xF7;
+    memset(mSysexbuf, 0, CARDSYSEXBYFFER);
+    memcpy(mSysexbuf, voicebuffer, 163);
+
 }
 
 void cMenu::mCard::CartHandling(uint8_t button)
