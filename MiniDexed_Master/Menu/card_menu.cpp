@@ -7,15 +7,17 @@
 #include "MainMenu.h"
 #include "card_menu.h"
 #include "midicore.h"
+#include "tools.h"
 
 #define PROGMEM
 //#include "fonts/FreeSans9pt7b.h"
 //#include "fonts/FreeSans12pt7b.h"
 //#include "fonts/FreeSans18pt7b.h"
 //#include "fonts/FreeSans24pt7b.h"
-#include "fonts/RobotoMono12.h"
+//#include "fonts/RobotoMono12.h"
 #include "fonts/RobotoCondensed.h"
-#include "fonts/OpenSansBoldCondensed16.h"
+#include "fonts/RobotoCondensed10.h"
+//#include "fonts/OpenSansBoldCondensed16.h"
 
 char cMenu::mCard::mCurrentDir[256];
 char cMenu::mCard::mCurrentFile[256];
@@ -36,15 +38,15 @@ void cMenu::mCard::CardMenu(uint8_t button)
     if (tryMount() != 0) menuBack(0);
 
     clearCallbacks();
-    buttons.setCallback(BUT8, &cMenu::menuBack);
-    buttons.setDBLCallback(BUT8, &cMenu::menuBack);
-    buttons.setLongCallback(BUT8, &cMenu::menuBack);
+    buttons.setCallback(BUT8, &cMenu::mCard::exitCardMenu);
+    buttons.setDBLCallback(BUT8, &cMenu::mCard::exitCardMenu);
+    buttons.setLongCallback(BUT8, &cMenu::mCard::exitCardMenu);
 //    setButtonCallback(BUT8,PNOPARAM, &cMenu::menuBack);
-    buttons.setCallback(BUT2, &cMenu::mCard::ListUp);
+    buttons.setCallback(BUT4, &cMenu::mCard::ListUp);
     buttons.setCallback(BUT1, &cMenu::mCard::ListDown);
-    buttons.setDBLCallback(BUT2, &cMenu::mCard::ListUp);
+    buttons.setDBLCallback(BUT4, &cMenu::mCard::ListUp);
     buttons.setDBLCallback(BUT1, &cMenu::mCard::ListDown);
-    buttons.setLongCallback(BUT2, &cMenu::mCard::ListUp);
+    buttons.setLongCallback(BUT4, &cMenu::mCard::ListUp);
     buttons.setLongCallback(BUT1, &cMenu::mCard::ListDown);
     buttons.setCallback(BUT5, &cMenu::mCard::OpenEntry);
     buttons.setCallback(BUT6, &cMenu::mCard::CloseEntry);
@@ -57,18 +59,29 @@ uint8_t cMenu::mCard::tryMount()
 {
     sd_card_t* pSD = sd_get_by_num(0);
     tft.writeFillRect(0,0,160,128,LIGHTGREY);
+    tft.setCursor(10, 72);
+    tft.println("Mounting SD Card");
+
     FRESULT fr = f_mount(&pSD->fatfs, pSD->pcName, 1);
-    printf("FRESULT= %i\n", fr);
+
     if (fr != FR_OK)
     {
         tft.writeFillRect(0, 0, 160, 128, BLACK);
         return fr;
     }
-    tft.writeFillRect(0, 0, 160, 128, DARKERGREY);
+    tft.writeFillRect(0, 0, 160, 128, FBROWSERBC);
     mCurrentDir[0] = '\0';
     mCurrentEntry = 0;
     mFirstEntryToShow = 0;
     return FR_OK;
+}
+
+void cMenu::mCard::exitCardMenu(uint8_t button)
+{
+    sd_card_t* pSD = sd_get_by_num(0);
+    tft.writeFillRect(0, 0, 160, 128, BLACK);
+    f_unmount(pSD->pcName);
+    menuBack(PNOPARAM);
 }
 
 uint32_t cMenu::mCard::getDir()
@@ -106,16 +119,32 @@ uint32_t cMenu::mCard::getDir()
 }
 
 void cMenu::mCard::ShowEntries()
-{ 
+{
     char name[32];
     char lowercase[256];
-
+ 
     tft.setFont(&Roboto_Condensed);
+
+
+    tft.setTextColor(WHITE);
+//tft.writeFillRect()
+    tft.writeFillRect(12, 0,44, 12, BUTTONCOLOR);
+    tft.setCursor(14, 10);
+    tft.print("5 Open");
+    tft.writeFillRect(63, 0, 46, 12, BUTTONCOLOR);
+    tft.setCursor(65, 10);
+    tft.print("6 Close");
+    tft.writeFillRect(118, 0, 42, 12, BUTTONCOLOR);
+    tft.setCursor(120, 10);
+    tft.print("8 Back");
+    tft.setTextColor(WHITE);
 
     for (size_t i = 0; i < MAXDISPLAYFILES; i++)
     {
+        // Check for valid filename
         if (strlen(mfileEntry[i].fname) > 0)
         {
+            // Mark directories with a color
             if ((mfileEntry[i].fattrib & AM_DIR) == 0x10)
             {
                 tft.setTextColor(BLUE);
@@ -124,15 +153,13 @@ void cMenu::mCard::ShowEntries()
                 tft.setTextColor(WHITE);
             }
 
-            tft.setCursor(DIRLEFTPOS - 24, 9 + 12 * i);
-
+            // Mark sysex files with a size based indication of their type
+            tft.setCursor(DIRLEFTPOS - 12, 24 + 12 * i);
             for (size_t lc = 0; lc <= strlen(mfileEntry[i].fname); lc++)
             {
                 lowercase[lc] = tolower(mfileEntry[i].fname[lc]);
             }
-
-            tft.writeFillRect(DIRLEFTPOS - 24, 12 * i, 24, 12, DARKERGREY);
-            
+            tft.writeFillRect(DIRLEFTPOS - 12, 14 + 12 * i, 12, 12, FBROWSERBC);
             if (strstr(lowercase, ".syx") != NULL)
             {
                 switch (mfileEntry[i].fsize)
@@ -151,22 +178,44 @@ void cMenu::mCard::ShowEntries()
                 }
             }
 
-            tft.setCursor(DIRLEFTPOS, 9 + 12 * i);
+            // Mark the selected entry
+            tft.setCursor(DIRLEFTPOS, 24 + 12 * i);
             if (i == (mCurrentEntry - mFirstEntryToShow))
             {
                 tft.setTextColor(BLACK);
-                tft.writeFillRect(DIRLEFTPOS, 12 * i, 160 - DIRLEFTPOS, 12, WHITE);
+                tft.writeFillRect(DIRLEFTPOS, 14 + 12 * i, 160 - DIRLEFTPOS, 12, WHITE);
             }
             else {
-                tft.writeFillRect(DIRLEFTPOS, 12 * i, 160 - DIRLEFTPOS, 12, DARKERGREY);
+                tft.writeFillRect(DIRLEFTPOS, 14 + 12 * i, 160 - DIRLEFTPOS, 12, FBROWSERBC);
             }
+
+            // Finally print the filename
             sprintf(name, "%.15s", mfileEntry[i].fname);
             tft.print(name);
         }
         else {
-            tft.writeFillRect(DIRLEFTPOS-24, 12 * i, 160 - DIRLEFTPOS + 24, 12, DARKERGREY);
+            // Fill in empty filenames
+            tft.writeFillRect(DIRLEFTPOS - 12, 14 + 12 * i, 160 - DIRLEFTPOS + 12, 12, FBROWSERBC);
         }
     }
+
+    tft.writeFillRect(0, 12, 12, 116, BLACK);
+    tft.fillTriangle(5, 127, 0, 119, 10, 119, WHITE); // Downward arrow
+    tft.fillTriangle(5, 13, 0, 21, 10, 21, WHITE); // Up Arrow
+    tft.drawFastVLine(11, 13, 116, GREY);
+
+    // 110
+    if (mFileCount > MAXDISPLAYFILES)
+    {
+        float step = 95.0f / (mFileCount - (MAXDISPLAYFILES - 1));
+        //        printf("fileCOunt %i\t First Entry to Show %i, step %f\n", mFileCount, mFirstEntryToShow, step);
+
+        tft.writeFillRect(1, 23 + step * mFirstEntryToShow, 9, map(step, 0, 95, 2, 108), LIGHTGREY);
+    }
+    else {
+        tft.writeFillRect(1, 23, 9, 95, LIGHTGREY);
+    }
+ 
 }
 
 void cMenu::mCard::OpenEntry(uint8_t button)
@@ -255,7 +304,7 @@ void cMenu::mCard::ListUp(uint8_t button)
     }
     if (mCurrentEntry > 5)
     {
-        if (mFirstEntryToShow < (mFileCount - 5))
+        if (mFirstEntryToShow < (mFileCount - MAXDISPLAYFILES))
         {
             mFirstEntryToShow++;
             getDir();
@@ -278,6 +327,26 @@ void cMenu::mCard::ListDown(uint8_t button)
     ShowEntries();
 }
 
+// Voice and Bank Handling
+void cMenu::mCard::VoiceUp(uint8_t button)
+{
+    if (mCurrentVoice < MAXPATCH)
+    {
+        mCurrentVoice++;
+    }
+}
+
+void cMenu::mCard::VoiceDown(uint8_t button)
+{
+    if (mCurrentVoice > 0)
+    {
+        mCurrentVoice--;
+    }
+}
+
+void cMenu::mCard::VoiceSelect(uint8_t button)
+{}
+
 void cMenu::mCard::VoiceHandling(uint8_t button)
 {
     char voiceName[12];
@@ -297,23 +366,49 @@ void cMenu::mCard::VoiceHandling(uint8_t button)
 
 void cMenu::mCard::BankHandling(uint8_t button)
 {
+    tft.setTextColor(WHITE);
+    tft.writeFillRect(0, 0, 160, 128, DARKERGREY);
 
+//    tft.setFont(&Roboto_Bold_10);
     printf("BankHandling\n");
-    char voiceName[12];
-    memset(voiceName, 0, 12);
     for (size_t v = 0; v < MAXPATCH; v++)
     {
-        memcpy(voiceName, mSysexbuf + DATA_HEADER + (v*BANKVOICE_SIZE) + BANKVNAME_OFFSET, 10);
-        printf("Voice[%i]: %s\n",v+1, voiceName);
+        memset(mVoiceNames[v], 0, 10);
+        memcpy(mVoiceNames[v], mSysexbuf + DATA_HEADER + (v*BANKVOICE_SIZE) + BANKVNAME_OFFSET, 10);
     }
 
-    ExtractVoiceFromBank();
+    char myname[14];
+    for (uint8_t r = 0; r < 8; r++)
+        {
+       uint8_t patch = r;
+
+       if (patch != mCurrentVoice)
+       {
+           tft.setFont(&Roboto_Condensed_10);
+           tft.writeFillRect(0, 13 + r * 12, 79, 12, WHITE);
+       }
+       else {
+           tft.setFont(&Roboto_Condensed);
+           tft.writeFillRect(0, 13 + r * 12, 79, 12, FBROWSERBC);
+       }
+       tft.setCursor(0, 23+r * 12);
+       sprintf(myname, "%2i %s", patch+1, mVoiceNames[patch]);
+       tft.print(myname);
+       if (patch < 24)
+       {
+           tft.setFont(&Roboto_Condensed_10);
+           tft.setCursor(80, 23 + r * 12);
+           sprintf(myname, "%2i %s", patch + 9, mVoiceNames[patch + 8]);
+           tft.print(myname);
+       }
+    }
+//    ExtractVoiceFromBank();
 //    sendToAllPorts(sysexbuf, sysexsize);
 }
 
 void cMenu::mCard::ExtractVoiceFromBank()
 {
-    uint8_t voicebuffer[162];
+    uint8_t voicebuffer[163];
     uint8_t packedvoice[128];
     uint16_t v = mCurrentVoice;
     memcpy(packedvoice, mSysexbuf + DATA_HEADER + (v * BANKVOICE_SIZE), BANKVOICE_SIZE);

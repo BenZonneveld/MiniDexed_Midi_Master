@@ -19,37 +19,40 @@
 #include "fonts/OpenSansBoldCondensed16.h"
 
 s_menu menuEntry[] = {
-	{ // M_MAIN
+	{ 
+		M_MAIN,
 		M_MAIN,
 		{PNOPARAM, PNOPARAM, PNOPARAM}, { false, false, false},
 		{PNOPARAM, PNOPARAM, PNOPARAM, PNOPARAM},
 		{
-			{"TG1", PNOPARAM, &cMenu::selectTG, &cMenu::TGEnable, &cMenu::Dexed },
-			{"TG2", PNOPARAM, &cMenu::selectTG, &cMenu::TGEnable, NULL },
-			{"TG3", PNOPARAM, &cMenu::selectTG, &cMenu::TGEnable, NULL },
-			{"TG4", PNOPARAM, &cMenu::selectTG, &cMenu::TGEnable, NULL },
-			{"TG5", PNOPARAM, &cMenu::selectTG, &cMenu::TGEnable, NULL },
-			{"TG6", PNOPARAM, &cMenu::selectTG, &cMenu::TGEnable, NULL },
-			{"TG7", PNOPARAM, &cMenu::selectTG, &cMenu::TGEnable, NULL },
-			{"TG8", PNOPARAM, &cMenu::selectTG, &cMenu::TGEnable, NULL },
+			{"TG1", M_TG, &cMenu::selectTG, &cMenu::TGEnable, &cMenu::Dexed },
+			{"TG2", M_TG, &cMenu::selectTG, &cMenu::TGEnable, NULL },
+			{"TG3", M_TG, &cMenu::selectTG, &cMenu::TGEnable, NULL },
+			{"TG4", M_TG, &cMenu::selectTG, &cMenu::TGEnable, NULL },
+			{"TG5", M_TG, &cMenu::selectTG, &cMenu::TGEnable, NULL },
+			{"TG6", M_TG, &cMenu::selectTG, &cMenu::TGEnable, NULL },
+			{"TG7", M_TG, &cMenu::selectTG, &cMenu::TGEnable, NULL },
+			{"TG8", M_TG, &cMenu::selectTG, &cMenu::TGEnable, NULL },
 		},
 	},
-	{ // M_TG
+	{ 
+		M_TG,
 		M_MAIN,
 		{PFREQ, PRESO, PVERB}, { true, true, true},
 		{PFREQ, PRESO, PVERB, PNOPARAM},
 		{
-			{ "MIDI", PNOPARAM, &cMenu::Midi, &cMenu::Midi, NULL},
-			{ "Filter", PNOPARAM, &cMenu::TGFilter, &cMenu::TGFilter, NULL},
-			{ "Tuning", PNOPARAM, &cMenu::TGTune, &cMenu::TGTune, NULL},
-			{ "Out", PNOPARAM, &cMenu::TGOut, &cMenu::TGOut, NULL},
-			{ "Pitch", PNOPARAM, &cMenu::TGPitch, &cMenu::TGPitch, NULL},
+			{ "MIDI", M_TG_MIDI, &cMenu::Midi, &cMenu::Midi, NULL},
+			{ "Filter", M_TG_FILT, &cMenu::TGFilter, &cMenu::TGFilter, NULL},
+			{ "Tuning", M_TG_TUNE, &cMenu::TGTune, &cMenu::TGTune, NULL},
+			{ "Out", M_TG_OUT, &cMenu::TGOut, &cMenu::TGOut, NULL},
+			{ "Pitch", M_TG_PITCH, &cMenu::TGPitch, &cMenu::TGPitch, NULL},
 			{ " ", PNOPARAM, NULL, NULL, NULL},
 			{ " ", PNOPARAM, NULL, NULL, NULL},
 			{ "Back", PNOPARAM, &cMenu::menuBack, &cMenu::menuBack, NULL},
 		},
 	},
-	{ // M_TG_MIDI
+	{ 
+		M_TG_MIDI,
 		M_TG,
 		{PBANK, PPATCH, PCHANNEL}, { false, false, false},
 		{PBANK, PPATCH, PCHANNEL, PNOPARAM},
@@ -64,7 +67,8 @@ s_menu menuEntry[] = {
 			{ "Back", PNOPARAM, &cMenu::menuBack, &cMenu::menuBack, NULL},
 		},
 	},
-	{ // M_TG_FILT
+	{ 
+		M_TG_FILT,
 		M_TG,
 		{PFREQ, PRESO, PVERB}, { false, false, false},
 		{PFREQ, PRESO, PVERB, PNOPARAM},
@@ -79,7 +83,8 @@ s_menu menuEntry[] = {
 			{ "Back", PNOPARAM, &cMenu::menuBack, &cMenu::menuBack, NULL},
 		},
 	},
-	{ // M_TG_TUNE
+	{ 
+		M_TG_TUNE,
 		M_TG,
 		{PSHIFT, PTUNE, PNOPARAM}, { false, false, false},
 		{PSHIFT, PTUNE, PNOPARAM, PNOPARAM},
@@ -94,7 +99,8 @@ s_menu menuEntry[] = {
 			{ "Back", PNOPARAM, &cMenu::menuBack, &cMenu::menuBack, NULL},
 		},
 	},
-	{ // M_TG_OUT
+	{ 
+		M_TG_OUT,
 		M_TG,
 		{PPAN, PVOL, PNOPARAM}, { false, false, false},
 		{PPAN, PVOL, PNOPARAM, PNOPARAM},
@@ -109,14 +115,15 @@ s_menu menuEntry[] = {
 			{ "Back", PNOPARAM, &cMenu::menuBack, &cMenu::menuBack, NULL},
 		},
 	},
-	{ // M_TG_PITCH
+	{ 
+		M_TG_PITCH,
 		M_TG,
 		{PBRANGE, PBSTEP, PNOPARAM}, { false, false, false},
 		{PBRANGE, PBSTEP, PNOPARAM, PMONO},
 		{
 			{ "PBRng-", PBRANGE, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
 			{ "PBStp-", PBSTEP, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
-			{ "Porta", PNOPARAM, &cMenu::TGPorta, &cMenu::TGPorta, NULL},
+			{ "Porta", M_TG_PORTA, &cMenu::TGPorta, &cMenu::TGPorta, NULL},
 			{ "Mono", PMONO, &cMenu::ParmToggle, &cMenu::ParmToggle, NULL},
 			{ "PBRng+", PBRANGE, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
 			{ "PBStp+", PBSTEP, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
@@ -124,7 +131,8 @@ s_menu menuEntry[] = {
 			{ "Back", PNOPARAM, &cMenu::menuBack, &cMenu::menuBack, NULL},
 		},
 	},
-	{ // M_TG_PORTA
+	{ 
+		M_TG_PORTA,
 		M_TG_PITCH,
 		{PTIME, PNOPARAM, PNOPARAM}, { false, false, false},
 		{PTIME, PPMODE, PGLISS, PNOPARAM},
@@ -139,22 +147,24 @@ s_menu menuEntry[] = {
 			{ "Back", PNOPARAM, &cMenu::menuBack, &cMenu::menuBack, NULL},
 		},
 	},
-	{ // M_DEXED
+	{
+		M_DEXED,
 		M_MAIN,
 		{PNOPARAM, PNOPARAM, PNOPARAM}, { false, false, false},
 		{PNOPARAM, PNOPARAM, FCOMP_EN, PNOPARAM},
 		{
-			{ "Rev 1", PNOPARAM, &cMenu::FX1, &cMenu::FX1, NULL},
-			{ "Rev 2", PNOPARAM, &cMenu::FX2, &cMenu::FX2, NULL},
+			{ "Rev 1", M_FX1, &cMenu::FX1, &cMenu::FX1, NULL},
+			{ "Rev 2", M_FX2, &cMenu::FX2, &cMenu::FX2, NULL},
 			{ "Comp", FCOMP_EN, &cMenu::ParmToggle, &cMenu::ParmToggle, NULL},
 			{ " ", PNOPARAM, NULL, NULL, NULL},
-			{ "Card", PNOPARAM, &cMenu::mCard::CardMenu, &cMenu::mCard::CardMenu, NULL},
+			{ "Card", M_CARD, &cMenu::mCard::CardMenu, &cMenu::mCard::CardMenu, NULL},
 			{ "Router", PNOPARAM, &cMenu::Routing, &cMenu::Routing, NULL},
 			{ " ", PNOPARAM, NULL, NULL, NULL},
 			{ "Back", PNOPARAM, &cMenu::menuBack, &cMenu::menuBack, NULL},
 		},
 	},
-	{ // M_FX1
+	{ 
+		M_FX1,
 		M_DEXED,
 		{FSIZE, FDIFF, FRLEVEL}, { false, false, false},
 		{FSIZE, FDIFF, FRLEVEL, FREV_EN},
@@ -169,7 +179,8 @@ s_menu menuEntry[] = {
 			{ "Back", PNOPARAM, &cMenu::menuBack, &cMenu::menuBack, NULL},
 		},
 	},
-	{ // M_FX2
+	{ 
+		M_FX2,
 		M_DEXED,
 		{ FHIGHDAMP, FLOWDAMP, FLOWPASS }, { false, false, false },
 		{ FHIGHDAMP, FLOWDAMP, FLOWPASS, PNOPARAM },
@@ -184,7 +195,8 @@ s_menu menuEntry[] = {
 			{ "Back", PNOPARAM, &cMenu::menuBack, &cMenu::menuBack, NULL},
 		},
 	},
-	{ // M_ROUTING
+	{   
+		M_ROUTING,
 		M_DEXED,
 		{ PNOPARAM, PNOPARAM, PNOPARAM }, { false, false, false },
 		{ PNOPARAM, PNOPARAM, PNOPARAM, PNOPARAM },
@@ -199,7 +211,8 @@ s_menu menuEntry[] = {
 			{ "Back", PNOPARAM, &cMenu::menuBack, &cMenu::menuBack, NULL},
 		},
 	},
-	{ // M_CARD
+	{ 
+		M_CARD,
 		M_DEXED,
 		{ PNOPARAM, PNOPARAM, PNOPARAM }, { false, false, false },
 		{ PNOPARAM, PNOPARAM, PNOPARAM, PNOPARAM },
@@ -284,8 +297,8 @@ void cMenu::ShowButtonText(uint8_t button)
 		break;
 	}
 
-	uint16_t color = tft.color565(0xff, 251, 0x25);
-	tft.setTextColor(BLACK);
+	uint16_t color = BUTTONCOLOR;
+	tft.setTextColor(WHITE);
 	if (TGEnabled[button] == false && menu == M_MAIN ) {
 		color = LIGHTGREY;
 		tft.setTextColor(GREY);
@@ -294,15 +307,13 @@ void cMenu::ShowButtonText(uint8_t button)
 	if (button < 4)
 	{
 		h = 12;
-	//	tft.fillCircleHelper(col + (2*offset)-9, row + 4, 4, 1, 9, color);
 		tft.writeFillRect(col, row, (2 * offset) - 8, BUTTONHEIGHT, color);
-		tft.setCursor(col + offset - (w/2) - 4 , row + h + 2);
+		tft.setCursor(col + offset - (w/2) - 4 , row + h + 4);
 	}
 	else {
 		h = 12;
-	//	tft.fillCircleHelper(col + 4, row + 4, 4, 2, 9, color);
 		tft.writeFillRect(col + 4, row, (2 * offset) - 4, BUTTONHEIGHT, color);
-		tft.setCursor(col+offset - (w/2) + 4, row + h + 2);
+		tft.setCursor(col+offset - (w/2) + 4, row + h + 4);
 	}
 	tft.print(menuEntry[menu].button[button].name);
 }
@@ -370,7 +381,7 @@ void cMenu::ShowValue(uint16_t param)
 		tft.writeFillRect(VALUEPOS, parampos[param], VALUEWIDTH, BUTTONHEIGHT, WHITE);
 	}
 	else {
-		tft.writeFillRect(VALUEPOS, parampos[param], VALUEWIDTH, BUTTONHEIGHT, tft.color565(64, 64, 255));
+		tft.writeFillRect(VALUEPOS, parampos[param], VALUEWIDTH, BUTTONHEIGHT, tft.color565(255, 64, 64));
 	}
 
 	if (param == PCHANNEL)
@@ -416,7 +427,7 @@ void cMenu::menuBack(uint8_t cbparam)
 		mainmenu(PNOPARAM);
 		break;
 	case M_TG:
-		selectTGcb(PNOPARAM);
+		selectTG(PNOPARAM);
 		break;
 	case M_TG_PITCH:
 		TGPitch(PNOPARAM);
@@ -1006,75 +1017,79 @@ void cMenu::buildMenu(uint8_t men)
 	}
 }
 
-void cMenu::mainmenu(uint8_t cbparam)
+void cMenu::mainmenu(uint8_t button)
 {
+	printf("bparam: %i\n",bparam[button]);
 	dexed[0].getConfig();
 	buildMenu(M_MAIN);
 }
 
 void cMenu::Midi(uint8_t button)
 {
+	printf("bparam: %i\n", bparam[button]);
 	buildMenu(M_TG_MIDI);
 }
 
 void cMenu::selectTG(uint8_t button)
 {
+	printf("bparam: %i\n", bparam[button]);
+
 	currentTG = button;
 	dexed[currentTG].getPatch();
 	dexed[currentTG].getBank();
-	selectTGcb(PNOPARAM);
-}
-
-void cMenu::selectTGcb(uint8_t cbparam)
-{
 	buildMenu(M_TG);
 }
 
 void cMenu::TGFilter(uint8_t button)
 {
+	printf("bparam: %i\n", bparam[button]);
 	buildMenu(M_TG_FILT);
 }
 
 void cMenu::TGTune(uint8_t button)
 {
+	printf("bparam: %i\n", bparam[button]);
 	buildMenu(M_TG_TUNE);
 }
 
 void cMenu::TGOut(uint8_t button)
 {
+	printf("bparam: %i\n", bparam[button]);
 	buildMenu(M_TG_OUT);
 }
 
 void cMenu::TGPitch(uint8_t button)
 {
+	printf("bparam: %i\n", bparam[button]);
 	buildMenu(M_TG_PITCH);
 }
 
 void cMenu::TGPorta(uint8_t button)
 {
+	printf("bparam: %i\n", bparam[button]);
 	buildMenu(M_TG_PORTA);
 }
 
 void cMenu::Dexed(uint8_t button)
 {
+	printf("bparam: %i\n", bparam[button]);
 	buildMenu(M_DEXED);
 }
 
 void cMenu::FX1(uint8_t button)
 {
+	printf("bparam: %i\n", bparam[button]);
 	buildMenu(M_FX1);
 }
 
 void cMenu::FX2(uint8_t button)
 {
+	printf("bparam: %i\n", bparam[button]);
 	buildMenu(M_FX2);
 }
 
 void cMenu::Routing(uint8_t button)
 {
+	printf("bparam: %i\n", bparam[button]);
 	buildMenu(M_ROUTING);
-}
-
-void cMenu::Card(uint8_t button)
-{
 }

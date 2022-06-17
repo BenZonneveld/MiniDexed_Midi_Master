@@ -20,6 +20,7 @@ extern "C"
 #define MIDPOT	1
 #define BOTPOT	2
 
+#define BUTTONCOLOR tft.color565(9, 4, 176)
 #define MIDI_CC_BANK_SELECT_MSB          0       // TODO
 #define MIDI_CC_MODULATION               1
 #define MIDI_CC_VOLUME                   7
@@ -56,7 +57,7 @@ enum menulvl { M_MAIN = 0,
 };
 
 typedef struct {
-//	const uint8_t menulvl;
+	const uint8_t this_menu;
 	uint8_t prev;
 	uint16_t potparams[3];
 	bool potflags[3];
@@ -93,7 +94,7 @@ public:
 	uint8_t currentMenu() { return menu; }
 	static void menuBack(uint8_t button);
 	static void mainmenu(uint8_t cbparam);
-	static void selectTGcb(uint8_t cbparam);
+	//static void selectTGcb(uint8_t cbparam);
 	static void selectTG(uint8_t button);
 	static void Midi(uint8_t button);
 	static void TGFilter(uint8_t button);
@@ -113,7 +114,6 @@ public:
 	static void FX1(uint8_t cbparam);
 	static void FX2(uint8_t cbparam);
 	static void Routing(uint8_t cbparam);
-	static void Card(uint8_t cbparam);
 #include "card_menu.h"
 private:
 	static void buildMenu(uint8_t men);

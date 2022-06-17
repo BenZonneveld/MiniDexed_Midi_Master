@@ -1,11 +1,12 @@
 
 //#include "MainMenu.h"
 
-#define MAXDISPLAYFILES	10
+#define MAXDISPLAYFILES	9
 #define MAXDIRENTRIES 512
 #define CARDSYSEXBYFFER 9000
 // GUI
 #define DIRLEFTPOS 30
+#define FBROWSERBC	DARKERGREY
 
 class mCard {
 public:
@@ -17,7 +18,11 @@ public:
 	static void VoiceHandling(uint8_t button);
 	static void BankHandling(uint8_t button);
 	static void CartHandling(uint8_t button);
-
+	static void exitCardMenu(uint8_t button);
+	static void VoiceUp(uint8_t button);
+	static void VoiceDown(uint8_t button);
+	static void VoiceSelect(uint8_t button);
+	static void ShowVoices(uint8_t button);
 private:
 	static uint8_t tryMount();
 	static uint32_t getDir();
