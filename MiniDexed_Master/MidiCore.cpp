@@ -16,6 +16,8 @@
 
 queue_t midi_fifo;
 queue_t sysex_fifo;
+queue_t tx_fifo;
+
 bool led_usb_state = false;
 bool led_uart_state = false;
 
@@ -132,6 +134,7 @@ void led_task(void)
 void midicore()
 {
     dexed_t mididata;
+    sysex_t rawsysex;
     printf("MidiCore Launched on core 1:\r\n");
     tusb_init();
 #ifndef MIDIPORT
@@ -160,6 +163,11 @@ void midicore()
         {
             dispatcher(mididata);
         }
+
+        while (queue_try_remove(&tx_fifo, &rawsysex))
+        {
+            sendToAllPorts(rawsysex.buffer, rawsysex.length);
+        }
     }
 }
 
@@ -170,15 +178,23 @@ void dispatcher(dexed_t mididata)
     if (mididata.cmd == 1)
     {
         dexedPatchRequest(mididata);
+        return;
     }
     if (mididata.cmd == 2)
     {
+        return;
         dexedConfigRequest();
     }
     if (mididata.cmd == 3)
     {
+        return;
         dexedGetBankName(mididata);
     }
+    if (mididata.cmd == 4)
+    {
+        return;
+    }
+
     if ( mididata.cmd == 0 )
     {
         switch (mididata.parm)

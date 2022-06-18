@@ -377,15 +377,22 @@ void cMenu::mCard::BankVoiceSelect(uint8_t button)
 
 void cMenu::mCard::SendVoice(uint8_t button)
 {
+    sysex_t sv;
+
     printf("Send Single Voice to TG %i\n", button+1);
     mSysexbuf[2] = 0x00 | button;
 
+    memcpy(sv.buffer, mSysexbuf, 163);
+
     for (size_t c = 0; c < 163; c++)
     {
-        printf("%02X, ", mSysexbuf[c]);
+        printf("%02X, ", sv.buffer[c]);
         if ((c + 1) % 16 == 0) printf("\n");
     }
     printf("\n");
+
+    sv.length = 163;
+    queue_add_blocking(&tx_fifo, &sv);
 
     // Go back to the previes screen
     menu = menuEntry[menu].prev;
