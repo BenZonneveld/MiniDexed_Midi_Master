@@ -8,14 +8,16 @@ extern "C"
 #endif
 
 extern queue_t tg_fifo;
-#define VOICEDATA_HEADER 6
+#define DATA_HEADER 6
 #define VOICEDATA_SIZE 162
+#define BANKVOICE_SIZE	128
+#define BANKVNAME_OFFSET 118
 #define SYSEX_BUFFER	204
 #define VNAME_OFFSET	145
 
 #define MAXBANKS 127
 #define MAXPATCH 31
-#define MAXCHANNEL 16
+#define MAXCHANNEL 17
 #define MAXFREQ 99
 #define MAXRESO	99
 #define MAXREV	99

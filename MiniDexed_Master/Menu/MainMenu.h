@@ -2,8 +2,17 @@
 #include "Adafruit_GFX.h"
 #include "Adafruit_SPITFT.h"
 #include "TG.h"
+
 #ifndef MAIN_MENU_H
 #define MAIN_MENU_H
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+#include "f_util.h"
+#include "ff.h"
+
 #define VALUEWIDTH 37
 #define BUTTONHEIGHT 18
 #define VALUEPOS	59
@@ -11,6 +20,7 @@
 #define MIDPOT	1
 #define BOTPOT	2
 
+#define BUTTONCOLOR tft.color565(9, 4, 176)
 #define MIDI_CC_BANK_SELECT_MSB          0       // TODO
 #define MIDI_CC_MODULATION               1
 #define MIDI_CC_VOLUME                   7
@@ -43,11 +53,13 @@ enum menulvl { M_MAIN = 0,
 	M_FX1,
 	M_FX2,
 	M_ROUTING,
-	M_CARD
+	M_CARD,
+	M_BANKVOICE,
+	M_VOICE
 };
 
 typedef struct {
-//	const uint8_t menulvl;
+	const uint8_t this_menu;
 	uint8_t prev;
 	uint16_t potparams[3];
 	bool potflags[3];
@@ -73,25 +85,20 @@ typedef struct {
 	uint8_t mastervolume;
 } s_fx;
 
+extern s_menu menuEntry[];
 extern s_fx fx_settings;
+extern Adafruit_SPITFT tft;
 
 class cMenu {
 public:
 	void Init();
 	//	void ClearNeedUpdate() { menuNeedFlush = false; }
 	//	bool NeedUpdate() { return menuNeedFlush; }
-	void Show() { mainmenu(0); }
+	void Show() { OpenMenu(0); }
 	uint8_t currentMenu() { return menu; }
 	static void menuBack(uint8_t button);
-	static void mainmenu(uint8_t cbparam);
-	static void selectTGcb(uint8_t cbparam);
-	static void selectTG(uint8_t button);
-	static void Midi(uint8_t button);
-	static void TGFilter(uint8_t button);
-	static void TGTune(uint8_t button);
-	static void TGOut(uint8_t button);
-	static void TGPitch(uint8_t button);
-	static void TGPorta(uint8_t button);
+	static void OpenMenu(uint8_t button);
+	static void Dexed(uint8_t button);
 	static void ParmSelect(uint8_t button);
 	static void ParmToggle(uint8_t button);
 	static void ParmPot(uint8_t channel);
@@ -100,13 +107,9 @@ public:
 	static void showTGInfo(int16_t param);
 	static void showDexedInfo(int16_t param);
 	static void ShowValue(uint16_t param);
-	static void Dexed(uint8_t cbparam);
-	static void FX1(uint8_t cbparam);
-	static void FX2(uint8_t cbparam);
-	static void Routing(uint8_t cbparam);
-	static void Card(uint8_t cbparam);
+#include "card_menu.h"
 private:
-	static void buildMenu(uint8_t men);
+	static void buildMenu();
 	static void ShowButtonText(uint8_t button);
 	static void setButtonCallback(uint8_t button,uint16_t param, void (*callback)(uint8_t button));
 	static void clearCallbacks();
@@ -135,5 +138,8 @@ private:
 #define MAGENTA 0xF81F
 #define YELLOW 0xFFE0
 #define ORANGE 0xFC00
+#ifdef __cplusplus
+}
+#endif
 
 #endif

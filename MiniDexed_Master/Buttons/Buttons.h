@@ -25,10 +25,10 @@ extern "C"
         void setCallback(uint8_t mask, void (* callback)(uint8_t button));
         void setDBLCallback(uint8_t mask, void (*callback)(uint8_t button));
         void setLongCallback(uint8_t mask, void (*callback)(uint8_t button));
-        void doCallback(uint8_t button);
+        void doCallback(uint8_t button); 
+        BTNEVNT getState(uint8_t btn);
     private:
         BTNEVNT checkButton(bool buttonval, uint8_t btn); 
-        BTNEVNT getState(uint8_t btn);
         uint8_t state;
         uint64_t last_seen;
         uint8_t cs;

@@ -13,17 +13,19 @@ family_initialize_project(${PROJECT} ${CMAKE_CURRENT_LIST_DIR})
 add_executable(${PROJECT})
 
 add_subdirectory(GFX-lib)
+add_subdirectory(FatFS build)
 
 target_sources(${PROJECT} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/MDMA.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/MidiCore.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usb_descriptors.c
         ${CMAKE_CURRENT_SOURCE_DIR}/tud_callbacks.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/fatfs_config.c
         ${CMAKE_CURRENT_SOURCE_DIR}/utils/tools.c
-#        ${CMAKE_CURRENT_SOURCE_DIR}/MIDI/midi.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Pots/Pots.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Buttons/Buttons.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Menu/MainMenu.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Menu/card_menu.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Dexed/TG.cpp
 )
 
@@ -35,12 +37,12 @@ pico_enable_stdio_uart(${PROJECT} 1)
 target_include_directories(${PROJECT} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/utils
-#        ${CMAKE_CURRENT_SOURCE_DIR}/MIDI
         ${CMAKE_CURRENT_SOURCE_DIR}/Pots
         ${CMAKE_CURRENT_SOURCE_DIR}/Buttons
         ${CMAKE_CURRENT_SOURCE_DIR}/Menu
         ${CMAKE_CURRENT_SOURCE_DIR}/Dexed
         ${CMAKE_CURRENT_SOURCE_DIR}/GFX-lib
+        ${CMAKE_CURRENT_SOURCE_DIR}/FatFs/include
 )
 
 target_link_libraries(${PROJECT} PUBLIC
@@ -51,6 +53,7 @@ target_link_libraries(${PROJECT} PUBLIC
     hardware_gpio
     pico_bootsel_via_double_reset
     GFX-lib
+    FatFs_SPI
 )
 
 target_compile_definitions(${PROJECT} PRIVATE
@@ -68,7 +71,7 @@ target_compile_definitions(${PROJECT} PRIVATE
   MIPI_DISPLAY_PIN_MOSI=11 # SDA
   MIPI_DISPLAY_PIN_MISO=12
   MIPI_DISPLAY_PIXEL_FORMAT=MIPI_DCS_PIXEL_FORMAT_16BIT
-  MIPI_DISPLAY_ADDRESS_MODE=MIPI_DCS_ADDRESS_MODE_BGR|MIPI_DCS_ADDRESS_MODE_SWAP_XY|MIPI_DCS_ADDRESS_MODE_MIRROR_Y 
+  MIPI_DISPLAY_ADDRESS_MODE=MIPI_DCS_ADDRESS_MODE_RGB|MIPI_DCS_ADDRESS_MODE_SWAP_XY|MIPI_DCS_ADDRESS_MODE_MIRROR_Y 
   MIPI_DISPLAY_WIDTH=160
   MIPI_DISPLAY_HEIGHT=128
   MIPI_DISPLAY_OFFSET_X=0
