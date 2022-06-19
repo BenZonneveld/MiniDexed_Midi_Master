@@ -23,7 +23,7 @@ bool led_usb_state = false;
 bool led_uart_state = false;
 
 I2SClass I2S;
-uint8_t buff[APP_BUFFER_SIZE];
+uint16_t buff[APP_BUFFER_SIZE];
 
 //--------------------------------------------------------------------+
 // UART Helper
@@ -145,12 +145,12 @@ void midicore()
     printf("tusb_init done");
 #endif
     // Setup i2s
- /*   I2S.setSCK(I2S_SCK);
+    I2S.setSCK(I2S_SCK);
     I2S.setWS(I2S_WS);
     I2S.setSD(I2S_SD);
     I2S.setBufferSize(40000);
     uint8_t i2sState = I2S.begin(I2S_MODE_STEREO, 44100, 16);
-    printf("i2s begin returned %i\n", i2sState);*/
+    printf("i2s begin returned %i\n", i2sState);
 
     // Initialise UARTs
     uart_init(DEXED, 230400);
@@ -181,13 +181,19 @@ void midicore()
             sendToAllPorts(rawsysex.buffer, rawsysex.length);
         }
 
-        //int ret = I2S.read(buff, APP_BUFFER_SIZE);
-        //if (ret < 0) {
-        //    printf("Microphone read error: %i\n",ret);
-        //    sleep_ms(1000);
-        //    return;
-        //}
-        //printf("Read %i bytes\n",ret);
+        int ret = I2S.read(buff, APP_BUFFER_SIZE);
+        if (ret < 0) {
+            printf("Microphone read error: %i\n", ret);
+            //    sleep_ms(1000);
+            //    return;
+        }
+//        else {
+//            for (size_t p = 0; p < ret; p++)
+//            {
+////                if ( buff[p] != 0 ) printf("%i\n", buff[p]);
+//            }
+//        }
+//        //printf("Read %i bytes\n",ret);
     }
 }
 

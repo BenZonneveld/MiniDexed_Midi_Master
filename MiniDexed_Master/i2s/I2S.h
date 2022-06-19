@@ -13,6 +13,7 @@
   version 2.1 of the License, or (at your option) any later version.
   See file LICENSE.txt for further informations on licensing terms.
 */
+#include <pico/stdlib.h>
 
 #ifndef I2S_h
 #define I2S_h
@@ -21,7 +22,7 @@
 #define I2S_MODE_STEREO 1
 
 class I2SClass {
-public:
+  public:
     I2SClass();
 
     bool setSCK(uint8_t pin);
@@ -32,11 +33,12 @@ public:
     void end();
     int read(void* buffer, size_t size);
 
-private:
+  private:
     uint8_t _pin_sck;
     uint8_t _pin_ws;
     uint8_t _pin_sd;
     int32_t _bufferSize;
+
 };
 
 #endif

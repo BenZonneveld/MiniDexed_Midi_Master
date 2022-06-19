@@ -14,9 +14,6 @@
   See file LICENSE.txt for further informations on licensing terms.
 */
 
-#include <stdlib.h>
-#include <bsp/board.h>
-
 #include "I2S.h"
 #include "machine_i2s.c"
 

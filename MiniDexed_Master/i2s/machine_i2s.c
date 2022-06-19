@@ -180,7 +180,7 @@ STATIC const pio_program_t pio_write_32 = {
 };
 
 //  PIO program for 32-bit read
-//    set(x, 30)                  .side(0b00)
+//    set(x, 30)                  .side(0b00) destination x register
 //    label('left_channel')
 //    in_(pins, 1)                .side(0b01)
 //    jmp(x_dec, "left_channel")  .side(0b00)
@@ -190,7 +190,27 @@ STATIC const pio_program_t pio_write_32 = {
 //    in_(pins, 1)                .side(0b11)
 //    jmp(x_dec, "right_channel") .side(0b10)
 //    in_(pins, 1)                .side(0b01)
-STATIC const uint16_t pio_instructions_read_32[] = {57406, 18433, 65, 22529, 61502, 22529, 4165, 18433};
+
+// 0xE030       set(x,30).side(0b00)
+// 0x4801       in(pins, 1)        .side(0xb01)   ((side is reverse bit order! // read a single bit
+// 0x0041       jmp(
+// 0x5801       in
+// 0xF03E       set?
+// 0x5801       in
+// 0x1045       jmp
+// 0x4801       in
+//STATIC const uint16_t pio_instructions_read_32[] = {0xE03E, 0x4801, 0x0041, 0x5801, 0xF03E, 0x5801, 0x1045, 0x4801};
+STATIC const uint16_t pio_instructions_read_32[] = { 
+    0xF03E, // set(x, 30)                  .side(0b10)
+    0x5801, // in_(pins, 1)                .side(0b11)
+    0x1041, // jmp(x_dec, "right_channel").side(0b10)
+    0x4801, //    in_(pins, 1)                .side(0b01)
+    0xE03E, // set(x, 30)                  .side(0b00)
+    0x5801, // in_(pins, 1).side(0b11)
+    0x0045, // jmp(x_dec, "right_channel") .side(0b00)
+    0x4801  // in_(pins, 1)                .side(0b01)
+};
+
 STATIC const pio_program_t pio_read_32 = {
     pio_instructions_read_32,
     sizeof(pio_instructions_read_32) / sizeof(uint16_t),
@@ -288,6 +308,7 @@ STATIC uint32_t fill_appbuf_from_ringbuf(machine_i2s_obj_t *self, mp_buffer_info
     uint8_t appbuf_sample_size_in_bytes = (self->bits == 16? 2 : 4) * (self->format == STEREO ? 2: 1);
     uint32_t num_bytes_needed_from_ringbuf = appbuf->len * (I2S_RX_FRAME_SIZE_IN_BYTES / appbuf_sample_size_in_bytes);
     uint8_t discard_byte;
+
     while (num_bytes_needed_from_ringbuf) {
 
         uint8_t f_index = get_frame_mapping_index(self->bits, self->format);
@@ -409,6 +430,7 @@ STATIC void feed_dma(machine_i2s_obj_t *self, uint8_t *dma_buffer_p) {
 }
 
 STATIC void irq_configure(machine_i2s_obj_t *self) {
+    printf("irq_configure\n");
     if (self->i2s_id == 0) {
         irq_set_exclusive_handler(DMA_IRQ_0, dma_irq0_handler);
         irq_set_enabled(DMA_IRQ_0, true);
@@ -429,6 +451,7 @@ STATIC void irq_deinit(machine_i2s_obj_t *self) {
 }
 
 STATIC int pio_configure(machine_i2s_obj_t *self) {
+    printf("pio_configure\n");
     if (self->mode == TX) {
         if (self->bits == 16) {
             self->pio_program = &pio_write_16;
@@ -513,6 +536,7 @@ STATIC void pio_deinit(machine_i2s_obj_t *self) {
 }
 
 STATIC void gpio_init_i2s(PIO pio, uint8_t sm, mp_hal_pin_obj_t pin_num, uint8_t pin_val, gpio_dir_t pin_dir) {
+    printf("gpio_init_i2s\n");
     uint32_t pinmask = 1 << pin_num;
     pio_sm_set_pins_with_mask(pio, sm, pin_val << pin_num, pinmask);
     pio_sm_set_pindirs_with_mask(pio, sm, pin_dir << pin_num, pinmask);
@@ -520,11 +544,14 @@ STATIC void gpio_init_i2s(PIO pio, uint8_t sm, mp_hal_pin_obj_t pin_num, uint8_t
 }
 
 STATIC void gpio_configure(machine_i2s_obj_t *self) {
-    gpio_init_i2s(self->pio, self->sm, self->sck, 0, GP_OUTPUT);
-    gpio_init_i2s(self->pio, self->sm, self->ws, 0, GP_OUTPUT);
+    printf("gpio_configure\n");
     if (self->mode == TX) {
+        gpio_init_i2s(self->pio, self->sm, self->sck, 0, GP_OUTPUT);
+        gpio_init_i2s(self->pio, self->sm, self->ws, 0, GP_OUTPUT);
         gpio_init_i2s(self->pio, self->sm, self->sd, 0, GP_OUTPUT);
     } else { // RX
+        gpio_init_i2s(self->pio, self->sm, self->sck, 0, GP_INPUT);
+        gpio_init_i2s(self->pio, self->sm, self->ws, 0, GP_INPUT);
         gpio_init_i2s(self->pio, self->sm, self->sd, 0, GP_INPUT);
     }
 }
@@ -561,6 +588,7 @@ STATIC uint8_t *dma_get_buffer(machine_i2s_obj_t *i2s_obj, uint channel) {
 }
 
 STATIC int dma_configure(machine_i2s_obj_t *self) {
+    printf("dma_configure\n");
     uint8_t num_free_dma_channels = 0;
     for (uint8_t ch = 0; ch < NUM_DMA_CHANNELS; ch++) {
         if (!dma_channel_is_claimed(ch)) {
@@ -674,7 +702,7 @@ STATIC int machine_i2s_init_helper(machine_i2s_obj_t *self,
     //
     // ---- Check validity of arguments ----
     //
-
+    
     // does WS pin follow SCK pin?
     // note:  SCK and WS are implemented as PIO sideset pins.  Sideset pins must be sequential.
     if (ws != (sck + 1)) {
@@ -719,7 +747,7 @@ STATIC int machine_i2s_init_helper(machine_i2s_obj_t *self,
     self->format = i2s_format;
     self->rate = i2s_rate;
     self->ibuf = ring_buffer_len;
-    self->io_mode = BLOCKING;
+    self->io_mode = UASYNCIO; // BLOCKING;
 
     irq_configure(self);
     int err = pio_configure(self);
