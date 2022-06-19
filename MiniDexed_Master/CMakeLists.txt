@@ -19,6 +19,7 @@ target_sources(${PROJECT} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/MDMA.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/MidiCore.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usb_descriptors.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/tud_audio_callbacks.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/tud_callbacks.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/fatfs_config.c
         ${CMAKE_CURRENT_SOURCE_DIR}/utils/tools.c
@@ -54,12 +55,14 @@ target_link_libraries(${PROJECT} PUBLIC
     hardware_spi
     hardware_gpio
     hardware_pio
+    hardware_dma
     pico_bootsel_via_double_reset
     GFX-lib
     FatFs_SPI
 )
 
 target_compile_definitions(${PROJECT} PRIVATE
+  USE_USB_AUDIO
   HAGL_HAL_USE_SINGLE_BUFFER
   #HAGL_HAL_USE_DOUBLE_BUFFER
   #HAGL_HAL_USE_TRIPLE_BUFFER

@@ -12,6 +12,8 @@
 #include "mdma.h"
 
 #include "I2s.h"
+#include "tud_audio_callbacks.h"
+
 //#define DEBUGSYSEX
 //#define DEBUGMIDI
 
@@ -137,6 +139,13 @@ void led_task(void)
 
 void midicore()
 {
+#ifdef USE_USB_AUDIO
+    sampleFreqRng.wNumSubRanges = 1;
+    sampleFreqRng.subrange[0].bMin = AUDIO_SAMPLE_RATE;
+    sampleFreqRng.subrange[0].bMax = AUDIO_SAMPLE_RATE;
+    sampleFreqRng.subrange[0].bRes = 0;
+#endif
+
     dexed_t mididata;
     sysex_t rawsysex;
     printf("MidiCore Launched on core 1:\r\n");

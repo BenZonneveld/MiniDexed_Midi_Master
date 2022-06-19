@@ -4,7 +4,7 @@
 #include <tusb.h> 
 
 #include "MidiCore.h"
-
+#include "tud_audio_callbacks.h"
 
 //--------------------------------------------------------------------+
 // Device callbacks
@@ -34,4 +34,3 @@ void tud_suspend_cb(bool remote_wakeup_en)
 void tud_resume_cb(void)
 {
 }
-
