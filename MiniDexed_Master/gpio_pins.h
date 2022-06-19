@@ -18,4 +18,4 @@
 
 #define I2S_SD		20
 #define I2S_WS		19
-#define I2C_SCK		18
+#define I2S_SCK		18

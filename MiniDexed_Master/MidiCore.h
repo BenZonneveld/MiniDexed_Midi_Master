@@ -5,9 +5,12 @@
 
 extern queue_t midi_fifo;
 extern queue_t sysex_fifo;
+extern queue_t tx_fifo;
 
 extern bool led_usb_state;
 extern bool led_uart_state;
+
+#define APP_BUFFER_SIZE 4096
 
 void midi_task(void); 
 void led_task(void);

@@ -27,6 +27,7 @@ target_sources(${PROJECT} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/Menu/MainMenu.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Menu/card_menu.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Dexed/TG.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/i2s/I2S.cpp
 )
 
 
@@ -43,6 +44,7 @@ target_include_directories(${PROJECT} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/Dexed
         ${CMAKE_CURRENT_SOURCE_DIR}/GFX-lib
         ${CMAKE_CURRENT_SOURCE_DIR}/FatFs/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/i2s
 )
 
 target_link_libraries(${PROJECT} PUBLIC
@@ -51,6 +53,7 @@ target_link_libraries(${PROJECT} PUBLIC
     hardware_adc
     hardware_spi
     hardware_gpio
+    hardware_pio
     pico_bootsel_via_double_reset
     GFX-lib
     FatFs_SPI

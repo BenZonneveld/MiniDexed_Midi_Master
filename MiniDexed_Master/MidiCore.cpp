@@ -11,6 +11,7 @@
 
 #include "mdma.h"
 
+#include "I2s.h"
 //#define DEBUGSYSEX
 //#define DEBUGMIDI
 
@@ -20,6 +21,9 @@ queue_t tx_fifo;
 
 bool led_usb_state = false;
 bool led_uart_state = false;
+
+I2SClass I2S;
+uint8_t buff[APP_BUFFER_SIZE];
 
 //--------------------------------------------------------------------+
 // UART Helper
@@ -140,6 +144,14 @@ void midicore()
 #ifndef MIDIPORT
     printf("tusb_init done");
 #endif
+    // Setup i2s
+ /*   I2S.setSCK(I2S_SCK);
+    I2S.setWS(I2S_WS);
+    I2S.setSD(I2S_SD);
+    I2S.setBufferSize(40000);
+    uint8_t i2sState = I2S.begin(I2S_MODE_STEREO, 44100, 16);
+    printf("i2s begin returned %i\n", i2sState);*/
+
     // Initialise UARTs
     uart_init(DEXED, 230400);
     gpio_set_function(TX1, GPIO_FUNC_UART);
@@ -168,6 +180,14 @@ void midicore()
         {
             sendToAllPorts(rawsysex.buffer, rawsysex.length);
         }
+
+        //int ret = I2S.read(buff, APP_BUFFER_SIZE);
+        //if (ret < 0) {
+        //    printf("Microphone read error: %i\n",ret);
+        //    sleep_ms(1000);
+        //    return;
+        //}
+        //printf("Read %i bytes\n",ret);
     }
 }
 
@@ -182,16 +202,19 @@ void dispatcher(dexed_t mididata)
     }
     if (mididata.cmd == 2)
     {
-        return;
         dexedConfigRequest();
+        return;
     }
+
     if (mididata.cmd == 3)
     {
-        return;
         dexedGetBankName(mididata);
+        return;
     }
+    
     if (mididata.cmd == 4)
     {
+        printf("mididata.cmd = %02X\n", mididata.cmd);
         return;
     }
 
@@ -339,6 +362,7 @@ void dexedGetBankName(dexed_t mididata)
         (uint8_t)(0x40 | (mididata.instance & 0xF)),
         0xF7
     };
+    printf("Bank Name Request\n");
     sendToAllPorts(bankname_req, 4);
 }
 
@@ -359,9 +383,9 @@ void dexedPatchRequest(dexed_t mididata)
 
 void dexedConfigRequest()
 {
-#ifdef DEBUGSYSEX
+//#ifdef DEBUGSYSEX
     printf("Send Config Request\n");
-#endif
+//#endif
     uint8_t config_req[4] = {
         0xF0,
         0x43,
@@ -521,9 +545,9 @@ void parseSysex(uint8_t buf)
 
 void handleMidi(sysex_t raw_sysex)
 {
-#ifdef DEBUGSYSEX
+//#ifdef DEBUGSYSEX
     printf("handle sysex: ");
-#endif
+//#endif
     if ((raw_sysex.buffer[0] & 0xF0) == 0xC0) // Program Change
     {
 #ifdef DEBUGSYSEX
@@ -643,9 +667,9 @@ void handleMidi(sysex_t raw_sysex)
     }
     if ((raw_sysex.buffer[2] & 0x70) == 0x50 && raw_sysex.buffer[3] == 0)
     {
-#ifdef DEBUGSYSEX
+//#ifdef DEBUGSYSEX
         printf("Bank Name Received\n");
-#endif
+//#endif
 
         uint8_t instanceID = raw_sysex.buffer[2] & 0xF;
         dexed[instanceID].setBankName(raw_sysex);
