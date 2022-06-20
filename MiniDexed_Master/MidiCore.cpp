@@ -1,8 +1,19 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <pico/stdlib.h>
 
 #include "bsp/board.h"
 #include "tusb.h"
+
+#include <inttypes.h>
+#include <vector>
+#include "hardware/pio.h"
+#include "hardware/spi.h"
+#include "hardware/uart.h"
+#include "sph0645.pio.h"
+#include <algorithm>
+#include "hardware/dma.h"
+
 #include "hardware/uart.h"
 #include "hardware/gpio.h"
 #include "pico/util/queue.h"
@@ -11,8 +22,8 @@
 
 #include "mdma.h"
 
-#include "I2s.h"
-#include "tud_audio_callbacks.h"
+//#include "I2s.h"
+#include "usb_audio.h"
 
 //#define DEBUGSYSEX
 //#define DEBUGMIDI
@@ -24,8 +35,13 @@ queue_t tx_fifo;
 bool led_usb_state = false;
 bool led_uart_state = false;
 
-I2SClass I2S;
-uint16_t buff[APP_BUFFER_SIZE];
+size_t clk;
+PIO pio = pio0;
+uint sm;
+uint dma_chan;
+
+//I2SClass I2S;
+int32_t buff[APP_BUFFER_SIZE] = { 0 };
 
 //--------------------------------------------------------------------+
 // UART Helper
@@ -139,28 +155,27 @@ void led_task(void)
 
 void midicore()
 {
-#ifdef USE_USB_AUDIO
-    sampleFreqRng.wNumSubRanges = 1;
-    sampleFreqRng.subrange[0].bMin = AUDIO_SAMPLE_RATE;
-    sampleFreqRng.subrange[0].bMax = AUDIO_SAMPLE_RATE;
-    sampleFreqRng.subrange[0].bRes = 0;
-#endif
-
     dexed_t mididata;
     sysex_t rawsysex;
     printf("MidiCore Launched on core 1:\r\n");
     tusb_init();
+
+    usb_audio_init();
+    usb_audio_set_tx_ready_handler(on_usb_audio_tx_ready);
+
 #ifndef MIDIPORT
     printf("tusb_init done");
 #endif
-    // Setup i2s
-    I2S.setSCK(I2S_SCK);
-    I2S.setWS(I2S_WS);
-    I2S.setSD(I2S_SD);
-    I2S.setBufferSize(40000);
-    uint8_t i2sState = I2S.begin(I2S_MODE_STEREO, 44100, 16);
-    printf("i2s begin returned %i\n", i2sState);
 
+    printf("Buffer size: %i", CFG_TUD_AUDIO_EP_SZ_IN);
+    i2s_init();
+    // Setup i2s
+    //I2S.setSCK(I2S_SCK);
+    //I2S.setWS(I2S_WS);
+    //I2S.setSD(I2S_SD);
+    //I2S.setBufferSize(APP_BUFFER_SIZE);
+    //uint8_t i2sState = I2S.begin(I2S_MODE_STEREO, 48000, 32);
+    //printf("i2s begin returned %i\n", i2sState);
     // Initialise UARTs
     uart_init(DEXED, 230400);
     gpio_set_function(TX1, GPIO_FUNC_UART);
@@ -178,31 +193,25 @@ void midicore()
     while (1)
     {
         tud_task();   // tinyusb device task
-        led_task();
+    //    led_task();
         midi_task();
-        while (queue_try_remove(&tg_fifo, &mididata))
-        {
-            dispatcher(mididata);
-        }
+        //while (queue_try_remove(&tg_fifo, &mididata))
+        //{
+        //    dispatcher(mididata);
+        //}
 
-        while (queue_try_remove(&tx_fifo, &rawsysex))
-        {
-            sendToAllPorts(rawsysex.buffer, rawsysex.length);
-        }
+        //while (queue_try_remove(&tx_fifo, &rawsysex))
+        //{
+        //    sendToAllPorts(rawsysex.buffer, rawsysex.length);
+        //}
 
-        int ret = I2S.read(buff, APP_BUFFER_SIZE);
-        if (ret < 0) {
-            printf("Microphone read error: %i\n", ret);
-            //    sleep_ms(1000);
-            //    return;
-        }
-//        else {
-//            for (size_t p = 0; p < ret; p++)
-//            {
-////                if ( buff[p] != 0 ) printf("%i\n", buff[p]);
-//            }
-//        }
-//        //printf("Read %i bytes\n",ret);
+        start_dma(buff, APP_BUFFER_SIZE);
+        finalize_dma();
+        usb_audio_write(buff, APP_BUFFER_SIZE);
+
+//        i2s_print_samples(buff, APP_BUFFER_SIZE);
+ //       
+        //on_usb_audio_tx_ready();
     }
 }
 
@@ -757,4 +766,37 @@ void handleMidi(sysex_t raw_sysex)
 #ifdef DEBUGSYSEX
     printf("\nSysex should be handled\n");
 #endif
+}
+
+void i2s_init() {
+    clk = clock_get_hz(clk_sys);
+    dma_chan = dma_claim_unused_channel(true);
+    auto offset = pio_add_program(pio, &i2s_program);
+    sm = pio_claim_unused_sm(pio, true);
+    i2s_program_init(pio, sm, offset, I2S_SD, I2S_SCK);
+}
+
+void start_dma(int32_t* buf, size_t len) {
+    dma_channel_config c = dma_channel_get_default_config(dma_chan);
+    channel_config_set_read_increment(&c, false);
+    channel_config_set_write_increment(&c, true);
+    channel_config_set_dreq(&c, pio_get_dreq(pio, sm, false));
+    dma_channel_configure(dma_chan, &c, buf, &pio->rxf[sm], len, true);
+}
+
+void finalize_dma() {
+    dma_channel_wait_for_finish_blocking(dma_chan);
+}
+
+void i2s_print_samples(int32_t* samples, size_t len) {
+    for (size_t i = 0; i < len; i++) {
+        auto val = samples[i]&0xffff0000;
+        printf("%08X\n", val);
+    }
+    /* printf("("); */
+    /* for (size_t i = 0; i < len; i++) { */
+    /*   printf("%d, ", samples[i]); */
+    /*   /1* printf("%08X, ", samples[i]); *1/ */
+    /* } */
+    /* printf(")\n"); */
 }

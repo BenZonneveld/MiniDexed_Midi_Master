@@ -4,7 +4,6 @@
 #include <tusb.h> 
 
 #include "MidiCore.h"
-#include "tud_audio_callbacks.h"
 
 //--------------------------------------------------------------------+
 // Device callbacks

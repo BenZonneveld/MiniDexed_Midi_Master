@@ -392,7 +392,7 @@ void cMenu::mCard::SendVoice(uint8_t button)
     printf("\n");
 
     sv.length = 163;
-    queue_add_blocking(&tx_fifo, &sv);
+//    queue_add_blocking(&tx_fifo, &sv);
 
     // Go back to the previes screen
     menu = menuEntry[menu].prev;

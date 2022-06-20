@@ -167,7 +167,7 @@ void cTG::sendParam(int16_t parm)
 		break;
 	}
 	tgdata.value = value & 0xff;
-	queue_add_blocking(&tg_fifo, &tgdata);
+//	queue_add_blocking(&tg_fifo, &tgdata);
 	if (parm == PBANK) getBank();
 }
 
@@ -182,9 +182,7 @@ void cTG::getPatch()
 	tgdata.cmd = 1;
 	tgdata.parm = 0;
 	tgdata.value = mparms[PPATCH];
-	queue_add_blocking(&tg_fifo, &tgdata);
-//	queue_remove_blocking(&sysex_fifo, &raw_sysex);
-//	setSysex(raw_sysex);
+//	queue_add_blocking(&tg_fifo, &tgdata);
 }
 
 void cTG::getConfig()
@@ -197,7 +195,7 @@ void cTG::getConfig()
 	tgdata.cmd = 2;
 	tgdata.parm = 0;
 	tgdata.value = 0;
-	queue_add_blocking(&tg_fifo, &tgdata);
+//	queue_add_blocking(&tg_fifo, &tgdata);
 }
 
 void cTG::getBank()
@@ -210,7 +208,7 @@ void cTG::getBank()
 	tgdata.cmd = 3;
 	tgdata.parm = 0;
 	tgdata.value = 0;
-	queue_add_blocking(&tg_fifo, &tgdata);
+//	queue_add_blocking(&tg_fifo, &tgdata);
 }
 
 void cTG::setSysex(sysex_t sysex)

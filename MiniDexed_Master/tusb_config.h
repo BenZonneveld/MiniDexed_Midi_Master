@@ -27,45 +27,30 @@
 #define _TUSB_CONFIG_H_
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 //--------------------------------------------------------------------
 // COMMON CONFIGURATION
 //--------------------------------------------------------------------
 
-// defined by board.mk
+// defined by compiler flags for flexibility
 #ifndef CFG_TUSB_MCU
-  #error CFG_TUSB_MCU must be defined
+#error CFG_TUSB_MCU must be defined
 #endif
 
-// RHPort number used for device can be defined by board.mk, default to port 0
-#ifndef BOARD_DEVICE_RHPORT_NUM
-  #define BOARD_DEVICE_RHPORT_NUM     0
-#endif
-
-// RHPort max operational speed can defined by board.mk
-// Default to Highspeed for MCU with internal HighSpeed PHY (can be port specific), otherwise FullSpeed
-#ifndef BOARD_DEVICE_RHPORT_SPEED
-  #if (CFG_TUSB_MCU == OPT_MCU_LPC18XX || CFG_TUSB_MCU == OPT_MCU_LPC43XX || CFG_TUSB_MCU == OPT_MCU_MIMXRT10XX || \
-       CFG_TUSB_MCU == OPT_MCU_NUC505  || CFG_TUSB_MCU == OPT_MCU_CXD56)
-    #define BOARD_DEVICE_RHPORT_SPEED   OPT_MODE_HIGH_SPEED
-  #else
-    #define BOARD_DEVICE_RHPORT_SPEED   OPT_MODE_FULL_SPEED
-  #endif
-#endif
-
-// Device mode with rhport and speed defined by board.mk
-#if   BOARD_DEVICE_RHPORT_NUM == 0
-  #define CFG_TUSB_RHPORT0_MODE     (OPT_MODE_DEVICE | BOARD_DEVICE_RHPORT_SPEED)
-#elif BOARD_DEVICE_RHPORT_NUM == 1
-  #define CFG_TUSB_RHPORT1_MODE     (OPT_MODE_DEVICE | BOARD_DEVICE_RHPORT_SPEED)
+#if CFG_TUSB_MCU == OPT_MCU_LPC43XX || CFG_TUSB_MCU == OPT_MCU_LPC18XX || CFG_TUSB_MCU == OPT_MCU_MIMXRT10XX
+#define CFG_TUSB_RHPORT0_MODE       (OPT_MODE_DEVICE | OPT_MODE_HIGH_SPEED)
 #else
-  #error "Incorrect RHPort configuration"
+#define CFG_TUSB_RHPORT0_MODE       OPT_MODE_DEVICE
 #endif
 
 #ifndef CFG_TUSB_OS
-#define CFG_TUSB_OS               OPT_OS_NONE
+#define CFG_TUSB_OS                 OPT_OS_NONE
+#endif
+
+#ifndef CFG_TUSB_DEBUG
+#define CFG_TUSB_DEBUG              0
 #endif
 
 // CFG_TUSB_DEBUG is defined by compiler in DEBUG build
@@ -78,9 +63,6 @@
  * - CFG_TUSB_MEM SECTION : __attribute__ (( section(".usb_ram") ))
  * - CFG_TUSB_MEM_ALIGN   : __attribute__ ((aligned(4)))
  */
-
-#define CFG_TUD_ENABLED           1
-
 #ifndef CFG_TUSB_MEM_SECTION
 #define CFG_TUSB_MEM_SECTION
 #endif
@@ -98,39 +80,53 @@
 #endif
 
 //------------- CLASS -------------//
-#ifdef USE_USB_AUDIO
-#define CFG_TUD_AUDIO             1
-#endif
-
+#define CFG_TUD_CDC               0
+#define CFG_TUD_MSC               0
+#define CFG_TUD_HID               0
 #define CFG_TUD_MIDI              1
 #define CFG_TUD_VENDOR            0
-
+#define CFG_TUD_AUDIO             1
 // MIDI FIFO size of TX and RX
 #define CFG_TUD_MIDI_RX_BUFSIZE   (TUD_OPT_HIGH_SPEED ? 512 : 64)
 #define CFG_TUD_MIDI_TX_BUFSIZE   (TUD_OPT_HIGH_SPEED ? 512 : 64)
+//--------------------------------------------------------------------
+// AUDIO CLASS DRIVER CONFIGURATION
+//--------------------------------------------------------------------
 
-#ifdef USE_USB_AUDIO
+#ifdef USE_MONO
+#define CFG_TUD_AUDIO_FUNC_1_DESC_LEN                                 TUD_AUDIO_MIC_ONE_CH_DESC_LEN
+#define CFG_TUD_AUDIO_FUNC_1_N_AS_INT                                 1                                       // Number of Standard AS Interface Descriptors (4.9.1) defined per audio function - this is required to be able to remember the current alternate settings of these interfaces - We restrict us here to have a constant number for all audio functions (which means this has to be the maximum number of AS interfaces an audio function has and a second audio function with less AS interfaces just wastes a few bytes)
+#define CFG_TUD_AUDIO_FUNC_1_CTRL_BUF_SZ                              64                                      // Size of control request buffer
 
-#define CFG_TUD_AUDIO_FUNC_1_DESC_LEN                 TUD_AUDIO_MIC_FOUR_CH_DESC_LEN
+#define CFG_TUD_AUDIO_ENABLE_EP_IN                                    1
+#define CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX                    2                                       // Driver gets this info from the descriptors - we define it here to use it to setup the descriptors and to do calculations with it below
+#define CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX                            1                                       // Driver gets this info from the descriptors - we define it here to use it to setup the descriptors and to do calculations with it below - be aware: for different number of channels you need another descriptor!
+#define CFG_TUD_AUDIO_EP_SZ_IN                                        (48 + 1) * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX      // 16 Samples (16 kHz) x 2 Bytes/Sample x 1 Channel
+#define CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX                             CFG_TUD_AUDIO_EP_SZ_IN                  // Maximum EP IN size for all AS alternate settings used
+#define CFG_TUD_AUDIO_FUNC_1_EP_IN_SW_BUF_SZ                          CFG_TUD_AUDIO_EP_SZ_IN
+// Have a look into audio_device.h for all configurations
+#else
+#define CFG_TUD_AUDIO_FUNC_1_DESC_LEN                                 TUD_AUDIO_MIC_FOUR_CH_DESC_LEN
 
-#define CFG_TUD_AUDIO_FUNC_1_N_AS_INT                 1
-#define CFG_TUD_AUDIO_FUNC_1_CTRL_BUF_SZ              64
+#define CFG_TUD_AUDIO_FUNC_1_N_AS_INT                                 1
+#define CFG_TUD_AUDIO_FUNC_1_CTRL_BUF_SZ                              64
 
-#define CFG_TUD_AUDIO_ENABLE_EP_IN                    1
-#define CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX    2         // This value is not required by the driver, it parses this information from the descriptor once the alternate interface is set by the host - we use it for the setup
-#define CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX            4         // This value is not required by the driver, it parses this information from the descriptor once the alternate interface is set by the host - we use it for the setup
-#define CFG_TUD_AUDIO_EP_SZ_IN                        (48 + 1) * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX      // 48 Samples (48 kHz) x 2 Bytes/Sample x CFG_TUD_AUDIO_N_CHANNELS_TX Channels - the Windows driver always needs an extra sample per channel of space more, otherwise it complains... found by trial and error
-#define CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX             CFG_TUD_AUDIO_EP_SZ_IN
-#define CFG_TUD_AUDIO_FUNC_1_EP_IN_SW_BUF_SZ          CFG_TUD_AUDIO_EP_SZ_IN
+#define CFG_TUD_AUDIO_ENABLE_EP_IN                                    1
+#define CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX                    2         // This value is not required by the driver, it parses this information from the descriptor once the alternate interface is set by the host - we use it for the setup
+#define CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX                            4        // This value is not required by the driver, it parses this information from the descriptor once the alternate interface is set by the host - we use it for the setup
+#define CFG_TUD_AUDIO_EP_SZ_IN                                        (48 + 1) * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX      // 48 Samples (48 kHz) x 2 Bytes/Sample x CFG_TUD_AUDIO_N_CHANNELS_TX Channels - the Windows driver always needs an extra sample per channel of space more, otherwise it complains... found by trial and error
+#define CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX                             CFG_TUD_AUDIO_EP_SZ_IN
+#define CFG_TUD_AUDIO_FUNC_1_EP_IN_SW_BUF_SZ                          CFG_TUD_AUDIO_EP_SZ_IN
 
-#define CFG_TUD_AUDIO_ENABLE_ENCODING                 1
-#define CFG_TUD_AUDIO_ENABLE_TYPE_I_ENCODING          1
-#define CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX      2         // One I2S stream contains two channels, each stream is saved within one support FIFO - this value is currently fixed, the driver does not support a changing value
-#define CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO        (CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX / CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX)
-#define CFG_TUD_AUDIO_FUNC_1_TX_SUPP_SW_FIFO_SZ       (CFG_TUD_AUDIO_EP_SZ_IN / CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO)
+#define CFG_TUD_AUDIO_ENABLE_ENCODING                                 1
+#define CFG_TUD_AUDIO_ENABLE_TYPE_I_ENCODING                          1
+#define CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX                      2         // One I2S stream contains two channels, each stream is saved within one support FIFO - this value is currently fixed, the driver does not support a changing value
+#define CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO                        (CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX / CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX)
+#define CFG_TUD_AUDIO_FUNC_1_TX_SUPP_SW_FIFO_SZ                       (CFG_TUD_AUDIO_EP_SZ_IN / CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO)
 #endif
+
 #ifdef __cplusplus
- }
+}
 #endif
 
 #endif /* _TUSB_CONFIG_H_ */

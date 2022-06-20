@@ -199,8 +199,8 @@ STATIC const pio_program_t pio_write_32 = {
 // 0x5801       in
 // 0x1045       jmp
 // 0x4801       in
-//STATIC const uint16_t pio_instructions_read_32[] = {0xE03E, 0x4801, 0x0041, 0x5801, 0xF03E, 0x5801, 0x1045, 0x4801};
-STATIC const uint16_t pio_instructions_read_32[] = { 
+STATIC const uint16_t pio_instructions_read_32[] = {0xE03E, 0x4801, 0x0041, 0x5801, 0xF03E, 0x5801, 0x1045, 0x4801};
+/*STATIC const uint16_t pio_instructions_read_32[] = {
     0xF03E, // set(x, 30)                  .side(0b10)
     0x5801, // in_(pins, 1)                .side(0b11)
     0x1041, // jmp(x_dec, "right_channel").side(0b10)
@@ -209,7 +209,7 @@ STATIC const uint16_t pio_instructions_read_32[] = {
     0x5801, // in_(pins, 1).side(0b11)
     0x0045, // jmp(x_dec, "right_channel") .side(0b00)
     0x4801  // in_(pins, 1)                .side(0b01)
-};
+};*/
 
 STATIC const pio_program_t pio_read_32 = {
     pio_instructions_read_32,
@@ -430,7 +430,6 @@ STATIC void feed_dma(machine_i2s_obj_t *self, uint8_t *dma_buffer_p) {
 }
 
 STATIC void irq_configure(machine_i2s_obj_t *self) {
-    printf("irq_configure\n");
     if (self->i2s_id == 0) {
         irq_set_exclusive_handler(DMA_IRQ_0, dma_irq0_handler);
         irq_set_enabled(DMA_IRQ_0, true);
@@ -451,7 +450,6 @@ STATIC void irq_deinit(machine_i2s_obj_t *self) {
 }
 
 STATIC int pio_configure(machine_i2s_obj_t *self) {
-    printf("pio_configure\n");
     if (self->mode == TX) {
         if (self->bits == 16) {
             self->pio_program = &pio_write_16;
@@ -536,7 +534,6 @@ STATIC void pio_deinit(machine_i2s_obj_t *self) {
 }
 
 STATIC void gpio_init_i2s(PIO pio, uint8_t sm, mp_hal_pin_obj_t pin_num, uint8_t pin_val, gpio_dir_t pin_dir) {
-    printf("gpio_init_i2s\n");
     uint32_t pinmask = 1 << pin_num;
     pio_sm_set_pins_with_mask(pio, sm, pin_val << pin_num, pinmask);
     pio_sm_set_pindirs_with_mask(pio, sm, pin_dir << pin_num, pinmask);
@@ -544,7 +541,6 @@ STATIC void gpio_init_i2s(PIO pio, uint8_t sm, mp_hal_pin_obj_t pin_num, uint8_t
 }
 
 STATIC void gpio_configure(machine_i2s_obj_t *self) {
-    printf("gpio_configure\n");
     if (self->mode == TX) {
         gpio_init_i2s(self->pio, self->sm, self->sck, 0, GP_OUTPUT);
         gpio_init_i2s(self->pio, self->sm, self->ws, 0, GP_OUTPUT);
@@ -588,7 +584,6 @@ STATIC uint8_t *dma_get_buffer(machine_i2s_obj_t *i2s_obj, uint channel) {
 }
 
 STATIC int dma_configure(machine_i2s_obj_t *self) {
-    printf("dma_configure\n");
     uint8_t num_free_dma_channels = 0;
     for (uint8_t ch = 0; ch < NUM_DMA_CHANNELS; ch++) {
         if (!dma_channel_is_claimed(ch)) {
@@ -747,7 +742,8 @@ STATIC int machine_i2s_init_helper(machine_i2s_obj_t *self,
     self->format = i2s_format;
     self->rate = i2s_rate;
     self->ibuf = ring_buffer_len;
-    self->io_mode = UASYNCIO; // BLOCKING;
+    self->io_mode = BLOCKING;
+//    self->io_mode = BLOCKING;
 
     irq_configure(self);
     int err = pio_configure(self);

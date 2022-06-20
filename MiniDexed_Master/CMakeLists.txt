@@ -19,17 +19,16 @@ target_sources(${PROJECT} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/MDMA.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/MidiCore.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usb_descriptors.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/tud_audio_callbacks.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/tud_callbacks.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/fatfs_config.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/usb_audio.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/utils/tools.c
         ${CMAKE_CURRENT_SOURCE_DIR}/Pots/Pots.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Buttons/Buttons.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Menu/MainMenu.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Menu/card_menu.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Dexed/TG.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/i2s/I2S.cpp
-)
+ )
 
 
 pico_enable_stdio_usb(${PROJECT} 0)
@@ -46,7 +45,10 @@ target_include_directories(${PROJECT} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/GFX-lib
         ${CMAKE_CURRENT_SOURCE_DIR}/FatFs/include
         ${CMAKE_CURRENT_SOURCE_DIR}/i2s
+        ${CMAKE_CURRENT_SOURCE_DIR}/i2s_input
 )
+
+pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_SOURCE_DIR}/i2s_input/sph0645.pio)
 
 target_link_libraries(${PROJECT} PUBLIC
     pico_stdlib
@@ -59,15 +61,13 @@ target_link_libraries(${PROJECT} PUBLIC
     pico_bootsel_via_double_reset
     GFX-lib
     FatFs_SPI
+    tinyusb_device
+    tinyusb_board
 )
 
 target_compile_definitions(${PROJECT} PRIVATE
   USE_USB_AUDIO
-  HAGL_HAL_USE_SINGLE_BUFFER
-  #HAGL_HAL_USE_DOUBLE_BUFFER
-  #HAGL_HAL_USE_TRIPLE_BUFFER
-  #HAGL_HAL_USE_DMA
-  HAGL_HAL_DEBUG
+  USE_MONO
   MIPI_DISPLAY_SPI_CLOCK_SPEED_HZ=24000000
   MIPI_DISPLAY_PIN_CS=13
   MIPI_DISPLAY_PIN_DC=7 # A0
