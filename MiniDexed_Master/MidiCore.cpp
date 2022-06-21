@@ -207,11 +207,9 @@ void midicore()
 
         start_dma(buff, APP_BUFFER_SIZE);
         finalize_dma();
-        usb_audio_write(buff, APP_BUFFER_SIZE);
+//        usb_audio_write(buff, APP_BUFFER_SIZE);
 
-//        i2s_print_samples(buff, APP_BUFFER_SIZE);
- //       
-        //on_usb_audio_tx_ready();
+        on_usb_audio_tx_ready();
     }
 }
 
@@ -799,4 +797,9 @@ void i2s_print_samples(int32_t* samples, size_t len) {
     /*   /1* printf("%08X, ", samples[i]); *1/ */
     /* } */
     /* printf(")\n"); */
+}
+
+void on_usb_audio_tx_ready()
+{
+    usb_audio_write(buff, APP_BUFFER_SIZE);
 }

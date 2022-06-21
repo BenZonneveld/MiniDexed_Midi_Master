@@ -30,7 +30,7 @@ void midiParser(uint8_t *buffer, size_t length);
 void parseSysex(uint8_t buf);
 void parseCtrls(uint8_t buf);
 void handleMidi(sysex_t raw_sysex);
-static void on_usb_audio_tx_ready();
+void on_usb_audio_tx_ready();
 
 void i2s_init();
 static void start_dma(int32_t* buf, size_t len);

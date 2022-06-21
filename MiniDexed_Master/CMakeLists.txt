@@ -66,7 +66,6 @@ target_link_libraries(${PROJECT} PUBLIC
 )
 
 target_compile_definitions(${PROJECT} PRIVATE
-  USE_USB_AUDIO
   USE_MONO
   MIPI_DISPLAY_SPI_CLOCK_SPEED_HZ=24000000
   MIPI_DISPLAY_PIN_CS=13

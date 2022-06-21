@@ -26,7 +26,7 @@
 #include "bsp/board.h"
 #include "tusb.h"
 #include "usb_audio.h"
-
+#include "midicore.h"
 
 bool mute[CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX + 1]; 						// +1 for master channel 0
 uint16_t volume[CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX + 1]; 					// +1 for master channel 0
@@ -58,7 +58,13 @@ void usb_audio_set_tx_ready_handler(usb_audio_tx_ready_handler_t handler)
 void usb_audio_write(const void * data, uint16_t len)
 {
 #ifdef USE_MONO
-    tud_audio_write((int16_t*)data, len);
+    int32_t* dat = (int32_t *)data;
+    for (size_t i = 0; i < len; i++)
+    {
+        int32_t val = dat[i];
+        dat[i] = bswap(val);
+    }
+    tud_audio_write((uint8_t*)data, len);
 #else
 //    for (uint8_t cnt = 0; cnt < CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO; cnt++)
 //    {
