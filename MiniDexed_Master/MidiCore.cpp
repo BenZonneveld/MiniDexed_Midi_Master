@@ -41,7 +41,7 @@ uint sm;
 uint dma_chan;
 
 //I2SClass I2S;
-int32_t buff[APP_BUFFER_SIZE] = { 0 };
+//int32_t buff[APP_BUFFER_SIZE] = { 0 };
 
 //--------------------------------------------------------------------+
 // UART Helper
@@ -155,6 +155,8 @@ void led_task(void)
     }
 }
 
+
+// Main MIDI & Audio Core
 void midicore()
 {
     dexed_t mididata;
@@ -168,16 +170,12 @@ void midicore()
     printf("tusb_init done\n");
 #endif
 
-    printf("Buffer size: %i\n", CFG_TUD_AUDIO_EP_SZ_IN);
-    printf("Sample Rate: %i\n", SAMPLE_RATE);
+    printf("CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO: %i\n", CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO);
+    printf("CFG_TUD_AUDIO_FUNC_1_TX_SUPP_SW_FIFO_SZ: %i\n", CFG_TUD_AUDIO_FUNC_1_TX_SUPP_SW_FIFO_SZ);
+    printf("APP_BUFFER_SIZE: %i\n", APP_BUFFER_SIZE);
+    printf("SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX %i\n", SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX);
     i2s_init();
-    // Setup i2s
-    //I2S.setSCK(I2S_SCK);
-    //I2S.setWS(I2S_WS);
-    //I2S.setSD(I2S_SD);
-    //I2S.setBufferSize(APP_BUFFER_SIZE);
-    //uint8_t i2sState = I2S.begin(I2S_MODE_STEREO, 48000, 32);
-    //printf("i2s begin returned %i\n", i2sState);
+
     // Initialise UARTs
     uart_init(DEXED, 230400);
     gpio_set_function(TX1, GPIO_FUNC_UART);
@@ -192,6 +190,7 @@ void midicore()
 #else
     printf(", UARTS Setup entering task loop\r\n");
 #endif
+    start_dma(i2s_buffer, APP_BUFFER_SIZE);
     while (1)
     {
         tud_task();   // tinyusb device task
@@ -206,12 +205,7 @@ void midicore()
         {
             sendToAllPorts(rawsysex.buffer, rawsysex.length);
         }
-
-        start_dma(buff, APP_BUFFER_SIZE);
-        finalize_dma();
-        usb_audio_write(buff, APP_BUFFER_SIZE);
-
-//        on_usb_audio_tx_ready();
+        usb_audio_write();
     }
 }
 
@@ -793,17 +787,6 @@ void i2s_print_samples(int32_t* samples, size_t len) {
         auto val = samples[i]&0xffff0000;
         printf("%08X\n", val);
     }
-    /* printf("("); */
-    /* for (size_t i = 0; i < len; i++) { */
-    /*   printf("%d, ", samples[i]); */
-    /*   /1* printf("%08X, ", samples[i]); *1/ */
-    /* } */
-    /* printf(")\n"); */
-}
-
-void on_usb_audio_tx_ready()
-{
-    usb_audio_write(buff, APP_BUFFER_SIZE);
 }
 
 //--------------------------------------------------------------------+

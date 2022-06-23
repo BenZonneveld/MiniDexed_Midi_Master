@@ -3,7 +3,7 @@
 #include "pico/util/queue.h"
 #include "TG.h"
 
-#define APP_BUFFER_SIZE ((CFG_TUD_AUDIO_EP_SZ_IN/2) - 1)
+#define APP_BUFFER_SIZE (((CFG_TUD_AUDIO_EP_SZ_IN/CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX)/2) - 1)
 
 extern queue_t midi_fifo;
 extern queue_t sysex_fifo;
@@ -30,9 +30,8 @@ void midiParser(uint8_t *buffer, size_t length);
 void parseSysex(uint8_t buf);
 void parseCtrls(uint8_t buf);
 void handleMidi(sysex_t raw_sysex);
-void on_usb_audio_tx_ready();
 
 void i2s_init();
-static void start_dma(int32_t* buf, size_t len);
-static void finalize_dma();
+void start_dma(int32_t* buf, size_t len);
+void finalize_dma();
 static void i2s_print_samples(int32_t* samples, size_t len);

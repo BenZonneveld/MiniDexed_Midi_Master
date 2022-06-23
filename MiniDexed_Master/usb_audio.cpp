@@ -27,7 +27,7 @@
 #include "bsp/board.h"
 #include "tusb.h"
 #include "usb_audio.h"
-#include "midicore.h"
+#include "MidiCore.h"
 
 bool mute[CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX + 1]; 						// +1 for master channel 0
 uint16_t volume[CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX + 1]; 					// +1 for master channel 0
@@ -37,7 +37,7 @@ uint8_t clkValid;
 audio_control_range_2_n_t(1) volumeRng[CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX+1]; 			// Volume range state
 audio_control_range_4_n_t(1) sampleFreqRng; 						// Sample frequency range state
 
-uint16_t i2s_dummy_buffer[CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO][CFG_TUD_AUDIO_FUNC_1_TX_SUPP_SW_FIFO_SZ / 2];   // Ensure half word aligned
+int32_t i2s_buffer[CFG_TUD_AUDIO_FUNC_1_TX_SUPP_SW_FIFO_SZ / 2];   // Ensure half word aligned
 
 /*------------- MAIN -------------*/
 void usb_audio_init()
@@ -52,23 +52,31 @@ void usb_audio_init()
   sampleFreqRng.subrange[0].bRes = 0;
 }
 
-void usb_audio_write(const void * data, uint16_t len)
+void usb_audio_write()
 {
+    finalize_dma();
+
 #if USE_MONO
+
     int32_t* dat = (int32_t *)data;
     //uint16_t* dest = (uint16_t*)calloc(sizeof(uint16_t), len);
-    for (size_t i = 0; i < len; i++)
-    {
-        int32_t val = bswap(dat[i]);
-        dat[i] = val;
-    }
-    tud_audio_write((uint8_t*)dat, len);
+//    for (size_t i = 0; i < len; i++)
+//    {
+//        int32_t val = bswap(dat[i]);
+//        dat[i] = val;
+//    }
+    tud_audio_write((uint8_t*)i2s_buffer, APP_BUFFER_SIZE);
 #else
-   for (uint8_t cnt = 0; cnt < CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO; cnt++)
-    {
-        tud_audio_write_support_ff(0, (uint16_t*)data, len);
-    }
+    //for (size_t i = 0; i < APP_BUFFER_SIZE; i++)
+    //{
+    //    i2s_buffer[i]
+    //}
+//    tud_audio_write((uint8_t*)i2s_buffer, APP_BUFFER_SIZE);
+    tud_audio_write_support_ff(0, (uint8_t*)i2s_buffer, APP_BUFFER_SIZE);
+    tud_audio_write_support_ff(1, (uint8_t*)i2s_buffer, APP_BUFFER_SIZE);
+    //    tud_audio_write_support_ff(1, i2s_buffer, SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX);
 #endif
+    start_dma(i2s_buffer, APP_BUFFER_SIZE);
     return;
 }
 
@@ -314,14 +322,11 @@ bool tud_audio_tx_done_pre_load_cb(uint8_t rhport, uint8_t itf, uint8_t ep_in, u
   (void) ep_in;
   (void) cur_alt_setting;
 
-#ifndef USE_MONO
-  for (uint8_t cnt = 0; cnt < CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO; cnt++)
-  {
-      tud_audio_write_support_ff(cnt,i2s_dummy_buffer[cnt], SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX);
-  }
-#endif
-//  on_usb_audio_tx_ready();
-
+//#ifndef USE_MONO
+//  finalize_dma();
+//  tud_audio_write_support_ff(0,i2s_buffer, SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX);
+//  tud_audio_write_support_ff(1, i2s_buffer, SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX);
+//#endif
   return true;
 }
 
@@ -333,24 +338,22 @@ bool tud_audio_tx_done_post_load_cb(uint8_t rhport, uint16_t n_bytes_copied, uin
   (void) ep_in;
   (void) cur_alt_setting;
 
-#ifndef USE_MONO
-  uint16_t dataVal;
-
-  // Generate dummy data
-  for (uint16_t cnt = 0; cnt < CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO; cnt++)
-  {
-      uint16_t* p_buff = i2s_dummy_buffer[cnt];              // 2 bytes per sample
-      dataVal = 1;
-      for (uint16_t cnt2 = 0; cnt2 < SAMPLE_RATE / 1000; cnt2++)
-      {
-          for (uint8_t cnt3 = 0; cnt3 < CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX; cnt3++)
-          {
-              *p_buff++ = dataVal;
-          }
-          dataVal++;
-      }
-  }
-#endif
+  //uint16_t dataVal;
+//  start_dma(i2s_buffer, APP_BUFFER_SIZE);
+  //// Generate dummy data
+  //for (uint16_t cnt = 0; cnt < CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO; cnt++)
+  //{
+  //    uint16_t* p_buff = i2s_dummy_buffer[cnt];              // 2 bytes per sample
+  //    dataVal = 1;
+  //    for (uint16_t cnt2 = 0; cnt2 < SAMPLE_RATE / 1000; cnt2++)
+  //    {
+  //        for (uint8_t cnt3 = 0; cnt3 < CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX; cnt3++)
+  //        {
+  //            *p_buff++ = dataVal;
+  //        }
+  //        dataVal++;
+  //    }
+  //}
   return true;
 }
 
