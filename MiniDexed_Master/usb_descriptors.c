@@ -51,7 +51,7 @@ tusb_desc_device_t const desc_device =
     .bDeviceProtocol    = MISC_PROTOCOL_IAD,
     .bMaxPacketSize0    = CFG_TUD_ENDPOINT0_SIZE,
 
-    .idVendor           = 0xCaef,
+    .idVendor           = 0xCafe,
     .idProduct          = USB_PID,
     .bcdDevice          = 0x0100,
 
@@ -83,11 +83,11 @@ enum
 #if USE_MONO
 #define CONFIG_TOTAL_LEN    	(TUD_CONFIG_DESC_LEN + CFG_TUD_AUDIO * TUD_AUDIO_MIC_ONE_CH_DESC_LEN + TUD_MIDI_DESC_LEN)
 #else
-#define CONFIG_TOTAL_LEN    	(TUD_CONFIG_DESC_LEN + CFG_TUD_AUDIO * TUD_AUDIO_MIC_FOUR_CH_DESC_LEN + TUD_MIDI_DESC_LEN)
+#define CONFIG_TOTAL_LEN    	(TUD_CONFIG_DESC_LEN + + TUD_MIDI_DESC_LEN + CFG_TUD_AUDIO * TUD_AUDIO_MIC_FOUR_CH_DESC_LEN )
 #endif
 
-#define EPNUM_AUDIO   0x01
-#define EPNUM_MIDI    0x02
+#define EPNUM_AUDIO   0x02
+#define EPNUM_MIDI    0x01
 
 uint8_t const desc_configuration[] =
 {

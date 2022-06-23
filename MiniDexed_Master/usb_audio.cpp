@@ -64,10 +64,10 @@ void usb_audio_write(const void * data, uint16_t len)
     }
     tud_audio_write((uint8_t*)dat, len);
 #else
-   for (uint8_t cnt = 0; cnt < CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO; cnt++)
-    {
-        tud_audio_write_support_ff(0, (uint16_t*)data, len);
-    }
+//  for (uint8_t cnt = 0; cnt < CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO; cnt++)
+//    {
+//        tud_audio_write_support_ff(0, (uint16_t*)data, len);
+//    }
 #endif
     return;
 }
@@ -314,12 +314,10 @@ bool tud_audio_tx_done_pre_load_cb(uint8_t rhport, uint8_t itf, uint8_t ep_in, u
   (void) ep_in;
   (void) cur_alt_setting;
 
-#ifndef USE_MONO
   for (uint8_t cnt = 0; cnt < CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO; cnt++)
   {
       tud_audio_write_support_ff(cnt,i2s_dummy_buffer[cnt], SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX);
   }
-#endif
 //  on_usb_audio_tx_ready();
 
   return true;
@@ -333,7 +331,6 @@ bool tud_audio_tx_done_post_load_cb(uint8_t rhport, uint16_t n_bytes_copied, uin
   (void) ep_in;
   (void) cur_alt_setting;
 
-#ifndef USE_MONO
   uint16_t dataVal;
 
   // Generate dummy data
@@ -350,7 +347,6 @@ bool tud_audio_tx_done_post_load_cb(uint8_t rhport, uint16_t n_bytes_copied, uin
           dataVal++;
       }
   }
-#endif
   return true;
 }
 

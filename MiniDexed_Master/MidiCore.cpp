@@ -170,14 +170,11 @@ void midicore()
 
     printf("Buffer size: %i\n", CFG_TUD_AUDIO_EP_SZ_IN);
     printf("Sample Rate: %i\n", SAMPLE_RATE);
+    printf("Sample Buffer Size %i\n", SAMPLE_BUFFER_SIZE);
+    printf("App Buffer Size %i\n", APP_BUFFER_SIZE);
+
     i2s_init();
-    // Setup i2s
-    //I2S.setSCK(I2S_SCK);
-    //I2S.setWS(I2S_WS);
-    //I2S.setSD(I2S_SD);
-    //I2S.setBufferSize(APP_BUFFER_SIZE);
-    //uint8_t i2sState = I2S.begin(I2S_MODE_STEREO, 48000, 32);
-    //printf("i2s begin returned %i\n", i2sState);
+
     // Initialise UARTs
     uart_init(DEXED, 230400);
     gpio_set_function(TX1, GPIO_FUNC_UART);
@@ -207,9 +204,9 @@ void midicore()
             sendToAllPorts(rawsysex.buffer, rawsysex.length);
         }
 
-        start_dma(buff, APP_BUFFER_SIZE);
-        finalize_dma();
-        usb_audio_write(buff, APP_BUFFER_SIZE);
+ //       start_dma(buff, APP_BUFFER_SIZE);
+ //       finalize_dma();
+ //       usb_audio_write(buff, APP_BUFFER_SIZE);
 
 //        on_usb_audio_tx_ready();
     }
@@ -793,12 +790,6 @@ void i2s_print_samples(int32_t* samples, size_t len) {
         auto val = samples[i]&0xffff0000;
         printf("%08X\n", val);
     }
-    /* printf("("); */
-    /* for (size_t i = 0; i < len; i++) { */
-    /*   printf("%d, ", samples[i]); */
-    /*   /1* printf("%08X, ", samples[i]); *1/ */
-    /* } */
-    /* printf(")\n"); */
 }
 
 void on_usb_audio_tx_ready()

@@ -3,7 +3,7 @@
 #include "pico/util/queue.h"
 #include "TG.h"
 
-#define APP_BUFFER_SIZE ((CFG_TUD_AUDIO_EP_SZ_IN/2) - 1)
+#define APP_BUFFER_SIZE (((CFG_TUD_AUDIO_EP_SZ_IN/CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX)/2) - 1)
 
 extern queue_t midi_fifo;
 extern queue_t sysex_fifo;
