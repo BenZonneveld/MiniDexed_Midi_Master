@@ -167,13 +167,12 @@ void cTG::sendParam(int16_t parm)
 		break;
 	}
 	tgdata.value = value & 0xff;
-//	queue_add_blocking(&tg_fifo, &tgdata);
+	queue_add_blocking(&tg_fifo, &tgdata);
 	if (parm == PBANK) getBank();
 }
 
 void cTG::getPatch()
 {
-//	sysex_t raw_sysex;
 	dexed_t tgdata;
 
 	tgdata.channel = 0;
@@ -182,12 +181,11 @@ void cTG::getPatch()
 	tgdata.cmd = 1;
 	tgdata.parm = 0;
 	tgdata.value = mparms[PPATCH];
-//	queue_add_blocking(&tg_fifo, &tgdata);
+	queue_add_blocking(&tg_fifo, &tgdata);
 }
 
 void cTG::getConfig()
 {
-//	sysex_t raw_sysex;
 	dexed_t tgdata;
 
 	tgdata.channel = 0;
@@ -195,12 +193,11 @@ void cTG::getConfig()
 	tgdata.cmd = 2;
 	tgdata.parm = 0;
 	tgdata.value = 0;
-//	queue_add_blocking(&tg_fifo, &tgdata);
+	queue_add_blocking(&tg_fifo, &tgdata);
 }
 
 void cTG::getBank()
 {
-	//	sysex_t raw_sysex;
 	dexed_t tgdata;
 
 	tgdata.channel = 0;
@@ -208,25 +205,16 @@ void cTG::getBank()
 	tgdata.cmd = 3;
 	tgdata.parm = 0;
 	tgdata.value = 0;
-//	queue_add_blocking(&tg_fifo, &tgdata);
+	queue_add_blocking(&tg_fifo, &tgdata);
 }
 
 void cTG::setSysex(sysex_t sysex)
 {
-	//printf("setSysex size: %i\n", sysex.length);
 	uint8_t offset = DATA_HEADER;
 	if (sysex.length > VOICEDATA_SIZE ) offset = offset + (sysex.length - VOICEDATA_SIZE);
-	//printf("offset %i\n", offset);
 		
-//	memcpy(msysex, sysex.buffer+offset, VOICEDATA_SIZE);
-	//for (size_t i = VNAME_OFFSET; i <= VOICEDATA_SIZE; i++)
-	//{
-	//	printf("%02X, ", msysex[i]);
-	//}
-	//printf("\n");
 	memcpy(mvoicename, sysex.buffer + offset + VNAME_OFFSET, 10);
 	mvoicename[10] = '\0';
-//	printf("Voice Name in setSysex: %s\n", mvoicename);
 }
 
 void cTG::setBankName(sysex_t sysex)

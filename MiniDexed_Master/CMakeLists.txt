@@ -19,7 +19,6 @@ target_sources(${PROJECT} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/MDMA.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/MidiCore.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usb_descriptors.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/tud_callbacks.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/fatfs_config.c
         ${CMAKE_CURRENT_SOURCE_DIR}/usb_audio.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/utils/tools.c
@@ -66,7 +65,7 @@ target_link_libraries(${PROJECT} PUBLIC
 )
 
 target_compile_definitions(${PROJECT} PRIVATE
-  USE_MONO
+#  USE_MONO
   MIPI_DISPLAY_SPI_CLOCK_SPEED_HZ=24000000
   MIPI_DISPLAY_PIN_CS=13
   MIPI_DISPLAY_PIN_DC=7 # A0

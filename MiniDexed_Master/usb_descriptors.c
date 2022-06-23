@@ -51,7 +51,7 @@ tusb_desc_device_t const desc_device =
     .bDeviceProtocol    = MISC_PROTOCOL_IAD,
     .bMaxPacketSize0    = CFG_TUD_ENDPOINT0_SIZE,
 
-    .idVendor           = 0xCafe,
+    .idVendor           = 0xCaef,
     .idProduct          = USB_PID,
     .bcdDevice          = 0x0100,
 
@@ -80,7 +80,7 @@ enum
   ITF_NUM_MIDI_STREAMING,
   ITF_NUM_TOTAL
 };
-#ifdef USE_MONO
+#if USE_MONO
 #define CONFIG_TOTAL_LEN    	(TUD_CONFIG_DESC_LEN + CFG_TUD_AUDIO * TUD_AUDIO_MIC_ONE_CH_DESC_LEN + TUD_MIDI_DESC_LEN)
 #else
 #define CONFIG_TOTAL_LEN    	(TUD_CONFIG_DESC_LEN + CFG_TUD_AUDIO * TUD_AUDIO_MIC_FOUR_CH_DESC_LEN + TUD_MIDI_DESC_LEN)
@@ -94,7 +94,7 @@ uint8_t const desc_configuration[] =
     // Interface count, string index, total length, attribute, power in mA
     TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, 0x00, 100),
 
-#ifdef USE_MONO
+#if USE_MONO
     // Interface number, string index, EP Out & EP In address, EP size
     TUD_AUDIO_MIC_ONE_CH_DESCRIPTOR(/*_itfnum*/ ITF_NUM_AUDIO_CONTROL, 
     /*_stridx*/ 4, 
@@ -104,7 +104,12 @@ uint8_t const desc_configuration[] =
     /*_epsize*/ CFG_TUD_AUDIO_EP_SZ_IN),
 #else
     // Interface number, string index, EP Out & EP In address, EP size
-    TUD_AUDIO_MIC_FOUR_CH_DESCRIPTOR(/*_itfnum*/ ITF_NUM_AUDIO_CONTROL, /*_stridx*/ 4, /*_nBytesPerSample*/ CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX, /*_nBitsUsedPerSample*/ CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX*8, /*_epin*/ 0x80 | EPNUM_AUDIO, /*_epsize*/ CFG_TUD_AUDIO_EP_SZ_IN),
+    TUD_AUDIO_MIC_FOUR_CH_DESCRIPTOR(/*_itfnum*/ ITF_NUM_AUDIO_CONTROL,
+    /*_stridx*/ 4,
+    /*_nBytesPerSample*/ CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX,
+    /*_nBitsUsedPerSample*/ CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX*8,
+    /*_epin*/ 0x80 | EPNUM_AUDIO, 
+    /*_epsize*/ CFG_TUD_AUDIO_EP_SZ_IN),
 #endif
     // Interface number, string index, EP Out & EP In address, EP size
     TUD_MIDI_DESCRIPTOR(ITF_NUM_MIDI, 5, EPNUM_MIDI, 0x80 | EPNUM_MIDI, 64)

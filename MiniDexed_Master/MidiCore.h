@@ -5,9 +5,9 @@
 
 #define APP_BUFFER_SIZE ((CFG_TUD_AUDIO_EP_SZ_IN/2) - 1)
 
-//extern queue_t midi_fifo;
-//extern queue_t sysex_fifo;
-//extern queue_t tx_fifo;
+extern queue_t midi_fifo;
+extern queue_t sysex_fifo;
+extern queue_t tx_fifo;
 
 extern bool led_usb_state;
 extern bool led_uart_state;

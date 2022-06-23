@@ -22,10 +22,10 @@ cMenu menu;
 /*------------- MAIN -------------*/
 int main(void)
 {
-//    queue_init(&tg_fifo, sizeof(dexed_t), FIFOLENGTH);
-//    queue_init(&midi_fifo, sizeof(dexed_t), FIFOLENGTH);
-//    queue_init(&sysex_fifo, sizeof(sysex_t), FIFOLENGTH);
-//    queue_init(&tx_fifo, sizeof(sysex_t), FIFOLENGTH);
+    queue_init(&tg_fifo, sizeof(dexed_t), FIFOLENGTH);
+    queue_init(&midi_fifo, sizeof(dexed_t), FIFOLENGTH);
+    queue_init(&sysex_fifo, sizeof(sysex_t), FIFOLENGTH);
+    queue_init(&tx_fifo, sizeof(sysex_t), FIFOLENGTH);
     //    set_sys_clock_khz(140000, true);
 
     board_init();
@@ -50,10 +50,10 @@ int main(void)
     {
         Pots.readAll();
         buttons.handleButtons();
-        //while (queue_try_remove(&sysex_fifo, &raw_sysex))
-        //{
-        //    handleMidi(raw_sysex);
-        //}
+        while (queue_try_remove(&sysex_fifo, &raw_sysex))
+        {
+            handleMidi(raw_sysex);
+        }
     }
 
     return 0;

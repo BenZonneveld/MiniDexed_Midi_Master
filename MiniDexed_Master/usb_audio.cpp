@@ -22,6 +22,7 @@
  * THE SOFTWARE.
  *
  */
+#include "stdlib.h"
 #include <pico/stdlib.h>
 #include "bsp/board.h"
 #include "tusb.h"
@@ -35,7 +36,8 @@ uint8_t clkValid;
 // Range states
 audio_control_range_2_n_t(1) volumeRng[CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX+1]; 			// Volume range state
 audio_control_range_4_n_t(1) sampleFreqRng; 						// Sample frequency range state
-static usb_audio_tx_ready_handler_t usb_audio_tx_ready_handler = NULL;
+
+uint16_t i2s_dummy_buffer[CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO][CFG_TUD_AUDIO_FUNC_1_TX_SUPP_SW_FIFO_SZ / 2];   // Ensure half word aligned
 
 /*------------- MAIN -------------*/
 void usb_audio_init()
@@ -50,26 +52,22 @@ void usb_audio_init()
   sampleFreqRng.subrange[0].bRes = 0;
 }
 
-void usb_audio_set_tx_ready_handler(usb_audio_tx_ready_handler_t handler)
-{
-  usb_audio_tx_ready_handler = handler;
-}
-
 void usb_audio_write(const void * data, uint16_t len)
 {
-#ifdef USE_MONO
+#if USE_MONO
     int32_t* dat = (int32_t *)data;
+    //uint16_t* dest = (uint16_t*)calloc(sizeof(uint16_t), len);
     for (size_t i = 0; i < len; i++)
     {
-        int32_t val = dat[i];
-        dat[i] = bswap(val);
+        int32_t val = bswap(dat[i]);
+        dat[i] = val;
     }
-    tud_audio_write((uint8_t*)data, len);
+    tud_audio_write((uint8_t*)dat, len);
 #else
-//    for (uint8_t cnt = 0; cnt < CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO; cnt++)
-//    {
+   for (uint8_t cnt = 0; cnt < CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO; cnt++)
+    {
         tud_audio_write_support_ff(0, (uint16_t*)data, len);
-//    }
+    }
 #endif
     return;
 }
@@ -316,10 +314,13 @@ bool tud_audio_tx_done_pre_load_cb(uint8_t rhport, uint8_t itf, uint8_t ep_in, u
   (void) ep_in;
   (void) cur_alt_setting;
 
-  if (usb_audio_tx_ready_handler)
+#ifndef USE_MONO
+  for (uint8_t cnt = 0; cnt < CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO; cnt++)
   {
-    usb_audio_tx_ready_handler();
+      tud_audio_write_support_ff(cnt,i2s_dummy_buffer[cnt], SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX);
   }
+#endif
+//  on_usb_audio_tx_ready();
 
   return true;
 }
@@ -332,6 +333,24 @@ bool tud_audio_tx_done_post_load_cb(uint8_t rhport, uint16_t n_bytes_copied, uin
   (void) ep_in;
   (void) cur_alt_setting;
 
+#ifndef USE_MONO
+  uint16_t dataVal;
+
+  // Generate dummy data
+  for (uint16_t cnt = 0; cnt < CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO; cnt++)
+  {
+      uint16_t* p_buff = i2s_dummy_buffer[cnt];              // 2 bytes per sample
+      dataVal = 1;
+      for (uint16_t cnt2 = 0; cnt2 < SAMPLE_RATE / 1000; cnt2++)
+      {
+          for (uint8_t cnt3 = 0; cnt3 < CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX; cnt3++)
+          {
+              *p_buff++ = dataVal;
+          }
+          dataVal++;
+      }
+  }
+#endif
   return true;
 }
 

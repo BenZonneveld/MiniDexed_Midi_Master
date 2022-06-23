@@ -69,6 +69,7 @@ __time_critical_func(uart_read) (uart_inst_t* uart, uint8_t* dst, size_t maxlen)
 
 void midi_task(void)
 {
+#if CFG_TUD_MIDI              
     if (!tud_midi_mounted())
     {
         return;
@@ -116,8 +117,8 @@ void midi_task(void)
             return;
         }
     }
-
     buf_valid = uart_read(DEXED, buffer, sizeof buffer);
+
     if (buf_valid)
     {
         midiParser(buffer, buf_valid);
@@ -131,6 +132,7 @@ void midi_task(void)
 
         led_uart_state = false;
     }
+#endif
 }
 
 //--------------------------------------------------------------------+
@@ -161,13 +163,13 @@ void midicore()
     tusb_init();
 
     usb_audio_init();
-    usb_audio_set_tx_ready_handler(on_usb_audio_tx_ready);
-
+ 
 #ifndef MIDIPORT
-    printf("tusb_init done");
+    printf("tusb_init done\n");
 #endif
 
-    printf("Buffer size: %i", CFG_TUD_AUDIO_EP_SZ_IN);
+    printf("Buffer size: %i\n", CFG_TUD_AUDIO_EP_SZ_IN);
+    printf("Sample Rate: %i\n", SAMPLE_RATE);
     i2s_init();
     // Setup i2s
     //I2S.setSCK(I2S_SCK);
@@ -195,21 +197,21 @@ void midicore()
         tud_task();   // tinyusb device task
     //    led_task();
         midi_task();
-        //while (queue_try_remove(&tg_fifo, &mididata))
-        //{
-        //    dispatcher(mididata);
-        //}
-
-        //while (queue_try_remove(&tx_fifo, &rawsysex))
-        //{
-        //    sendToAllPorts(rawsysex.buffer, rawsysex.length);
-        //}
+        while (queue_try_remove(&tg_fifo, &mididata))
+        {
+            dispatcher(mididata);
+        }
+        
+        while (queue_try_remove(&tx_fifo, &rawsysex))
+        {
+            sendToAllPorts(rawsysex.buffer, rawsysex.length);
+        }
 
         start_dma(buff, APP_BUFFER_SIZE);
         finalize_dma();
-//        usb_audio_write(buff, APP_BUFFER_SIZE);
+        usb_audio_write(buff, APP_BUFFER_SIZE);
 
-        on_usb_audio_tx_ready();
+//        on_usb_audio_tx_ready();
     }
 }
 
@@ -802,4 +804,34 @@ void i2s_print_samples(int32_t* samples, size_t len) {
 void on_usb_audio_tx_ready()
 {
     usb_audio_write(buff, APP_BUFFER_SIZE);
+}
+
+//--------------------------------------------------------------------+
+// Device callbacks
+//--------------------------------------------------------------------+
+
+// Invoked when device is mounted
+void tud_mount_cb(void)
+{
+    asm("nop");
+}
+
+// Invoked when device is unmounted
+void tud_umount_cb(void)
+{
+    led_usb_state = false;
+    led_uart_state = false;
+}
+
+// Invoked when usb bus is suspended
+// remote_wakeup_en : if host allow us to perform remote wakeup
+// Within 7ms, device must draw an average of current less than 2.5 mA from bus
+void tud_suspend_cb(bool remote_wakeup_en)
+{
+    (void)remote_wakeup_en;
+}
+
+// Invoked when usb bus is resumed
+void tud_resume_cb(void)
+{
 }
