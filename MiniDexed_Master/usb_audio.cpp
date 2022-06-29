@@ -37,7 +37,7 @@ uint8_t clkValid;
 audio_control_range_2_n_t(1) volumeRng[CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX+1]; 			// Volume range state
 audio_control_range_4_n_t(1) sampleFreqRng; 						// Sample frequency range state
 
-int32_t i2s_buffer[CFG_TUD_AUDIO_FUNC_1_TX_SUPP_SW_FIFO_SZ / 2];   // Ensure half word aligned
+uint32_t i2s_buffer[512];   // Ensure half word aligned
 
 /*------------- MAIN -------------*/
 void usb_audio_init()
@@ -54,7 +54,6 @@ void usb_audio_init()
 
 void usb_audio_write()
 {
-    finalize_dma();
 
 #if USE_MONO
 
@@ -65,18 +64,20 @@ void usb_audio_write()
 //        int32_t val = bswap(dat[i]);
 //        dat[i] = val;
 //    }
-    tud_audio_write((uint8_t*)i2s_buffer, APP_BUFFER_SIZE);
+    tud_audio_write((uint8_t*)i2s_buffer, SAMPLE_BUFFER_SIZE);
 #else
-    //for (size_t i = 0; i < APP_BUFFER_SIZE; i++)
+    //int16_t tx_buffer[SAMPLE_BUFFER_SIZE][4];
+    //size_t t = 0;
+    //for (size_t i = 0; i < SAMPLE_BUFFER_SIZE; i++)
     //{
-    //    i2s_buffer[i]
+    //    tx_buffer[i][0] = i2s_buffer[i][0];
+    //    tx_buffer[i][1] = 0;
+    //    tx_buffer[i][2] = 0;
+    //    tx_buffer[i][3] = 0;
     //}
-//    tud_audio_write((uint8_t*)i2s_buffer, APP_BUFFER_SIZE);
-    tud_audio_write_support_ff(0, (uint8_t*)i2s_buffer, APP_BUFFER_SIZE);
-    tud_audio_write_support_ff(1, (uint8_t*)i2s_buffer, APP_BUFFER_SIZE);
-    //    tud_audio_write_support_ff(1, i2s_buffer, SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX);
+    tud_audio_write((uint8_t*)i2s_buffer, SAMPLE_BUFFER_SIZE*2);
 #endif
-    start_dma(i2s_buffer, APP_BUFFER_SIZE);
+
     return;
 }
 

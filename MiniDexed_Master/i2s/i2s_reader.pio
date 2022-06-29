@@ -1,0 +1,38 @@
+;
+; Copyright (c) 2021 Raspberry Pi (Trading) Ltd.
+;
+; SPDX-License-Identifier: BSD-3-Clause
+;
+
+.program i2s_reader
+
+;.side_set 2
+; Sample bits using an external clock, and push groups of bits into the RX FIFO.
+; - IN pin 0 is the data pin
+; - IN pin 1 is the clock pin
+; - Autopush is enabled, threshold 8
+;
+; This program samples data with each rising clock edge (like mode 0 or mode 3
+; SPI). The data is actually sampled one system clock cycle after the rising
+; edge is observed, so a clock ratio of at least input_clk < clk_sys / 6 is
+; recommended for good sampling alignment.
+
+wait 1 pin 1
+wait 0 pin 1
+loop:
+wait 1 pin 2
+in pins, 1
+wait 0 pin 2
+jmp loop
+
+;    set x, 14                 side(0b00)
+;left_channel:
+;    in pins, 1                side(0b01)
+;    jmp x-- left_channel      side(0b00)
+;    in pins, 1                side(0b11)
+;    set x, 14                 side(0b10)
+;right_channel:
+;    in pins, 1                side(0b11)
+;    jmp x-- right_channel     side(0b10)
+;    in pins, 1                side(0b01)
+

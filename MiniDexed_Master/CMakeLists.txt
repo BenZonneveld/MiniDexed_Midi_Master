@@ -27,6 +27,7 @@ target_sources(${PROJECT} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/Menu/MainMenu.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Menu/card_menu.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Dexed/TG.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/i2s/i2s.cpp
  )
 
 
@@ -44,10 +45,11 @@ target_include_directories(${PROJECT} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/GFX-lib
         ${CMAKE_CURRENT_SOURCE_DIR}/FatFs/include
         ${CMAKE_CURRENT_SOURCE_DIR}/i2s
-        ${CMAKE_CURRENT_SOURCE_DIR}/i2s_input
+#        ${CMAKE_CURRENT_SOURCE_DIR}/i2s_input
 )
 
-pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_SOURCE_DIR}/i2s_input/sph0645.pio)
+#pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_SOURCE_DIR}/i2s_input/sph0645.pio)
+pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_SOURCE_DIR}/i2s/i2s_reader.pio)
 
 target_link_libraries(${PROJECT} PUBLIC
     pico_stdlib
@@ -57,6 +59,7 @@ target_link_libraries(${PROJECT} PUBLIC
     hardware_gpio
     hardware_pio
     hardware_dma
+    hardware_irq
     pico_bootsel_via_double_reset
     GFX-lib
     FatFs_SPI

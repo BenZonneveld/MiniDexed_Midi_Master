@@ -13,7 +13,6 @@
   version 2.1 of the License, or (at your option) any later version.
   See file LICENSE.txt for further informations on licensing terms.
 */
-#include <pico/stdlib.h>
 
 #ifndef I2S_h
 #define I2S_h

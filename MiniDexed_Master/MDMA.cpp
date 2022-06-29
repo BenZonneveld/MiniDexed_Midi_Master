@@ -38,11 +38,6 @@ int main(void)
 
     multicore_launch_core1(midicore);
  
-//    while (midi_ready == false)
-//    {
-//        tight_loop_contents();
-//    }
- //   tft.fillScreen(BLACK);
     menu.Show();
 
     sysex_t raw_sysex;

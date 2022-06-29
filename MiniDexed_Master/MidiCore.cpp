@@ -5,15 +5,6 @@
 #include "bsp/board.h"
 #include "tusb.h"
 
-#include <inttypes.h>
-#include <vector>
-#include "hardware/pio.h"
-#include "hardware/spi.h"
-#include "hardware/uart.h"
-#include "sph0645.pio.h"
-#include <algorithm>
-#include "hardware/dma.h"
-
 #include "hardware/uart.h"
 #include "hardware/gpio.h"
 #include "pico/util/queue.h"
@@ -22,7 +13,7 @@
 
 #include "mdma.h"
 
-//#include "I2s.h"
+#include "I2s.h"
 #include "usb_audio.h"
 
 //#define DEBUGSYSEX
@@ -35,13 +26,7 @@ queue_t tx_fifo;
 bool led_usb_state = false;
 bool led_uart_state = false;
 
-size_t clk;
-PIO pio = pio0;
-uint sm;
-uint dma_chan;
-
-//I2SClass I2S;
-//int32_t buff[APP_BUFFER_SIZE] = { 0 };
+I2SClass I2S;
 
 //--------------------------------------------------------------------+
 // UART Helper
@@ -170,11 +155,13 @@ void midicore()
     printf("tusb_init done\n");
 #endif
 
-    printf("CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO: %i\n", CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO);
-    printf("CFG_TUD_AUDIO_FUNC_1_TX_SUPP_SW_FIFO_SZ: %i\n", CFG_TUD_AUDIO_FUNC_1_TX_SUPP_SW_FIFO_SZ);
-    printf("APP_BUFFER_SIZE: %i\n", APP_BUFFER_SIZE);
-    printf("SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX %i\n", SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX);
-    i2s_init();
+    printf("SAMPLE_RATE %i\n", SAMPLE_RATE);
+    printf("CFG_TUD_AUDIO_EP_SZ_IN %i\n", CFG_TUD_AUDIO_EP_SZ_IN);
+    //printf("CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO: %i\n", CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO);
+    //printf("CFG_TUD_AUDIO_FUNC_1_TX_SUPP_SW_FIFO_SZ: %i\n", CFG_TUD_AUDIO_FUNC_1_TX_SUPP_SW_FIFO_SZ);
+    printf("SAMPLE_BUFFER_SIZE: %i\n", SAMPLE_BUFFER_SIZE);
+//    printf("SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX %i\n", SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX);
+    //printf("CFG_TUD_AUDIO_FUNC_1_TX_SUPP_SW_FIFO_SZ / 2   %i\n", (CFG_TUD_AUDIO_FUNC_1_TX_SUPP_SW_FIFO_SZ-1) / 2);
 
     // Initialise UARTs
     uart_init(DEXED, 230400);
@@ -190,11 +177,23 @@ void midicore()
 #else
     printf(", UARTS Setup entering task loop\r\n");
 #endif
-    start_dma(i2s_buffer, APP_BUFFER_SIZE);
+
+    I2S.setSCK(I2S_SCK);
+    I2S.setWS(I2S_WS);
+    I2S.setSD(I2S_SD);
+
+    I2S.setBufferSize(512);
+    bool i2s_state = I2S.begin(I2S_MODE_STEREO, 48000, 16);
+
+    printf("I2s State: %i\n", i2s_state);
+
+    int16_t ret;
+
     while (1)
     {
         tud_task();   // tinyusb device task
     //    led_task();
+        ret = I2S.read(i2s_buffer, SAMPLE_BUFFER_SIZE);
         midi_task();
         while (queue_try_remove(&tg_fifo, &mididata))
         {
@@ -205,7 +204,12 @@ void midicore()
         {
             sendToAllPorts(rawsysex.buffer, rawsysex.length);
         }
-        usb_audio_write();
+ //       printf("ret : %i\n", ret);
+
+        sleep_us(250);
+        if (ret > 0)
+            usb_audio_write();
+//        else
     }
 }
 
@@ -760,33 +764,6 @@ void handleMidi(sysex_t raw_sysex)
 #ifdef DEBUGSYSEX
     printf("\nSysex should be handled\n");
 #endif
-}
-
-void i2s_init() {
-    clk = clock_get_hz(clk_sys);
-    dma_chan = dma_claim_unused_channel(true);
-    auto offset = pio_add_program(pio, &i2s_program);
-    sm = pio_claim_unused_sm(pio, true);
-    i2s_program_init(pio, sm, offset, I2S_SD, I2S_SCK);
-}
-
-void start_dma(int32_t* buf, size_t len) {
-    dma_channel_config c = dma_channel_get_default_config(dma_chan);
-    channel_config_set_read_increment(&c, false);
-    channel_config_set_write_increment(&c, true);
-    channel_config_set_dreq(&c, pio_get_dreq(pio, sm, false));
-    dma_channel_configure(dma_chan, &c, buf, &pio->rxf[sm], len, true);
-}
-
-void finalize_dma() {
-    dma_channel_wait_for_finish_blocking(dma_chan);
-}
-
-void i2s_print_samples(int32_t* samples, size_t len) {
-    for (size_t i = 0; i < len; i++) {
-        auto val = samples[i]&0xffff0000;
-        printf("%08X\n", val);
-    }
 }
 
 //--------------------------------------------------------------------+
