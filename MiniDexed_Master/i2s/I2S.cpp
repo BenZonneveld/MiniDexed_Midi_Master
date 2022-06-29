@@ -46,9 +46,7 @@ bool I2SClass::setBufferSize(int bufferSize) {
 }
 
 bool I2SClass::begin(int mode, long sampleRate, int bitsPerSample) {
-  format_t i2s_format = (mode == I2S_MODE_STEREO) ? STEREO : MONO;
-  machine_i2s_obj_t* i2s0 = machine_i2s_make_new(0, _pin_sck, _pin_ws, _pin_sd,
-      bitsPerSample, i2s_format, _bufferSize, sampleRate);
+  machine_i2s_obj_t* i2s0 = machine_i2s_make_new(0, _pin_sck, _pin_ws, _pin_sd, bitsPerSample, _bufferSize, sampleRate);
   if (i2s0 == NULL) {
     return false;
   }

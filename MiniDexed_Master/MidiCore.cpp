@@ -13,7 +13,6 @@
 
 #include "mdma.h"
 
-#include "I2s.h"
 #include "usb_audio.h"
 
 //#define DEBUGSYSEX
@@ -25,8 +24,6 @@ queue_t tx_fifo;
 
 bool led_usb_state = false;
 bool led_uart_state = false;
-
-I2SClass I2S;
 
 //--------------------------------------------------------------------+
 // UART Helper
@@ -178,22 +175,10 @@ void midicore()
     printf(", UARTS Setup entering task loop\r\n");
 #endif
 
-    I2S.setSCK(I2S_SCK);
-    I2S.setWS(I2S_WS);
-    I2S.setSD(I2S_SD);
-
-    I2S.setBufferSize(512);
-    bool i2s_state = I2S.begin(I2S_MODE_STEREO, 48000, 16);
-
-    printf("I2s State: %i\n", i2s_state);
-
-    int16_t ret;
-
     while (1)
     {
         tud_task();   // tinyusb device task
     //    led_task();
-        ret = I2S.read(i2s_buffer, SAMPLE_BUFFER_SIZE);
         midi_task();
         while (queue_try_remove(&tg_fifo, &mididata))
         {
@@ -204,12 +189,6 @@ void midicore()
         {
             sendToAllPorts(rawsysex.buffer, rawsysex.length);
         }
- //       printf("ret : %i\n", ret);
-
-        sleep_us(250);
-        if (ret > 0)
-            usb_audio_write();
-//        else
     }
 }
 
