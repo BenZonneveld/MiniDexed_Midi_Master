@@ -26,8 +26,9 @@
 #include <pico/stdlib.h>
 #include "bsp/board.h"
 #include "tusb.h"
+#include "gpio_pins.h"
 #include "usb_audio.h"
-#include "MidiCore.h"
+#include "I2s.h"
 
 bool mute[CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX + 1]; 						// +1 for master channel 0
 uint16_t volume[CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX + 1]; 					// +1 for master channel 0
@@ -37,7 +38,10 @@ uint8_t clkValid;
 audio_control_range_2_n_t(1) volumeRng[CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX+1]; 			// Volume range state
 audio_control_range_4_n_t(1) sampleFreqRng; 						// Sample frequency range state
 
-uint32_t i2s_buffer[512];   // Ensure half word aligned
+I2SClass I2S;
+
+//static uint32_t i2s_buffer[512];   // Ensure half word aligned
+//uint16_t usb_buffer[CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO][CFG_TUD_AUDIO_FUNC_1_TX_SUPP_SW_FIFO_SZ / 2];
 
 /*------------- MAIN -------------*/
 void usb_audio_init()
@@ -50,6 +54,17 @@ void usb_audio_init()
   sampleFreqRng.subrange[0].bMin = SAMPLE_RATE;
   sampleFreqRng.subrange[0].bMax = SAMPLE_RATE;
   sampleFreqRng.subrange[0].bRes = 0;
+
+  I2S.setSCK(I2S_SCK);
+  I2S.setWS(I2S_WS);
+  I2S.setSD(I2S_SD);
+
+  I2S.setBufferSize(512);
+  bool i2s_state = I2S.begin(I2S_MODE_STEREO, 48000, 16);
+
+  printf("I2s State: %i\n", i2s_state);
+
+  printf("SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX\n%i\n", SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX);
 }
 
 void usb_audio_write()
@@ -75,8 +90,7 @@ void usb_audio_write()
     //    tx_buffer[i][2] = 0;
     //    tx_buffer[i][3] = 0;
     //}
-    tud_audio_write((uint8_t*)i2s_buffer, SAMPLE_BUFFER_SIZE*2);
-#endif
+ #endif
 
     return;
 }
@@ -323,11 +337,9 @@ bool tud_audio_tx_done_pre_load_cb(uint8_t rhport, uint8_t itf, uint8_t ep_in, u
   (void) ep_in;
   (void) cur_alt_setting;
 
-//#ifndef USE_MONO
-//  finalize_dma();
-//  tud_audio_write_support_ff(0,i2s_buffer, SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX);
-//  tud_audio_write_support_ff(1, i2s_buffer, SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX);
-//#endif
+//  printf("tud_audio_tx_done_pre_load_cb\n");
+  tud_audio_write_support_ff(0, usb_buffer[0], SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX);
+  tud_audio_write_support_ff(1, usb_buffer[1], SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX);
   return true;
 }
 
@@ -339,22 +351,14 @@ bool tud_audio_tx_done_post_load_cb(uint8_t rhport, uint16_t n_bytes_copied, uin
   (void) ep_in;
   (void) cur_alt_setting;
 
-  //uint16_t dataVal;
-//  start_dma(i2s_buffer, APP_BUFFER_SIZE);
-  //// Generate dummy data
-  //for (uint16_t cnt = 0; cnt < CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO; cnt++)
-  //{
-  //    uint16_t* p_buff = i2s_dummy_buffer[cnt];              // 2 bytes per sample
-  //    dataVal = 1;
-  //    for (uint16_t cnt2 = 0; cnt2 < SAMPLE_RATE / 1000; cnt2++)
-  //    {
-  //        for (uint8_t cnt3 = 0; cnt3 < CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX; cnt3++)
-  //        {
-  //            *p_buff++ = dataVal;
-  //        }
-  //        dataVal++;
-  //    }
-  //}
+  int ret = I2S.read(i2s_buffer, SAMPLE_BUFFER_SIZE);
+  
+  for (size_t i = 0; i < ret; i++) 
+  {
+//      printf("%08X\n", i2s_buffer[i]);
+      usb_buffer[1][i] = (uint16_t)(i2s_buffer[i] & 0xffff);
+      usb_buffer[0][i] = (uint16_t)((i2s_buffer[i]&0xffff0000)>>16);
+  }
   return true;
 }
 

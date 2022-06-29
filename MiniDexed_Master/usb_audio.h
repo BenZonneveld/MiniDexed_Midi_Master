@@ -18,7 +18,9 @@
 #define SAMPLE_BUFFER_SIZE ((CFG_TUD_AUDIO_EP_SZ_IN/CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX)-2)
 #endif
 
-extern uint32_t i2s_buffer[512];
+static uint32_t i2s_buffer[512];
+static uint16_t usb_buffer[CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO][CFG_TUD_AUDIO_FUNC_1_TX_SUPP_SW_FIFO_SZ / 2];
+
 void usb_audio_init();
 void usb_audio_task();
 void usb_audio_write();
