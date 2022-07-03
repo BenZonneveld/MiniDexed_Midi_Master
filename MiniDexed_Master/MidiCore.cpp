@@ -152,14 +152,6 @@ void midicore()
     printf("tusb_init done\n");
 #endif
 
-    printf("SAMPLE_RATE %i\n", SAMPLE_RATE);
-    printf("CFG_TUD_AUDIO_EP_SZ_IN %i\n", CFG_TUD_AUDIO_EP_SZ_IN);
-    //printf("CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO: %i\n", CFG_TUD_AUDIO_FUNC_1_N_TX_SUPP_SW_FIFO);
-    //printf("CFG_TUD_AUDIO_FUNC_1_TX_SUPP_SW_FIFO_SZ: %i\n", CFG_TUD_AUDIO_FUNC_1_TX_SUPP_SW_FIFO_SZ);
-    printf("SAMPLE_BUFFER_SIZE: %i\n", SAMPLE_BUFFER_SIZE);
-//    printf("SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX %i\n", SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX);
-    //printf("CFG_TUD_AUDIO_FUNC_1_TX_SUPP_SW_FIFO_SZ / 2   %i\n", (CFG_TUD_AUDIO_FUNC_1_TX_SUPP_SW_FIFO_SZ-1) / 2);
-
     // Initialise UARTs
     uart_init(DEXED, 230400);
     gpio_set_function(TX1, GPIO_FUNC_UART);

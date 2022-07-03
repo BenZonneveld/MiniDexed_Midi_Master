@@ -65,8 +65,9 @@
 #define I2S_NUM_DMA_CHANNELS (2)
 
 //#define NUM_I2S_USER_FORMATS (4)
+#define SHIFT_IN    32
 #define I2S_RX_FRAME_SIZE_IN_BYTES (8)
-#define DMA_BITS 16
+#define DMA_BITS 32
 #define SAMPLES_PER_FRAME (2)
 #define PIO_INSTRUCTIONS_PER_BIT (4)
 
@@ -348,7 +349,7 @@ static int pio_configure(machine_i2s_obj_t *self) {
     sm_config_set_clkdiv(&config, clkdiv);
 
     sm_config_set_in_pins(&config, self->sd);
-    sm_config_set_in_shift(&config, false, true, DMA_BITS);
+    sm_config_set_in_shift(&config, false, true, SHIFT_IN);
     sm_config_set_fifo_join(&config, PIO_FIFO_JOIN_RX);  // double RX FIFO size
 
     sm_config_set_sideset(&config, 2, false, false);

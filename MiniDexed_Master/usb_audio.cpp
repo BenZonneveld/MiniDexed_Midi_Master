@@ -30,6 +30,13 @@
 #include "usb_audio.h"
 #include "I2s.h"
 
+#define SAMPLE_RATE 48000
+#define SAMPLE_BUFFER_SIZE ((CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX/2)-2)
+
+uint32_t i2s_buffer[SAMPLE_BUFFER_SIZE * 2];
+uint8_t left_buffer[2][SAMPLE_BUFFER_SIZE + 1];
+uint8_t right_buffer[2][SAMPLE_BUFFER_SIZE + 1];
+
 bool mute[CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX + 1]; 						// +1 for master channel 0
 uint16_t volume[CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX + 1]; 					// +1 for master channel 0
 uint32_t sampFreq;
@@ -59,7 +66,7 @@ void usb_audio_init()
   I2S.setWS(I2S_WS);
   I2S.setSD(I2S_SD);
 
-  I2S.setBufferSize(SAMPLE_BUFFER_SIZE*2);
+  I2S.setBufferSize(192*2);
   bool i2s_state = I2S.begin(I2S_MODE_STEREO, 48000, 16);
 
   printf("I2s State: %i\n", i2s_state);
@@ -76,8 +83,9 @@ void usb_audio_init()
 
   float target = ((1.0f / 96000.0f) * SAMPLE_BUFFER_SIZE) * 1000;
   printf("Target: %.6f\n", target);
-
-//  printf("SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX\n%i\n", SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_CHANNEL_PER_FIFO_TX);
+  printf("SAMPLE_RATE %i\n", SAMPLE_RATE);
+  printf("CFG_TUD_AUDIO_EP_SZ_IN %i\n", CFG_TUD_AUDIO_EP_SZ_IN);
+  printf("SAMPLE_BUFFER_SIZE: %i\n", SAMPLE_BUFFER_SIZE);
 }
 
 //--------------------------------------------------------------------+
@@ -343,7 +351,7 @@ bool tud_audio_tx_done_post_load_cb(uint8_t rhport, uint16_t n_bytes_copied, uin
 
 
     int ret = I2S.read(i2s_buffer, SAMPLE_BUFFER_SIZE);
-    printf("ret: %i\n", ret);
+//    printf("ret: %i\n", ret);
     return true;
 }
 
