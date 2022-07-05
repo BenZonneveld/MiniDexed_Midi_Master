@@ -40,19 +40,19 @@ bool I2SClass::setSD(uint8_t pin) {
   return true;
 }
 
-bool I2SClass::setBufferSize(int bufferSize) {
+bool I2SClass::setBufferSize(uint32_t bufferSize) {
   _bufferSize = bufferSize;
   return true;
 }
 
-bool I2SClass::begin(int mode, long sampleRate, int bitsPerSample) {
-  machine_i2s_obj_t* i2s0 = machine_i2s_make_new(0, _pin_sck, _pin_ws, _pin_sd, bitsPerSample, _bufferSize, sampleRate);
+bool I2SClass::begin() {
+  machine_i2s_obj_t* i2s0 = machine_i2s_make_new(0, _pin_sck, _pin_ws, _pin_sd, _bufferSize);
   if (i2s0 == NULL) {
     return false;
   }
   return true;
 }
 
-int I2SClass::read(void* buffer, size_t size) {
+int I2SClass::read(uint32_t* buffer, size_t size) {
   return machine_i2s_stream_read(machine_i2s_obj[0], buffer, size);
 }

@@ -13,7 +13,7 @@
 
 #include "mdma.h"
 
-#include "usb_audio.h"
+#include "UAC2/usb_audio.h"
 
 //#define DEBUGSYSEX
 //#define DEBUGMIDI

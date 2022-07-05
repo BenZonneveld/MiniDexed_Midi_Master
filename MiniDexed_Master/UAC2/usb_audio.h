@@ -13,5 +13,5 @@
 void usb_audio_init();
 void usb_audio_task();
 void usb_audio_write();
-
+void cdc_task(void);
 #endif

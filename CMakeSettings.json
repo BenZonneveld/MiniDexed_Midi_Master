@@ -32,6 +32,16 @@
           "name": "PICO_BOARD",
           "value": "pico",
           "type": "STRING"
+        },
+        {
+          "name": "CMAKE_TOOLCHAIN_FILE",
+          "value": "C:/Users/root/Source/Repos/pico/pico-sdk/cmake/preload/toolchains/pico_arm_gcc.cmake",
+          "type": "FILEPATH"
+        },
+        {
+          "name": "PICO_SDK_PATH",
+          "value": "C:/Users/root/Source/Repos/pico/pico-sdk",
+          "type": "PATH"
         }
       ]
     }
