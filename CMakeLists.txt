@@ -22,6 +22,5 @@ include(example_auto_set_url.cmake)
 #	-Wno-maybe-uninitialized
 #	)
 
-#add_subdirectory(i2sTest)
-add_subdirectory(MDM2)
-#add_subdirectory(MiniDexed_Master)
+#add_subdirectory(MDM2)
+add_subdirectory(MiniDexed_Master)

@@ -327,9 +327,14 @@ bool tud_audio_tx_done_pre_load_cb(uint8_t rhport, uint8_t itf, uint8_t ep_in, u
   (void) ep_in;
   (void) cur_alt_setting;
 
+  //for (size_t i = 0; i < INPUT_BUFFER_SIZE; i++)
+  //{
+  //    printf("%04X\n", left_buffer[0][i]*256+left_buffer[1][i]);
+  //}
 
   tud_audio_write((int8_t*)i2s_input, SAMPLE_BUFFER_SIZE*4);
-
+//  tud_audio_write_support_ff(0, (int16_t *)left_buffer, INPUT_BUFFER_SIZE);
+//  tud_audio_write_support_ff(1, (int16_t *)right_buffer, INPUT_BUFFER_SIZE);
   return true;
 }
 

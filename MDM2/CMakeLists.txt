@@ -12,12 +12,13 @@ family_initialize_project(${PROJECT} ${CMAKE_CURRENT_LIST_DIR})
 
 add_executable(${PROJECT})
 
-pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/i2s_reader.pio)
+pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_LIST_DIR}/UAC2/i2s_reader.pio)
 
 # Example source
 target_sources(${PROJECT} PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/i2s.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/UAC2/i2s.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/UAC2/usb_audio.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/usb_descriptors.c
 )
 

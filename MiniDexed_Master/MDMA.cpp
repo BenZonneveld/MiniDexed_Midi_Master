@@ -14,10 +14,10 @@
 
 //#define IGNORE_MIDI_CC
 
-//cPots Pots = cPots();
-//cButtons buttons = cButtons();
-//cTG dexed[8];
-//cMenu menu;
+cPots Pots = cPots();
+cButtons buttons = cButtons();
+cTG dexed[8];
+cMenu menu;
 
 /*------------- MAIN -------------*/
 int main(void)
@@ -33,22 +33,22 @@ int main(void)
 
     printf("MDMA Booting\r\n");
     
-//    Pots.init();
-//    menu.Init();
+    Pots.init();
+    menu.Init();
 
     multicore_launch_core1(midicore);
  
-//    menu.Show();
+    menu.Show();
 
     sysex_t raw_sysex;
     while (1)
     {
-//        Pots.readAll();
-//        buttons.handleButtons();
-    //    while (queue_try_remove(&sysex_fifo, &raw_sysex))
-    //    {
-    //        handleMidi(raw_sysex);
-    //    }
+        Pots.readAll();
+        buttons.handleButtons();
+        while (queue_try_remove(&sysex_fifo, &raw_sysex))
+        {
+            handleMidi(raw_sysex);
+        }
         ;
     }
 
