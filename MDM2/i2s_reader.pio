@@ -6,7 +6,6 @@
 
 .program i2s_reader
 
-;.side_set 2
 ; Sample bits using an external clock, and push groups of bits into the RX FIFO.
 ; - IN pin 0 is the data pin
 ; - IN pin 1 is the clock pin
@@ -18,21 +17,34 @@
 ; recommended for good sampling alignment.
 
 wait 1 pin 1
+start:
 wait 0 pin 1
-loop:
+set x,15
+left:
 wait 1 pin 2
 in pins, 1
 wait 0 pin 2
-jmp loop
+jmp x--, left
+set x,15
+wait 1 pin 1
+right:
+wait 1 pin 2
+in pins, 1
+wait 0 pin 2
+jmp x--, right
+jmp start
 
+;.side_set 2                 ;        /--- LRCLK
+                            ;        |/-- BCLK
+;public_entry_point:         ;        ||
 ;    set x, 14                 side(0b00)
 ;left_channel:
-;    in pins, 1                side(0b01)
+;    in pins, 1                side(0b10)
 ;    jmp x-- left_channel      side(0b00)
 ;    in pins, 1                side(0b11)
-;    set x, 14                 side(0b10)
+;    set x, 14                 side(0b01)
 ;right_channel:
 ;    in pins, 1                side(0b11)
-;    jmp x-- right_channel     side(0b10)
-;    in pins, 1                side(0b01)
+;    jmp x-- right_channel     side(0b01)
+;    in pins, 1                side(0b10)
 

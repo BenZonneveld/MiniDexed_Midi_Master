@@ -51,7 +51,7 @@ tusb_desc_device_t const desc_device =
     .bDeviceProtocol    = MISC_PROTOCOL_IAD,
     .bMaxPacketSize0    = CFG_TUD_ENDPOINT0_SIZE,
 
-    .idVendor           = 0xface,
+    .idVendor           = 0xBADD,
     .idProduct          = USB_PID,
     .bcdDevice          = 0x0100,
 
@@ -76,15 +76,23 @@ enum
 {
   ITF_NUM_AUDIO_CONTROL = 0,
   ITF_NUM_AUDIO_STREAMING,
-  ITF_NUM_MIDI,
-  ITF_NUM_MIDI_STREAMING,
   ITF_NUM_TOTAL
 };
 
-#define CONFIG_TOTAL_LEN    	(TUD_CONFIG_DESC_LEN + + TUD_MIDI_DESC_LEN + CFG_TUD_AUDIO * TUD_AUDIO_TWO_CH_DESC_LEN )
+#define CONFIG_TOTAL_LEN    	(TUD_CONFIG_DESC_LEN + CFG_TUD_AUDIO * TUD_AUDIO_TWO_CH_DESC_LEN)
 
-#define EPNUM_AUDIO   0x02
-#define EPNUM_MIDI    0x01
+#if TU_CHECK_MCU(LPC175X_6X) || TU_CHECK_MCU(LPC177X_8X) || TU_CHECK_MCU(LPC40XX)
+  // LPC 17xx and 40xx endpoint type (bulk/interrupt/iso) are fixed by its number
+  // 0 control, 1 In, 2 Bulk, 3 Iso, 4 In etc ...
+  #define EPNUM_AUDIO   0x03
+
+#elif TU_CHECK_MCU(NRF5X)
+  // nRF5x ISO can only be endpoint 8
+  #define EPNUM_AUDIO   0x08
+
+#else
+  #define EPNUM_AUDIO   0x01
+#endif
 
 uint8_t const desc_configuration[] =
 {
@@ -92,14 +100,7 @@ uint8_t const desc_configuration[] =
     TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, 0x00, 100),
 
     // Interface number, string index, EP Out & EP In address, EP size
-    TUD_AUDIO_TWO_CH_DESCRIPTOR(/*_itfnum*/ ITF_NUM_AUDIO_CONTROL,
-    /*_stridx*/ 4,
-    /*_nBytesPerSample*/ CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX,
-    /*_nBitsUsedPerSample*/ CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX*8,
-    /*_epin*/ 0x80 | EPNUM_AUDIO, 
-    /*_epsize*/ CFG_TUD_AUDIO_EP_SZ_IN),
-    // Interface number, string index, EP Out & EP In address, EP size
-    TUD_MIDI_DESCRIPTOR(ITF_NUM_MIDI, 5, EPNUM_MIDI, 0x80 | EPNUM_MIDI, 64)
+    TUD_AUDIO_TWO_CH_DESCRIPTOR(/*_itfnum*/ ITF_NUM_AUDIO_CONTROL, /*_stridx*/ 5, /*_nBytesPerSample*/ CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX, /*_nBitsUsedPerSample*/ CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX*8, /*_epin*/ 0x80 | EPNUM_AUDIO, /*_epsize*/ CFG_TUD_AUDIO_EP_SZ_IN)
 };
 
 // Invoked when received GET CONFIGURATION DESCRIPTOR
@@ -120,10 +121,10 @@ char const* string_desc_arr [] =
 {
     (const char[]) { 0x09, 0x04 }, 	// 0: is supported language is English (0x0409)
     "PaniRCorp",                   	// 1: Manufacturer
-    "MiniDexed",    		// 2: Product
+    "MicNode_2_Ch",    		// 2: Product
     "123458",                      	// 3: Serials, should use chip ID
-    "MiniDexed Audio",                 	 	// 4: Audio Interface
-    "MiniDexed Midi"
+    "UAC2",                 	 	// 4: Audio Interface
+    "MyName"
 };
 
 static uint16_t _desc_str[32];

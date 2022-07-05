@@ -31,11 +31,10 @@
 #include "I2s.h"
 
 #define SAMPLE_RATE 48000
-#define SAMPLE_BUFFER_SIZE ((CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX/2)-2)
 
-uint32_t i2s_buffer[SAMPLE_BUFFER_SIZE * 2];
-uint8_t left_buffer[2][SAMPLE_BUFFER_SIZE + 1];
-uint8_t right_buffer[2][SAMPLE_BUFFER_SIZE + 1];
+#define SAMPLE_BUFFER_SIZE (192/4)
+
+uint32_t i2s_input[SAMPLE_BUFFER_SIZE * 4] = { 0 };
 
 bool mute[CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX + 1]; 						// +1 for master channel 0
 uint16_t volume[CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX + 1]; 					// +1 for master channel 0
@@ -46,9 +45,6 @@ audio_control_range_2_n_t(1) volumeRng[CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX+1]; 		
 audio_control_range_4_n_t(1) sampleFreqRng; 						// Sample frequency range state
 
 I2SClass I2S;
-
-uint64_t startt = 0;
-uint64_t endt = 0;
 
 /*------------- MAIN -------------*/
 void usb_audio_init()
@@ -66,27 +62,16 @@ void usb_audio_init()
   I2S.setWS(I2S_WS);
   I2S.setSD(I2S_SD);
 
-  I2S.setBufferSize(192*2);
-  bool i2s_state = I2S.begin(I2S_MODE_STEREO, 48000, 16);
+  I2S.setBufferSize(SAMPLE_BUFFER_SIZE * 4);
+  bool i2s_state = I2S.begin();
 
   printf("I2s State: %i\n", i2s_state);
-
-  uint16_t val = 0;
-  for (size_t i = 0; i < SAMPLE_BUFFER_SIZE; i++)
-  {
-      left_buffer[1][i] = (val & 0xff);
-      left_buffer[0][i] = (val >> 8);
-      right_buffer[1][i] = ((65535 - val) & 0xff);
-      right_buffer[0][i] = ((65535 - val) >> 8);
-      val += 65535 / SAMPLE_BUFFER_SIZE;
-  }
-
-  float target = ((1.0f / 96000.0f) * SAMPLE_BUFFER_SIZE) * 1000;
-  printf("Target: %.6f\n", target);
-  printf("SAMPLE_RATE %i\n", SAMPLE_RATE);
-  printf("CFG_TUD_AUDIO_EP_SZ_IN %i\n", CFG_TUD_AUDIO_EP_SZ_IN);
   printf("SAMPLE_BUFFER_SIZE: %i\n", SAMPLE_BUFFER_SIZE);
 }
+
+//--------------------------------------------------------------------+
+// Application Callback API Implementations
+//--------------------------------------------------------------------+
 
 //--------------------------------------------------------------------+
 // Application Callback API Implementations
@@ -158,7 +143,6 @@ bool tud_audio_set_req_entity_cb(uint8_t rhport, tusb_control_request_t const * 
         mute[channelNum] = ((audio_control_cur_1_t*) pBuff)->bCur;
 
         TU_LOG2("    Set Mute: %d of channel: %u\r\n", mute[channelNum], channelNum);
-
       return true;
 
       case AUDIO_FU_CTRL_VOLUME:
@@ -168,8 +152,7 @@ bool tud_audio_set_req_entity_cb(uint8_t rhport, tusb_control_request_t const * 
         volume[channelNum] = ((audio_control_cur_2_t*) pBuff)->bCur;
 
         TU_LOG2("    Set Volume: %d dB of channel: %u\r\n", volume[channelNum], channelNum);
-
-     return true;
+      return true;
 
         // Unknown/Unsupported control
       default:
@@ -226,96 +209,110 @@ bool tud_audio_get_req_entity_cb(uint8_t rhport, tusb_control_request_t const * 
   // Input terminal (Microphone input)
   if (entityID == 1)
   {
-    switch (ctrlSel)
+    switch ( ctrlSel )
     {
-      case AUDIO_TE_CTRL_CONNECTOR:;
-      // The terminal connector control only has a get request with only the CUR attribute.
+      case AUDIO_TE_CTRL_CONNECTOR:
+      {
+        // The terminal connector control only has a get request with only the CUR attribute.
+        audio_desc_channel_cluster_t ret;
 
-      audio_desc_channel_cluster_t ret;
+        // Those are dummy values for now
+        ret.bNrChannels = 1;
+        ret.bmChannelConfig = (audio_channel_config_t)0;
+        ret.iChannelNames = 0;
 
-      // Those are dummy values for now
-      ret.bNrChannels = 1;
-      ret.bmChannelConfig = (audio_channel_config_t)0;
-      ret.iChannelNames = 0;
+        TU_LOG2("    Get terminal connector\r\n");
 
-      TU_LOG2("    Get terminal connector\r\n");
+        return tud_audio_buffer_and_schedule_control_xfer(rhport, p_request, (void*) &ret, sizeof(ret));
+      }
+      break;
 
-      return tud_audio_buffer_and_schedule_control_xfer(rhport, p_request, (void*)&ret, sizeof(ret));
-
-      // Unknown/Unsupported control selector
-      default: TU_BREAKPOINT(); return false;
+        // Unknown/Unsupported control selector
+      default:
+        TU_BREAKPOINT();
+        return false;
     }
   }
 
   // Feature unit
   if (entityID == 2)
   {
-    switch (ctrlSel)
+    switch ( ctrlSel )
     {
       case AUDIO_FU_CTRL_MUTE:
-	// Audio control mute cur parameter block consists of only one byte - we thus can send it right away
-	// There does not exist a range parameter block for mute
-	TU_LOG2("    Get Mute of channel: %u\r\n", channelNum);
-	return tud_control_xfer(rhport, p_request, &mute[channelNum], 1);
+        // Audio control mute cur parameter block consists of only one byte - we thus can send it right away
+        // There does not exist a range parameter block for mute
+        TU_LOG2("    Get Mute of channel: %u\r\n", channelNum);
+        return tud_control_xfer(rhport, p_request, &mute[channelNum], 1);
 
       case AUDIO_FU_CTRL_VOLUME:
+        switch ( p_request->bRequest )
+        {
+          case AUDIO_CS_REQ_CUR:
+            TU_LOG2("    Get Volume of channel: %u\r\n", channelNum);
+            return tud_control_xfer(rhport, p_request, &volume[channelNum], sizeof(volume[channelNum]));
 
-	switch (p_request->bRequest)
-	{
-	  case AUDIO_CS_REQ_CUR:
-	    TU_LOG2("    Get Volume of channel: %u\r\n", channelNum);
-	    return tud_control_xfer(rhport, p_request, &volume[channelNum], sizeof(volume[channelNum]));
-	  case AUDIO_CS_REQ_RANGE:
-	    TU_LOG2("    Get Volume range of channel: %u\r\n", channelNum);
+          case AUDIO_CS_REQ_RANGE:
+            TU_LOG2("    Get Volume range of channel: %u\r\n", channelNum);
 
-	    // Copy values - only for testing - better is version below
-	    audio_control_range_2_n_t(1) ret;
+            // Copy values - only for testing - better is version below
+            audio_control_range_2_n_t(1)
+            ret;
 
-	    ret.wNumSubRanges = 1;
-	    ret.subrange[0].bMin = -90; 	// -90 dB
-	    ret.subrange[0].bMax = 90;		// +90 dB
-	    ret.subrange[0].bRes = 1; 		// 1 dB steps
+            ret.wNumSubRanges = 1;
+            ret.subrange[0].bMin = -90;           // -90 dB
+            ret.subrange[0].bMax = 90;		// +90 dB
+            ret.subrange[0].bRes = 1; 		// 1 dB steps
 
-	    return tud_audio_buffer_and_schedule_control_xfer(rhport, p_request, (void*)&ret, sizeof(ret));
+            return tud_audio_buffer_and_schedule_control_xfer(rhport, p_request, (void*) &ret, sizeof(ret));
 
-	    // Unknown/Unsupported control
-	  default: TU_BREAKPOINT(); return false;
-	}
+            // Unknown/Unsupported control
+          default:
+            TU_BREAKPOINT();
+            return false;
+        }
+      break;
 
-	// Unknown/Unsupported control
-	  default: TU_BREAKPOINT(); return false;
+        // Unknown/Unsupported control
+      default:
+        TU_BREAKPOINT();
+        return false;
     }
   }
 
   // Clock Source unit
-  if (entityID == 4)
+  if ( entityID == 4 )
   {
-    switch (ctrlSel)
+    switch ( ctrlSel )
     {
       case AUDIO_CS_CTRL_SAM_FREQ:
+        // channelNum is always zero in this case
+        switch ( p_request->bRequest )
+        {
+          case AUDIO_CS_REQ_CUR:
+            TU_LOG2("    Get Sample Freq.\r\n");
+            return tud_control_xfer(rhport, p_request, &sampFreq, sizeof(sampFreq));
 
-	// channelNum is always zero in this case
+          case AUDIO_CS_REQ_RANGE:
+            TU_LOG2("    Get Sample Freq. range\r\n");
+            return tud_control_xfer(rhport, p_request, &sampleFreqRng, sizeof(sampleFreqRng));
 
-	switch (p_request->bRequest)
-	{
-	  case AUDIO_CS_REQ_CUR:
-	    TU_LOG2("    Get Sample Freq.\r\n");
-	    return tud_control_xfer(rhport, p_request, &sampFreq, sizeof(sampFreq));
-	  case AUDIO_CS_REQ_RANGE:
-	    TU_LOG2("    Get Sample Freq. range\r\n");
-	    return tud_control_xfer(rhport, p_request, &sampleFreqRng, sizeof(sampleFreqRng));
+           // Unknown/Unsupported control
+          default:
+            TU_BREAKPOINT();
+            return false;
+        }
+      break;
 
-	    // Unknown/Unsupported control
-	  default: TU_BREAKPOINT(); return false;
-	}
+      case AUDIO_CS_CTRL_CLK_VALID:
+        // Only cur attribute exists for this request
+        TU_LOG2("    Get Sample Freq. valid\r\n");
+        return tud_control_xfer(rhport, p_request, &clkValid, sizeof(clkValid));
 
-	  case AUDIO_CS_CTRL_CLK_VALID:
-	    // Only cur attribute exists for this request
-	    TU_LOG2("    Get Sample Freq. valid\r\n");
-	    return tud_control_xfer(rhport, p_request, &clkValid, sizeof(clkValid));
-
-	    // Unknown/Unsupported control
-	  default: TU_BREAKPOINT(); return false;
+      // Unknown/Unsupported control
+      default:
+        TU_BREAKPOINT();
+        return false;
     }
   }
 
@@ -325,34 +322,31 @@ bool tud_audio_get_req_entity_cb(uint8_t rhport, tusb_control_request_t const * 
 
 bool tud_audio_tx_done_pre_load_cb(uint8_t rhport, uint8_t itf, uint8_t ep_in, uint8_t cur_alt_setting)
 {
-    (void)rhport;
-    (void)itf;
-    (void)ep_in;
-    (void)cur_alt_setting;
+  (void) rhport;
+  (void) itf;
+  (void) ep_in;
+  (void) cur_alt_setting;
 
-    //endt = to_us_since_boot(get_absolute_time());
-    //printf("Time elapsed: %lld us\n", endt - startt);
-    //startt = endt;
+  //for (size_t i = 0; i < INPUT_BUFFER_SIZE; i++)
+  //{
+  //    printf("%04X\n", left_buffer[0][i]*256+left_buffer[1][i]);
+  //}
 
-
-    tud_audio_write_support_ff(0, left_buffer, SAMPLE_BUFFER_SIZE);
-    tud_audio_write_support_ff(1, right_buffer, SAMPLE_BUFFER_SIZE);
-
-    return true;
+  tud_audio_write((int8_t*)i2s_input, SAMPLE_BUFFER_SIZE*4);
+//  tud_audio_write_support_ff(0, (int16_t *)left_buffer, INPUT_BUFFER_SIZE);
+//  tud_audio_write_support_ff(1, (int16_t *)right_buffer, INPUT_BUFFER_SIZE);
+  return true;
 }
 
 bool tud_audio_tx_done_post_load_cb(uint8_t rhport, uint16_t n_bytes_copied, uint8_t itf, uint8_t ep_in, uint8_t cur_alt_setting)
 {
-    (void)rhport;
-    (void)n_bytes_copied;
-    (void)itf;
-    (void)ep_in;
-    (void)cur_alt_setting;
-
-
-    int ret = I2S.read(i2s_buffer, SAMPLE_BUFFER_SIZE);
-//    printf("ret: %i\n", ret);
-    return true;
+  (void) rhport;
+  (void) n_bytes_copied;
+  (void) itf;
+  (void) ep_in;
+  (void) cur_alt_setting;
+  int ret = I2S.read(i2s_input, SAMPLE_BUFFER_SIZE);
+  return true;
 }
 
 bool tud_audio_set_itf_close_EP_cb(uint8_t rhport, tusb_control_request_t const * p_request)

@@ -17,9 +17,6 @@
 #ifndef I2S_h
 #define I2S_h
 
-#define I2S_MODE_MONO 0
-#define I2S_MODE_STEREO 1
-
 class I2SClass {
   public:
     I2SClass();
@@ -27,16 +24,16 @@ class I2SClass {
     bool setSCK(uint8_t pin);
     bool setWS(uint8_t pin);
     bool setSD(uint8_t pin);
-    bool setBufferSize(int bufferSize);
-    bool begin(int mode, long sampleRate, int bitsPerSample);
+    bool setBufferSize(uint32_t bufferSize);
+    bool begin();
     void end();
-    int read(void* buffer, size_t size);
+    int read(uint32_t* buffer, size_t size);
 
   private:
     uint8_t _pin_sck;
     uint8_t _pin_ws;
     uint8_t _pin_sd;
-    int32_t _bufferSize;
+    uint32_t _bufferSize;
 
 };
 

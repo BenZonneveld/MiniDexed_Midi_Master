@@ -60,28 +60,18 @@
 // The DMA buffer size was empirically determined.  It is a tradeoff between:
 // 1. memory use (smaller buffer size desirable to reduce memory footprint)
 // 2. interrupt frequency (larger buffer size desirable to reduce interrupt frequency)
-#define SIZEOF_DMA_BUFFER_IN_BYTES (392)
-#define SIZEOF_HALF_DMA_BUFFER_IN_BYTES (SIZEOF_DMA_BUFFER_IN_BYTES / 2)
+#define SIZEOF_DMA_BUFFER_IN_WORDS (384)
+#define SIZEOF_HALF_DMA_BUFFER_IN_WORDS (SIZEOF_DMA_BUFFER_IN_WORDS / 2)
 #define I2S_NUM_DMA_CHANNELS (2)
 
-//#define NUM_I2S_USER_FORMATS (4)
-#define SHIFT_IN    32
-#define I2S_RX_FRAME_SIZE_IN_BYTES (8)
-#define DMA_BITS 32
-#define SAMPLES_PER_FRAME (2)
-#define PIO_INSTRUCTIONS_PER_BIT (4)
+#define IN_SHIFT    32 // Needs to be 32 for stereo, 16 msb for left, 16 lsb for right.
 
 #define mp_hal_pin_obj_t uint
 #define m_new(type, num) ((type *)(malloc(sizeof(type) * (num))))
 #define m_new_obj(type) (m_new(type, 1))
 
-typedef enum {
-    GP_INPUT = 0,
-    GP_OUTPUT = 1
-} gpio_dir_t;
-
 typedef struct _ring_buf_t {
-    uint8_t *buffer;
+    uint32_t *buffer;
     size_t head;
     size_t tail;
     size_t size;
@@ -92,90 +82,26 @@ typedef struct _machine_i2s_obj_t {
     mp_hal_pin_obj_t sck;
     mp_hal_pin_obj_t ws;
     mp_hal_pin_obj_t sd;
-    int8_t bits;
-    int32_t rate;
     int32_t ibuf;
     PIO pio;
     uint8_t sm;
     const pio_program_t *pio_program;
     uint prog_offset;
     uint dma_channel[I2S_NUM_DMA_CHANNELS];
-    uint8_t dma_buffer[SIZEOF_DMA_BUFFER_IN_BYTES];
+    uint32_t dma_buffer[SIZEOF_DMA_BUFFER_IN_WORDS];
     ring_buf_t ring_buffer;
-    uint8_t *ring_buffer_storage;
+    uint32_t *ring_buffer_storage;
 } machine_i2s_obj_t;
 
 // Buffer protocol
 typedef struct _mp_buffer_info_t {
-    void *buf;      // can be NULL if len == 0
+    uint32_t *buf;      // can be NULL if len == 0
     size_t len;     // in bytes
-    int typecode;   // as per binary.h
 } mp_buffer_info_t;
 
 static machine_i2s_obj_t* machine_i2s_obj[MAX_I2S_RP2] = {NULL, NULL};
 
-// The frame map is used with the readinto() method to transform the audio sample data coming
-// from DMA memory (32-bit stereo) to the format specified
-// in the I2S constructor.  e.g.  16-bit mono
-static const int8_t i2s_frame_map[I2S_RX_FRAME_SIZE_IN_BYTES] = {
-    -1, -1,  0,  1, -1, -1,  2,  3   // Stereo, 16-bits
-};
-
 static const PIO pio_instances[NUM_PIOS] = {pio0, pio1};
-
-//  PIO program for 16-bit write
-//    set(x, 14)                  .side(0b01)
-//    label('left_channel')
-//    out(pins, 1)                .side(0b00)
-//    jmp(x_dec, "left_channel")  .side(0b01)
-//    out(pins, 1)                .side(0b10)
-//    set(x, 14)                  .side(0b11)
-//    label('right_channel')
-//    out(pins, 1)                .side(0b10)
-//    jmp(x_dec, "right_channel") .side(0b11)
-//    out(pins, 1)                .side(0b00)
-static const uint16_t pio_instructions_write_16[] = {59438, 24577, 2113, 28673, 63534, 28673, 6213, 24577};
-static const pio_program_t pio_write_16 = {
-    pio_instructions_write_16,
-    sizeof(pio_instructions_write_16) / sizeof(uint16_t),
-    -1
-};
-
-//  PIO program for 32-bit write
-//    set(x, 30)                  .side(0b01)
-//    label('left_channel')
-//    out(pins, 1)                .side(0b00)
-//    jmp(x_dec, "left_channel")  .side(0b01)
-//    out(pins, 1)                .side(0b10)
-//    set(x, 30)                  .side(0b11)
-//    label('right_channel')
-//    out(pins, 1)                .side(0b10)
-//    jmp(x_dec, "right_channel") .side(0b11)
-//    out(pins, 1)                .side(0b00)
-static const uint16_t pio_instructions_write_32[] = {59454, 24577, 2113, 28673, 63550, 28673, 6213, 24577};
-static const pio_program_t pio_write_32 = {
-    pio_instructions_write_32,
-    sizeof(pio_instructions_write_32) / sizeof(uint16_t),
-    -1
-};
-
-//  PIO program for 32-bit read
-//    set(x, 30)                  .side(0b00)
-//    label('left_channel')
-//    in_(pins, 1)                .side(0b01)
-//    jmp(x_dec, "left_channel")  .side(0b00)
-//    in_(pins, 1)                .side(0b11)
-//    set(x, 30)                  .side(0b10)
-//    label('right_channel')
-//    in_(pins, 1)                .side(0b11)
-//    jmp(x_dec, "right_channel") .side(0b10)
-//    in_(pins, 1)                .side(0b01)
-static const uint16_t pio_instructions_read_32[] = {57406, 18433, 65, 22529, 61502, 22529, 4165, 18433};
-static const pio_program_t pio_read_32 = {
-    pio_instructions_read_32,
-    sizeof(pio_instructions_read_32) / sizeof(uint16_t),
-    -1
-};
 
 static void dma_irq0_handler(void);
 static void dma_irq1_handler(void);
@@ -186,14 +112,14 @@ static void dma_irq1_handler(void);
 // - Sequential atomic operations
 // One byte of capacity is used to detect buffer empty/full
 
-static void ringbuf_init(ring_buf_t *rbuf, uint8_t *buffer, size_t size) {
+static void ringbuf_init(ring_buf_t *rbuf, uint32_t *buffer, size_t size) {
     rbuf->buffer = buffer;
     rbuf->size = size;
     rbuf->head = 0;
     rbuf->tail = 0;
 }
 
-static bool ringbuf_push(ring_buf_t *rbuf, uint8_t data) {
+static bool ringbuf_push(ring_buf_t *rbuf, uint32_t data) {
     size_t next_tail = (rbuf->tail + 1) % rbuf->size;
 
     if (next_tail != rbuf->head) {
@@ -206,13 +132,14 @@ static bool ringbuf_push(ring_buf_t *rbuf, uint8_t data) {
     return false;
 }
 
-static bool ringbuf_pop(ring_buf_t *rbuf, uint8_t *data) {
+static bool ringbuf_pop(ring_buf_t *rbuf, uint32_t *data) {
     if (rbuf->head == rbuf->tail) {
         // empty
         return false;
     }
 
     *data = rbuf->buffer[rbuf->head];
+
     rbuf->head = (rbuf->head + 1) % rbuf->size;
     return true;
 }
@@ -245,43 +172,36 @@ static uint32_t fill_appbuf_from_ringbuf(machine_i2s_obj_t *self, mp_buffer_info
     //   Thus, for every 1 byte copied to the app buffer, 4 bytes are read from the ring buffer.
     //   If a 8kB app buffer is supplied, 32kB of audio samples is read from the ring buffer.
 
-    uint32_t num_bytes_copied_to_appbuf = 0;
-    uint8_t *app_p = (uint8_t *)appbuf->buf;
-    uint8_t appbuf_sample_size_in_bytes = (self->bits == 16? 2 : 4) * 2;
-    uint32_t num_bytes_needed_from_ringbuf = appbuf->len * (I2S_RX_FRAME_SIZE_IN_BYTES / appbuf_sample_size_in_bytes);
-    uint8_t discard_byte;
-    while (num_bytes_needed_from_ringbuf) {
-
-
-        for (uint8_t i = 0; i < I2S_RX_FRAME_SIZE_IN_BYTES; i++) {
-            int8_t r_to_a_mapping = i2s_frame_map[i];
-            if (r_to_a_mapping != -1) {
-                // poll the ringbuf until a sample becomes available,  copy into appbuf using the mapping transform
-                while (ringbuf_pop(&self->ring_buffer, app_p + r_to_a_mapping) == false) {
-                    asm volatile(
-                        "mov  r0, #01\n"    		// 1 cycle
-                        "loop1: sub  r0, r0, #1\n"	// 1 cycle
-                        "bne   loop1\n"          	// 2 cycles if loop taken, 1 if not
-                        );
-                }
-                num_bytes_copied_to_appbuf++;
-            }
-            num_bytes_needed_from_ringbuf--;
+    uint32_t num_words_copied_to_appbuf = 0;
+    uint32_t *app_p = (uint32_t *)appbuf->buf;
+//    uint8_t appbuf_sample_size_in_bytes = (self->bits == 16? 2 : 4) * 2;
+    uint32_t num_words_needed_from_ringbuf = appbuf->len;
+    while (num_words_needed_from_ringbuf) 
+    {
+        while (ringbuf_pop(&self->ring_buffer, app_p) == false) 
+        {
+            asm volatile(
+                "mov  r0, #05\n"    		// 1 cycle
+                "loop1: sub  r0, r0, #1\n"	// 1 cycle
+                "bne   loop1\n"          	// 2 cycles if loop taken, 1 if not
+                );
+            ;
         }
-        app_p += appbuf_sample_size_in_bytes;
+        num_words_copied_to_appbuf++;
+        num_words_needed_from_ringbuf--;
+        app_p += 1;
     }
 exit:
-    return num_bytes_copied_to_appbuf;
+    return num_words_copied_to_appbuf;
 }
 
 // function is used in IRQ context
-static void empty_dma(machine_i2s_obj_t *self, uint8_t *dma_buffer_p) {
+static void empty_dma(machine_i2s_obj_t *self, uint32_t *dma_buffer_p) {
     // when space exists, copy samples into ring buffer
-    if (ringbuf_available_space(&self->ring_buffer) >= SIZEOF_HALF_DMA_BUFFER_IN_BYTES) {
+    if (ringbuf_available_space(&self->ring_buffer) >= SIZEOF_HALF_DMA_BUFFER_IN_WORDS) {
 //        printf("Empty DMA\n");
-        for (uint32_t i = 0; i < SIZEOF_HALF_DMA_BUFFER_IN_BYTES; i++) {
+        for (uint32_t i = 0; i < SIZEOF_HALF_DMA_BUFFER_IN_WORDS; i++) {
             ringbuf_push(&self->ring_buffer, dma_buffer_p[i]);
-//            printf("%08X\n", dma_buffer_p[i]);
         }
     }
 }
@@ -340,16 +260,16 @@ static int pio_configure(machine_i2s_obj_t *self) {
 
     pio_sm_config config = pio_get_default_sm_config();
 
-    float pio_freq = self->rate *
-        SAMPLES_PER_FRAME *
-        DMA_BITS *
-        PIO_INSTRUCTIONS_PER_BIT;
-    float clkdiv = clock_get_hz(clk_sys) / pio_freq;
-    printf("pio_freq: %.3f\nclockdiv: %.3f\n", pio_freq, clkdiv);
-    sm_config_set_clkdiv(&config, clkdiv);
+    //float pio_freq = self->rate *
+    //    2 *
+    //    DMA_BITS *
+    //    PIO_INSTRUCTIONS_PER_BIT;
+    //float clkdiv = clock_get_hz(clk_sys) / pio_freq;
+    //printf("pio_freq: %.3f\nclockdiv: %.3f\n", pio_freq, clkdiv);
+    sm_config_set_clkdiv(&config, 1.0f);
 
     sm_config_set_in_pins(&config, self->sd);
-    sm_config_set_in_shift(&config, false, true, SHIFT_IN);
+    sm_config_set_in_shift(&config, false, true, IN_SHIFT);
     sm_config_set_fifo_join(&config, PIO_FIFO_JOIN_RX);  // double RX FIFO size
 
     sm_config_set_sideset(&config, 2, false, false);
@@ -360,7 +280,7 @@ static int pio_configure(machine_i2s_obj_t *self) {
     return 0;
 }
 
-static void gpio_init_i2s(PIO pio, uint8_t sm, mp_hal_pin_obj_t pin_num, uint8_t pin_val, gpio_dir_t pin_dir) {
+static void gpio_init_i2s(PIO pio, uint8_t sm, mp_hal_pin_obj_t pin_num, uint8_t pin_val, uint8_t pin_dir) {
     uint32_t pinmask = 1 << pin_num;
     pio_sm_set_pins_with_mask(pio, sm, pin_val << pin_num, pinmask);
     pio_sm_set_pindirs_with_mask(pio, sm, pin_dir << pin_num, pinmask);
@@ -368,9 +288,9 @@ static void gpio_init_i2s(PIO pio, uint8_t sm, mp_hal_pin_obj_t pin_num, uint8_t
 }
 
 static void gpio_configure(machine_i2s_obj_t* self) {
-    gpio_init_i2s(self->pio, self->sm, self->sck, 0, GP_INPUT);
-    gpio_init_i2s(self->pio, self->sm, self->ws, 0, GP_INPUT);
-    gpio_init_i2s(self->pio, self->sm, self->sd, 0, GP_INPUT);
+    gpio_init_i2s(self->pio, self->sm, self->sck, 0, 0);
+    gpio_init_i2s(self->pio, self->sm, self->ws, 0, 0);
+    gpio_init_i2s(self->pio, self->sm, self->sd, 0, 0);
 }
 
 // determine which DMA channel is associated to this IRQ
@@ -385,10 +305,10 @@ static int dma_map_irq_to_channel(uint irq_index) {
 }
 
 // note:  first DMA channel is mapped to the top half of buffer, second is mapped to the bottom half
-static uint8_t *dma_get_buffer(machine_i2s_obj_t *i2s_obj, uint channel) {
+static uint32_t *dma_get_buffer(machine_i2s_obj_t *i2s_obj, uint channel) {
     for (uint8_t ch = 0; ch < I2S_NUM_DMA_CHANNELS; ch++) {
         if (i2s_obj->dma_channel[ch] == channel) {
-            return i2s_obj->dma_buffer + (SIZEOF_HALF_DMA_BUFFER_IN_BYTES * ch);
+            return i2s_obj->dma_buffer + (SIZEOF_HALF_DMA_BUFFER_IN_WORDS * ch);
         }
     }
     // This should never happen
@@ -414,16 +334,13 @@ static int dma_configure(machine_i2s_obj_t *self) {
     // the top half of the DMA buffer.  The second DMA channel accesses the bottom half of the DMA buffer.
     // With chaining, when one DMA channel has completed a data transfer, the other
     // DMA channel automatically starts a new data transfer.
-    enum dma_channel_transfer_size dma_size = (DMA_BITS == 16) ? DMA_SIZE_16 : DMA_SIZE_32;
-    printf("DMA_size: %i\n", dma_size);
-    printf("DMA_BITS: %i\n", DMA_BITS);
 
     for (uint8_t ch = 0; ch < I2S_NUM_DMA_CHANNELS; ch++) {
         dma_channel_config dma_config = dma_channel_get_default_config(self->dma_channel[ch]);
-        channel_config_set_transfer_data_size(&dma_config, dma_size);
+        channel_config_set_transfer_data_size(&dma_config, DMA_SIZE_32);
         channel_config_set_chain_to(&dma_config, self->dma_channel[(ch + 1) % I2S_NUM_DMA_CHANNELS]);
 
-        uint8_t* dma_buffer = self->dma_buffer + (SIZEOF_HALF_DMA_BUFFER_IN_BYTES * ch);
+        uint32_t* dma_buffer = self->dma_buffer + (SIZEOF_HALF_DMA_BUFFER_IN_WORDS * ch);
 
         channel_config_set_dreq(&dma_config, pio_get_dreq(self->pio, self->sm, false));
         channel_config_set_read_increment(&dma_config, false);
@@ -432,7 +349,7 @@ static int dma_configure(machine_i2s_obj_t *self) {
             &dma_config,
             dma_buffer,                                             // dest = DMA buffer
             (void*)&self->pio->rxf[self->sm],                      // src = PIO RX FIFO
-            SIZEOF_HALF_DMA_BUFFER_IN_BYTES / (DMA_BITS / 8),
+            SIZEOF_HALF_DMA_BUFFER_IN_WORDS,
             false);
 
     }
@@ -458,18 +375,18 @@ static void dma_irq_handler(uint8_t irq_index) {
         return;
     }
 
-    uint8_t* dma_buffer = dma_get_buffer(self, dma_channel);
+    uint32_t* dma_buffer = dma_get_buffer(self, dma_channel);
     if (dma_buffer == NULL) {
         // This should never happen
         return;
     }
 
 //    printf("Handling DMA Channel %i\n", dma_channel);
-    //for (size_t i = 0; i < SIZEOF_DMA_BUFFER_IN_BYTES; i++)
-    //{
-    //    printf("%08X, ", dma_buffer[i]);
-    //}
-    //printf("\n");
+//    for (size_t i = 0; i < SIZEOF_DMA_BUFFER_IN_BYTES/2; i++)
+//    {
+//        printf("%08X, ", dma_buffer[i]);
+//    }
+//    printf("\n");
     empty_dma(self, dma_buffer);
     dma_irqn_acknowledge_channel(irq_index, dma_channel);
     dma_channel_set_write_addr(dma_channel, dma_buffer, false);
@@ -485,8 +402,7 @@ static void dma_irq1_handler(void) {
 
 static int machine_i2s_init_helper(machine_i2s_obj_t *self,
               mp_hal_pin_obj_t sck, mp_hal_pin_obj_t ws, mp_hal_pin_obj_t sd,
-              int8_t i2s_bits, 
-              int32_t ring_buffer_len, int32_t i2s_rate) {
+              int32_t ring_buffer_len) {
     //
     // ---- Check validity of arguments ----
     //
@@ -497,18 +413,9 @@ static int machine_i2s_init_helper(machine_i2s_obj_t *self,
         return -1;
     }
 
-    // is Bits valid?
-    if ((i2s_bits != 16) &&
-        (i2s_bits != 32)) {
-        return -3;
-    }
-
-    // is Rate valid?
-    // Not checked
-
     // is Ibuf valid?
     if (ring_buffer_len > 0) {
-        self->ring_buffer_storage = m_new(uint8_t, ring_buffer_len);
+        self->ring_buffer_storage = m_new(uint32_t, ring_buffer_len);
         ;
         ringbuf_init(&self->ring_buffer, self->ring_buffer_storage, ring_buffer_len);
     } else {
@@ -518,8 +425,6 @@ static int machine_i2s_init_helper(machine_i2s_obj_t *self,
     self->sck = sck;
     self->ws = ws;
     self->sd = sd;
-    self->bits = i2s_bits;
-    self->rate = i2s_rate;
     self->ibuf = ring_buffer_len;
 
     irq_configure(self);
@@ -541,8 +446,7 @@ static int machine_i2s_init_helper(machine_i2s_obj_t *self,
 
 static machine_i2s_obj_t* machine_i2s_make_new(uint8_t i2s_id,
               mp_hal_pin_obj_t sck, mp_hal_pin_obj_t ws, mp_hal_pin_obj_t sd,
-              int8_t i2s_bits, 
-              int32_t ring_buffer_len, int32_t i2s_rate) {
+              int32_t ring_buffer_len) {
     if (i2s_id >= MAX_I2S_RP2) {
         return NULL;
     }
@@ -554,25 +458,26 @@ static machine_i2s_obj_t* machine_i2s_make_new(uint8_t i2s_id,
         self->i2s_id = i2s_id;
     } 
 
-    if (machine_i2s_init_helper(self, sck, ws, sd, i2s_bits, ring_buffer_len, i2s_rate) != 0) {
+    if (machine_i2s_init_helper(self, sck, ws, sd, ring_buffer_len) != 0) {
         return NULL;
     }
     return self;
 }
 
-static int machine_i2s_stream_read(machine_i2s_obj_t *self, void *buf_in, size_t size) {
-    uint8_t appbuf_sample_size_in_bytes = (self->bits / 8) * 2;
-    if (size % appbuf_sample_size_in_bytes != 0) {
-        return -2;
-    }
+static int machine_i2s_stream_read(machine_i2s_obj_t *self, uint32_t *buf_in, size_t size) {
+    //uint8_t appbuf_sample_size_in_words = (self->bits / 8) * 2;
+    //if (size % appbuf_sample_size_in_words != 0) {
+    //    printf("size: %i app_buf_sample_size_in_bytes %i\n", size, appbuf_sample_size_in_bytes);
+    //    return -2;
+    //}
 
     if (size == 0) {
         return 0;
     }
 
     mp_buffer_info_t appbuf;
-    appbuf.buf = (void *)buf_in;
+    appbuf.buf = (uint32_t *)buf_in;
     appbuf.len = size;
-    uint32_t num_bytes_read = fill_appbuf_from_ringbuf(self, &appbuf);
-    return num_bytes_read;
+    uint32_t num_words_read = fill_appbuf_from_ringbuf(self, &appbuf);
+    return num_words_read;
 }
