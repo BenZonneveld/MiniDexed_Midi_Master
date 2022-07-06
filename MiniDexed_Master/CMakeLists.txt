@@ -21,8 +21,8 @@ target_sources(${PROJECT} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/usb_descriptors.c
         ${CMAKE_CURRENT_SOURCE_DIR}/fatfs_config.c
         ${CMAKE_CURRENT_SOURCE_DIR}/utils/tools.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/Pots/Pots.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/Buttons/Buttons.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Menu/Pots.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Menu/Buttons.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Menu/MainMenu.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Menu/card_menu.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Dexed/TG.cpp
@@ -38,13 +38,10 @@ pico_enable_stdio_uart(${PROJECT} 1)
 target_include_directories(${PROJECT} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/utils
-        ${CMAKE_CURRENT_SOURCE_DIR}/Pots
-        ${CMAKE_CURRENT_SOURCE_DIR}/Buttons
         ${CMAKE_CURRENT_SOURCE_DIR}/Menu
         ${CMAKE_CURRENT_SOURCE_DIR}/Dexed
         ${CMAKE_CURRENT_SOURCE_DIR}/GFX-lib
         ${CMAKE_CURRENT_SOURCE_DIR}/FatFs/include
-#        ${CMAKE_CURRENT_SOURCE_DIR}/UAC2
 )
 
 pico_generate_pio_header(${PROJECT} ${CMAKE_CURRENT_SOURCE_DIR}/UAC2/i2s_reader.pio)

@@ -14,8 +14,6 @@
 
 //#define IGNORE_MIDI_CC
 
-cPots Pots = cPots();
-cButtons buttons = cButtons();
 cTG dexed[8];
 cMenu menu;
 
@@ -31,8 +29,10 @@ int main(void)
     stdio_init_all();
     board_init();
 
+#ifndef MIDIPORT
     printf("MDMA Booting\r\n");
-    
+#endif
+
     Pots.init();
     menu.Init();
 

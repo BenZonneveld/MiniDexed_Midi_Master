@@ -143,7 +143,6 @@ void midicore()
 {
     dexed_t mididata;
     sysex_t rawsysex;
-    printf("MidiCore Launched on core 1:\r\n");
     tusb_init();
 
     usb_audio_init();
@@ -163,8 +162,6 @@ void midicore()
     // Set the GPIO pin mux to the UART - 0 is TX, 1 is RX
     gpio_set_function(TX0, GPIO_FUNC_UART);
     gpio_set_function(RX0, GPIO_FUNC_UART);
-#else
-    printf(", UARTS Setup entering task loop\r\n");
 #endif
 
     while (1)
@@ -187,7 +184,6 @@ void midicore()
 void dispatcher(dexed_t mididata)
 {
     int32_t temp = 0;
-//    printf("rx chan: %i\tinstance: %i cmd: %02X parm: %02X value: %04X\n", mididata.channel, mididata.instance, mididata.cmd, mididata.parm, mididata.value);
     if (mididata.cmd == 1)
     {
         dexedPatchRequest(mididata);
@@ -207,7 +203,9 @@ void dispatcher(dexed_t mididata)
     
     if (mididata.cmd == 4)
     {
+#ifdef DEBUGSYSEX
         printf("mididata.cmd = %02X\n", mididata.cmd);
+#endif
         return;
     }
 
@@ -335,7 +333,6 @@ void dx7sysex(uint16_t parm, dexed_t mididata)
     uint8_t val1 = mididata.value & 0x7f;
     uint8_t pgrp = (0x02<<2)|((parm >> 7) & 0x03);
     uint8_t prm = parm & 0x7F;
-//    uint8_t val2 = (mididata.value >> 7) & 0x7f;
     uint8_t sysex[7] = { 
         0xF0,  // Start sysex
         0x43,  // ID #: Yamaha
@@ -355,7 +352,9 @@ void dexedGetBankName(dexed_t mididata)
         (uint8_t)(0x40 | (mididata.instance & 0xF)),
         0xF7
     };
+#ifdef DEBUGSYSEX
     printf("Bank Name Request\n");
+#endif
     sendToAllPorts(bankname_req, 4);
 }
 
@@ -376,9 +375,9 @@ void dexedPatchRequest(dexed_t mididata)
 
 void dexedConfigRequest()
 {
-//#ifdef DEBUGSYSEX
-    printf("Send Config Request\n");
-//#endif
+#ifdef DEBUGSYSEX
+    printf("Send Config Request\n"); 
+#endif
     uint8_t config_req[4] = {
         0xF0,
         0x43,
@@ -510,7 +509,7 @@ void parseSysex(uint8_t buf)
             ((sysex_buf.buffer[2] & 0x70) == 0x10 && (sysex_buf.buffer[3] >> 2) == 2) || // Function parameters
             ((sysex_buf.buffer[2] & 0x70) == 0 && sysex_buf.buffer[3] == 0)) // Voice dumps
         {
-            ;
+            ; // Need the reverse of this check, found it easier to just put an empty statement here
         }
         else {
             SysExState = false;
@@ -526,7 +525,7 @@ void parseSysex(uint8_t buf)
 #endif
         if (SysExState == true)
         {
-            queue_add_blocking(&sysex_fifo, &sysex_buf);
+            queue_add_blocking(&sysex_fifo, &sysex_buf);   // Move data to the other core and push it to handleMidi below
 #ifdef DEBUGSYSEX
             printf("\nEnd of Sysex\n");
             printf("Sysex size: %i\n", sysex_buf.length);
@@ -538,9 +537,9 @@ void parseSysex(uint8_t buf)
 
 void handleMidi(sysex_t raw_sysex)
 {
-//#ifdef DEBUGSYSEX
+#ifdef DEBUG
     printf("handle sysex: ");
-//#endif
+#endif
     if ((raw_sysex.buffer[0] & 0xF0) == 0xC0) // Program Change
     {
 #ifdef DEBUGSYSEX
@@ -565,7 +564,9 @@ void handleMidi(sysex_t raw_sysex)
     }
     if ((raw_sysex.buffer[0] & 0xF0) == 0xB0) // Ctrl Change
     {
+#ifdef DEBUG
         printf("Ctrl %02X Change\n", raw_sysex.buffer[1]);
+#endif
         uint8_t instanceID = raw_sysex.buffer[0] & 0xF;
         uint8_t ctrl = raw_sysex.buffer[1];
         uint8_t val = raw_sysex.buffer[2];
@@ -579,18 +580,24 @@ void handleMidi(sysex_t raw_sysex)
             {
             case MIDI_CC_VOLUME:
                 param = PVOL;
+#ifdef DEBUG
                 printf("Volume for instance %i, value: %i\n", instanceID, val);
+#endif
                 setValue = true;
                 break;
             case MIDI_CC_PAN_POSITION:
                 param = PPAN;
                 setValue = true;
+#ifdef DEBUG
                 printf("Pan for instance %i, value: %i\n", instanceID, val);
+#endif
                 break;
             case MIDI_CC_BANK_SELECT_LSB:
                 param = PBANK;
                 setValue = true;
+#ifdef DEBUG
                 printf("Bank Select for instance %i, value: %i\n", instanceID, val);
+#endif
                 break;
             case MIDI_CC_BANK_SELECT_MSB:
                 param = PBANK;
@@ -601,17 +608,23 @@ void handleMidi(sysex_t raw_sysex)
                 break;
             case MIDI_CC_RESONANCE:
                 param = PRESO;
+#ifdef DEBUG
                 printf("Resonance for instance %i, value: %i\n", instanceID, val);
+#endif
                 setValue = true;
                 break;
             case MIDI_CC_CUTOFF:
                 param = PFREQ;
+#ifdef DEBUG
                 printf("Cutoff for instance %i, value: %i\n", instanceID, val);
+#endif
                 setValue = true;
                 break;
             case MIDI_CC_REVERB:
                 param = PVERB;
+#ifdef DEBUG
                 printf("Reverb Level for instance %i, value: %i\n", instanceID, val);
+#endif
                 setValue = true;
                 break;
             case MIDI_CC_DETUNE:         /// Ignore Detune
@@ -649,10 +662,12 @@ void handleMidi(sysex_t raw_sysex)
 #ifdef DEBUGSYSEX
         printf("Sysex Voice Dump\n");
 #endif
-        uint8_t channel = (raw_sysex.buffer[2] & 0xf && raw_sysex.length == 162 );
-        if (channel < 8)
+        uint8_t channel = (raw_sysex.buffer[2] & 0xf );
+        if (channel < 8 && raw_sysex.length == 162)
         {
+#ifdef DEBUG
             printf("Voice Dump Size: %i\n", raw_sysex.length);
+#endif
             dexed[channel].setSysex(raw_sysex);
         }
         menu.showTGInfo(PPATCH);
@@ -660,9 +675,9 @@ void handleMidi(sysex_t raw_sysex)
     }
     if ((raw_sysex.buffer[2] & 0x70) == 0x50 && raw_sysex.buffer[3] == 0)
     {
-//#ifdef DEBUGSYSEX
+#ifdef DEBUG
         printf("Bank Name Received\n");
-//#endif
+#endif
 
         uint8_t instanceID = raw_sysex.buffer[2] & 0xF;
         dexed[instanceID].setBankName(raw_sysex);
@@ -686,7 +701,7 @@ void handleMidi(sysex_t raw_sysex)
         fx_settings.diffusion = raw_sysex.buffer[config++];
         fx_settings.level = raw_sysex.buffer[config++];
         fx_settings.mastervolume = raw_sysex.buffer[config++];
-
+#ifdef DEBUG
         printf("Comp: %i Verb: %i, Size: %i, HDamp: %i, LDamp: %i LPass %i Diff: %i RLevel: %i Master Volume: %i\n",
             fx_settings.comp_enable,
             fx_settings.reverb_enable,
@@ -697,7 +712,7 @@ void handleMidi(sysex_t raw_sysex)
             fx_settings.diffusion,
             fx_settings.level,
             fx_settings.mastervolume);
-
+#endif
         for (uint8_t i = 0; i < 8; i++)
         {
             menu.setDexedParm(PBANK, raw_sysex.buffer[config++], i);

@@ -946,8 +946,9 @@ void Adafruit_SPITFT::init(uint16_t width, uint16_t height) {
     gpio_set_function(SCK, GPIO_FUNC_SPI);
     gpio_set_function(MOSI, GPIO_FUNC_SPI);
 //    spi_set_baudrate(spi1, MIPI_DISPLAY_SPI_CLOCK_SPEED_HZ);
-
+#ifndef MIDIPORT
     printf("Actual SPI Speed: %lu\n", spi_get_baudrate(spi1));
+#endif
     sleep_ms(100);
     // LCD Reset
     gpio_put(RESET, 1);

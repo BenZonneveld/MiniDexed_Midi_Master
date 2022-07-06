@@ -144,23 +144,18 @@ void cTG::sendParam(int16_t parm)
 	}
 	dexed_t tgdata;
 	if (parm != PCHANNEL)
-
 		tgdata.channel = mparms[PCHANNEL];
 	else
 		tgdata.channel = mobject_id;
 	tgdata.instance = mobject_id;
 	tgdata.cmd = 0;
-//	tgdata.val1 = value & 0x7f;
-//	tgdata.val2 = (value >> 7) & 0x7f;
 	tgdata.parm = parm;
 	switch (parm)
 	{
 	case PTUNE:
-//		printf("value: %i\n", value);
 		value = map(value, tg_parameters[PTUNE].low, tg_parameters[PTUNE].high, 3, 126);
 		break;
 	case PPAN:
-//		printf("value: %i\n", value);
 		value = map(value, tg_parameters[PPAN].low, tg_parameters[PPAN].high, 0, 127);
 		break;
 	default:
@@ -177,7 +172,6 @@ void cTG::getPatch()
 
 	tgdata.channel = 0;
 	tgdata.instance = mobject_id;
-	printf("getPatch data  for instanceID %i\n", mobject_id);
 	tgdata.cmd = 1;
 	tgdata.parm = 0;
 	tgdata.value = mparms[PPATCH];

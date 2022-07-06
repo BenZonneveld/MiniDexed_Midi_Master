@@ -6,12 +6,19 @@
 #ifndef MAIN_MENU_H
 #define MAIN_MENU_H
 
+#include "Menu/Pots.h"
+#include "Menu/Buttons.h"
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 #include "f_util.h"
 #include "ff.h"
+
+extern cPots Pots;
+extern cButtons buttons;
+
 
 #define VALUEWIDTH 37
 #define BUTTONHEIGHT 18
