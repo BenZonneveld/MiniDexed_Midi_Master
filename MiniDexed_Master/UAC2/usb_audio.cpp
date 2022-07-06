@@ -63,10 +63,7 @@ void usb_audio_init()
   I2S.setSD(I2S_SD);
 
   I2S.setBufferSize(SAMPLE_BUFFER_SIZE * 8);
-  bool i2s_state = I2S.begin();
-
-  printf("I2s State: %i\n", i2s_state);
-  printf("SAMPLE_BUFFER_SIZE: %i\n", SAMPLE_BUFFER_SIZE);
+  I2S.begin();
 }
 
 //--------------------------------------------------------------------+

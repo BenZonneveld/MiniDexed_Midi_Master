@@ -1,13 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pico/stdlib.h>
-
 #include "MainMenu.h"
-//#include "card_menu.h"
-
 #include "mdma.h"
 #include "tools.h"
-//#include "callback_arrays.h"
 
 #define PROGMEM
 //#include "fonts/FreeSans9pt7b.h"
@@ -17,6 +13,9 @@
 #include "fonts/RobotoMono12.h"
 #include "fonts/RobotoCondensed.h"
 #include "fonts/OpenSansBoldCondensed16.h"
+
+cPots Pots = cPots();
+cButtons buttons = cButtons();
 
 s_menu menuEntry[] = {
 	{ 
@@ -291,10 +290,7 @@ void cMenu::Init()
 	tft.setTextSize(0);
 	tft.setTextColor(WHITE);
 	tft.setFont(&Open_Sans_Condensed_Bold_16);
-//	tft.println("INIT");
-
 	currentTG = -1;
-//	mainmenu();
 }
 
 void cMenu::ShowButtonText(uint8_t button)
