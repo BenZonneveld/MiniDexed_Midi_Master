@@ -6,12 +6,19 @@
 #ifndef MAIN_MENU_H
 #define MAIN_MENU_H
 
+#include "Menu/Pots.h"
+#include "Menu/Buttons.h"
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 #include "f_util.h"
 #include "ff.h"
+
+extern cPots Pots;
+extern cButtons buttons;
+
 
 #define VALUEWIDTH 37
 #define BUTTONHEIGHT 18
@@ -20,7 +27,7 @@ extern "C"
 #define MIDPOT	1
 #define BOTPOT	2
 
-#define BUTTONCOLOR tft.color565(9, 4, 176)
+#define BUTTONCOLOR tft.color565(37, 150, 200)
 #define MIDI_CC_BANK_SELECT_MSB          0       // TODO
 #define MIDI_CC_MODULATION               1
 #define MIDI_CC_VOLUME                   7

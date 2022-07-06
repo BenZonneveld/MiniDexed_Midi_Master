@@ -1,29 +1,14 @@
-Pico
-====
-
-> Raspberry Pi is a trademark of the Raspberry Pi Foundation.
-
 Overview
 --------
 
-Some small programs for the Raspberry Pi Pico.
+This started out as a simple usb to midi interface for my MiniDexed. Then I wanted a more userfriendly interface.
+After that I thought it would be possible to grab the i2s audio from the MiniDexed and use tinyusb for UAC2 audio.
 
-Programs
---------
+While doing this I also made some patches for MiniDexed regarding System Exclusive data to make life easy.
 
-| Directory        | Description                                              |
-|------------------|----------------------------------------------------------|
-| dummy_flash/     | to be installed in the flash for the RAM loader          |
-| midi_adapter/    | USB to serial MIDI adapter (converter)                   |
-| spi_slave_pio/   | SPI slave, which is compatible with the Raspberry Pi 0-4 |
-
-Building
---------
-
-```
-export PICO_SDK_PATH=/absolute/path/to/pico-sdk
-mkdir build
-cd build
-cmake ..
-make
-```
+* Does MIDI over USB.
+* UAC2 audio over USB
+* Normal MIDI, yes a second MIDI port!
+* Double push on the TG selection screen to disable instances.
+* Faster access to settings for the MiniDexed instances.
+* Can load sound from sd card using the sd card slot in the display I use. (KMR 1.8 inch TFT)

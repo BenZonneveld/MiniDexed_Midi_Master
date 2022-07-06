@@ -14,6 +14,11 @@
   See file LICENSE.txt for further informations on licensing terms.
 */
 
+#include <stdlib.h>
+#include <stdint.h>
+#include <pico/stdlib.h>
+#include <stdbool.h>
+
 #include "I2S.h"
 #include "machine_i2s.c"
 
@@ -35,25 +40,19 @@ bool I2SClass::setSD(uint8_t pin) {
   return true;
 }
 
-bool I2SClass::setBufferSize(int bufferSize) {
+bool I2SClass::setBufferSize(uint32_t bufferSize) {
   _bufferSize = bufferSize;
   return true;
 }
 
-bool I2SClass::begin(int mode, long sampleRate, int bitsPerSample) {
-  format_t i2s_format = (mode == I2S_MODE_STEREO) ? STEREO : MONO;
-  machine_i2s_obj_t* i2s0 = machine_i2s_make_new(0, _pin_sck, _pin_ws, _pin_sd,
-      RX, bitsPerSample, i2s_format, _bufferSize, sampleRate);
+bool I2SClass::begin() {
+  machine_i2s_obj_t* i2s0 = machine_i2s_make_new(0, _pin_sck, _pin_ws, _pin_sd, _bufferSize);
   if (i2s0 == NULL) {
     return false;
   }
   return true;
 }
 
-void I2SClass::end() {
-  machine_i2s_deinit(machine_i2s_obj[0]);
-}
-
-int I2SClass::read(void* buffer, size_t size) {
+int I2SClass::read(uint32_t* buffer, size_t size) {
   return machine_i2s_stream_read(machine_i2s_obj[0], buffer, size);
 }

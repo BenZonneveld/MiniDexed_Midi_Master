@@ -14,8 +14,6 @@
 
 //#define IGNORE_MIDI_CC
 
-cPots Pots = cPots();
-cButtons buttons = cButtons();
 cTG dexed[8];
 cMenu menu;
 
@@ -26,23 +24,20 @@ int main(void)
     queue_init(&midi_fifo, sizeof(dexed_t), FIFOLENGTH);
     queue_init(&sysex_fifo, sizeof(sysex_t), FIFOLENGTH);
     queue_init(&tx_fifo, sizeof(sysex_t), FIFOLENGTH);
-    //    set_sys_clock_khz(140000, true);
-
-    board_init();
+    set_sys_clock_khz(140000, true);
 
     stdio_init_all();
+    board_init();
+
+#ifndef MIDIPORT
     printf("MDMA Booting\r\n");
-    
+#endif
+
     Pots.init();
     menu.Init();
 
     multicore_launch_core1(midicore);
  
-//    while (midi_ready == false)
-//    {
-//        tight_loop_contents();
-//    }
- //   tft.fillScreen(BLACK);
     menu.Show();
 
     sysex_t raw_sysex;
@@ -54,6 +49,7 @@ int main(void)
         {
             handleMidi(raw_sysex);
         }
+        ;
     }
 
     return 0;
