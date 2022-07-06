@@ -178,15 +178,13 @@ static uint32_t fill_appbuf_from_ringbuf(machine_i2s_obj_t *self, mp_buffer_info
     uint32_t num_words_needed_from_ringbuf = appbuf->len;
     while (num_words_needed_from_ringbuf) 
     {
-        while (ringbuf_pop(&self->ring_buffer, app_p) == false) 
+        while (ringbuf_pop(&self->ring_buffer, app_p) == false)
         {
-            sleep_us(1);
-            //asm volatile(
-            //    "mov  r0, #05\n"    		// 1 cycle
-            //    "loop1: sub  r0, r0, #1\n"	// 1 cycle
-            //    "bne   loop1\n"          	// 2 cycles if loop taken, 1 if not
-            //    );
-            ;
+            asm volatile(
+                "mov  r0, #01\n"    		// 1 cycle
+                "loop1: sub  r0, r0, #1\n"	// 1 cycle
+                "bne   loop1\n"          	// 2 cycles if loop taken, 1 if not
+                );
         }
         num_words_copied_to_appbuf++;
         num_words_needed_from_ringbuf--;
