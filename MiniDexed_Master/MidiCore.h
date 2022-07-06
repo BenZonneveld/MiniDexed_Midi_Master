@@ -10,7 +10,9 @@ extern queue_t tx_fifo;
 extern bool led_usb_state;
 extern bool led_uart_state;
 
-#define APP_BUFFER_SIZE 4096
+#define bswap(x) \
+  ((((x) & 0xff000000u) >> 24) | (((x) & 0x00ff0000u) >> 8)	\
+   | (((x) & 0x0000ff00u) << 8) | (((x) & 0x000000ffu) << 24))
 
 void midi_task(void); 
 void led_task(void);
@@ -26,3 +28,8 @@ void midiParser(uint8_t *buffer, size_t length);
 void parseSysex(uint8_t buf);
 void parseCtrls(uint8_t buf);
 void handleMidi(sysex_t raw_sysex);
+
+void i2s_init();
+void start_dma(int32_t* buf, size_t len);
+void finalize_dma();
+static void i2s_print_samples(int32_t* samples, size_t len);
