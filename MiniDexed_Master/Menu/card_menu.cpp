@@ -21,7 +21,6 @@
 
 char cMenu::mCard::mCurrentDir[256];
 char cMenu::mCard::mCurrentFile[256];
-//char cMenu::mCard::mFilenames[25][256];
 uint32_t cMenu::mCard::mFileCount;
 uint32_t cMenu::mCard::mCurrentEntry;
 uint32_t cMenu::mCard::mFirstEntryToShow; 
@@ -33,9 +32,7 @@ bool cMenu::mCard::mNeedRefresh;
 
 void cMenu::mCard::CardMenu(uint8_t button)
 {
-//    mCard cardmenu;
     menu = M_CARD;
-//    buildMenu(M_CARD);
     if (tryMount() != 0) menuBack(0);
 
     clearCallbacks();

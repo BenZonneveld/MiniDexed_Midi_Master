@@ -12,7 +12,7 @@
 #include "gpio_pins.h"
 
 #include "mdma.h"
-
+#include "tools.h"
 #include "UAC2/usb_audio.h"
 
 //#define DEBUGSYSEX
@@ -569,7 +569,7 @@ void handleMidi(sysex_t raw_sysex)
 #endif
         uint8_t instanceID = raw_sysex.buffer[0] & 0xF;
         uint8_t ctrl = raw_sysex.buffer[1];
-        uint8_t val = raw_sysex.buffer[2];
+        int8_t val = raw_sysex.buffer[2];
         static int16_t bank;
         static int8_t tune;
         bool setValue = false;
@@ -588,6 +588,7 @@ void handleMidi(sysex_t raw_sysex)
             case MIDI_CC_PAN_POSITION:
                 param = PPAN;
                 setValue = true;
+                val = map(val, 0, 127, -63, 63);
 #ifdef DEBUG
                 printf("Pan for instance %i, value: %i\n", instanceID, val);
 #endif

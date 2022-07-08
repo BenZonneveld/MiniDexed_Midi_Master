@@ -42,7 +42,7 @@ s_menu menuEntry[] = {
 		{
 			{ "MIDI", M_TG_MIDI, &cMenu::OpenMenu, &cMenu::OpenMenu, NULL},
 			{ "Filter", M_TG_FILT, &cMenu::OpenMenu, &cMenu::OpenMenu, NULL},
-			{ "Tuning", M_TG_TUNE, &cMenu::OpenMenu, &cMenu::OpenMenu, NULL},
+			{ "Tune", M_TG_TUNE, &cMenu::OpenMenu, &cMenu::OpenMenu, NULL},
 			{ "Out", M_TG_OUT, &cMenu::OpenMenu, &cMenu::OpenMenu, NULL},
 			{ "Pitch", M_TG_PITCH, &cMenu::OpenMenu, &cMenu::OpenMenu, NULL},
 			{ " ", PNOPARAM, NULL, NULL, NULL},
@@ -120,12 +120,12 @@ s_menu menuEntry[] = {
 		{PBRANGE, PBSTEP, PNOPARAM}, { false, false, false},
 		{PBRANGE, PBSTEP, PNOPARAM, PMONO},
 		{
-			{ "PBRng-", PBRANGE, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
-			{ "PBStp-", PBSTEP, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
+			{ "PBRn -", PBRANGE, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
+			{ "PBSt-", PBSTEP, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
 			{ "Porta", M_TG_PORTA, &cMenu::OpenMenu, &cMenu::OpenMenu, NULL},
 			{ "Mono", PMONO, &cMenu::ParmToggle, &cMenu::ParmToggle, NULL},
-			{ "PBRng+", PBRANGE, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
-			{ "PBStp+", PBSTEP, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
+			{ "PBRn+", PBRANGE, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
+			{ "PBSt+", PBSTEP, &cMenu::ParmSelect, &cMenu::ParmSelect, &cMenu::ParmSelect},
 			{ " ", PNOPARAM, NULL, NULL, NULL},
 			{ "Back", PNOPARAM, &cMenu::menuBack, &cMenu::menuBack, NULL},
 		},
@@ -852,7 +852,7 @@ void cMenu::showTGInfo(int16_t param)
 		if (param == -1 || param == PPAN)
 		{
 			tft.setFont(&Roboto_Bold_10);
-			int8_t pan = (dexed[currentTG].getValue(PPAN) + 63) / 4.8f;
+			int8_t pan = map(dexed[currentTG].getValue(PPAN), -63,63,0,25);
 			tft.writeFillRect(21, 19, 26, 8, BLACK);
 			tft.fillTriangle(34, 23, 21, 19, 21, 27, GREY);
 			tft.fillTriangle(34, 23, 47, 19, 47, 27, GREY);
@@ -1030,6 +1030,10 @@ void cMenu::OpenMenu(uint8_t button)
 {
 	if (bparam[button] != PNOPARAM)
 	{
+		if (menu == M_MAIN && bparam[button] == M_TG)
+		{
+			currentTG = button;
+		}
 		menu = bparam[button];
 	}
 	else {
@@ -1041,7 +1045,7 @@ void cMenu::OpenMenu(uint8_t button)
 
 	if (menu == M_TG)
 	{
-		currentTG = button;
+//		currentTG = button;   // TODO: Only when entering from main menu!!
 		dexed[currentTG].getPatch();
 		dexed[currentTG].getBank();
 	}
